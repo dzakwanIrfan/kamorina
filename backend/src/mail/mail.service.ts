@@ -20,7 +20,7 @@ export class MailService {
   }
 
   async sendEmailVerification(email: string, name: string, token: string) {
-    const verificationUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/verify-email?token=${token}`;
+    const verificationUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/auth/verify-email?token=${token}`;
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -43,7 +43,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, name: string, token: string) {
-    const resetUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/reset-password?token=${token}`;
+    const resetUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/auth/reset-password?token=${token}`;
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
