@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import NProgress from 'nprogress';
-
-// Import CSS
 import '@/styles/nprogress.css';
 
 // Configure NProgress
@@ -21,17 +19,10 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Start progress on route change
-    NProgress.start();
-
-    // Complete progress after a short delay
-    const timer = setTimeout(() => {
-      NProgress.done();
-    }, 100);
+    NProgress.done();
 
     return () => {
-      clearTimeout(timer);
-      NProgress.done();
+      NProgress.start();
     };
   }, [pathname, searchParams]);
 

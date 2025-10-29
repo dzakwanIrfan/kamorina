@@ -109,7 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <Image src="assets/logo.svg" alt="Logo" width={32} height={32} />
+                <Image src="/assets/logo.svg" alt="Logo" width={32} height={32} />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">Koperasi</span>
                   <span className="text-xs text-muted-foreground">Surya Niaga Kamorina</span>

@@ -112,7 +112,7 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <Image src="assets/logo.svg" alt="Kamorina Logo" width={64} height={64} />
+            <Image src="/assets/logo.svg" alt="Kamorina Logo" width={64} height={64} />
           </div>
           <CardTitle className="text-2xl font-bold text-center">
             Daftar Akun
