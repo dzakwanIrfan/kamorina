@@ -45,6 +45,7 @@ interface DataTableAdvancedProps<TData, TValue> {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (search: string) => void;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  onResetFilters?: () => void; 
   isLoading?: boolean;
 }
 
@@ -57,6 +58,7 @@ export function DataTableAdvanced<TData, TValue>({
   onPageSizeChange,
   onSearch,
   onFiltersChange,
+  onResetFilters, 
   isLoading = false,
 }: DataTableAdvancedProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -136,6 +138,15 @@ export function DataTableAdvanced<TData, TValue>({
     onFiltersChange?.(newFilters);
   };
 
+  const handleResetFilters = () => {
+    // Reset local state
+    setSearchValue('');
+    setFilters({});
+    
+    // Call parent reset handler
+    onResetFilters?.();
+  };
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -146,6 +157,7 @@ export function DataTableAdvanced<TData, TValue>({
         onSearchChange={handleSearch}
         filters={filters}
         onFiltersChange={handleFiltersChange}
+        onResetFilters={handleResetFilters} // Pass it down
       />
 
       {/* Table */}

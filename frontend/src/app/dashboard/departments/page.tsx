@@ -7,7 +7,6 @@ import { id as localeId } from 'date-fns/locale';
 import { Plus, AlertCircle, Building2, Trash2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -22,6 +21,15 @@ import { handleApiError } from '@/lib/axios';
 import { Department, QueryDepartmentParams } from '@/types/department.types';
 import { PaginatedResponse } from '@/types/pagination.types';
 import { DataTableConfig } from '@/types/data-table.types';
+
+// Define default query params
+const DEFAULT_QUERY_PARAMS: QueryDepartmentParams = {
+  page: 1,
+  limit: 10,
+  search: '',
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+};
 
 export default function DepartmentsPage() {
   const { user } = useAuthStore();
@@ -40,13 +48,7 @@ export default function DepartmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [queryParams, setQueryParams] = useState<QueryDepartmentParams>({
-    page: 1,
-    limit: 10,
-    search: '',
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-  });
+  const [queryParams, setQueryParams] = useState<QueryDepartmentParams>(DEFAULT_QUERY_PARAMS);
 
   // Dialog states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -93,6 +95,11 @@ export default function DepartmentsPage() {
       ...filters,
       page: 1,
     }));
+  };
+
+  const handleResetFilters = () => {
+    // Reset to default query params
+    setQueryParams(DEFAULT_QUERY_PARAMS);
   };
 
   const handlePageChange = (page: number) => {
@@ -231,7 +238,7 @@ export default function DepartmentsPage() {
         placeholder: 'Pilih tanggal akhir',
       },
     ],
-    selectable: canDelete, // Only enable selection if user can delete
+    selectable: canDelete,
     bulkActions: canDelete
       ? [
           {
@@ -353,12 +360,13 @@ export default function DepartmentsPage() {
             onPageSizeChange={handlePageSizeChange}
             onSearch={handleSearch}
             onFiltersChange={handleFiltersChange}
+            onResetFilters={handleResetFilters}
             isLoading={isLoading}
           />
         </CardContent>
       </Card>
 
-      {/* Form Dialog */}
+      {/* Dialogs */}
       <DepartmentFormDialog
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -367,7 +375,6 @@ export default function DepartmentsPage() {
         isLoading={isSubmitting}
       />
 
-      {/* Single Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
@@ -377,7 +384,6 @@ export default function DepartmentsPage() {
         isLoading={isDeleting}
       />
 
-      {/* Bulk Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={isBulkDeleteOpen}
         onOpenChange={setIsBulkDeleteOpen}

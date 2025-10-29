@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { X, Search, Filter, ChevronDown } from 'lucide-react';
 import { Table } from '@tanstack/react-table';
 
@@ -31,6 +30,7 @@ interface DataTableToolbarProps<TData> {
   onSearchChange?: (value: string) => void;
   filters?: Record<string, any>;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  onResetFilters?: () => void; 
 }
 
 export function DataTableToolbar<TData>({
@@ -40,6 +40,7 @@ export function DataTableToolbar<TData>({
   onSearchChange,
   filters = {},
   onFiltersChange,
+  onResetFilters, 
 }: DataTableToolbarProps<TData>) {
   const isFiltered = Object.keys(filters).length > 0 || searchValue.length > 0;
   const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -56,8 +57,12 @@ export function DataTableToolbar<TData>({
   };
 
   const clearFilters = () => {
+    // Clear all filters and search
     onFiltersChange?.({});
     onSearchChange?.('');
+    
+    // Call parent reset handler to reset query params
+    onResetFilters?.();
   };
 
   const executeBulkAction = async (action: DataTableBulkAction<TData>) => {
