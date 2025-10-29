@@ -1,4 +1,3 @@
-// schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,41 +7,116 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ApplicationStatus {
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalStep {
+  DIVISI_SIMPAN_PINJAM
+  KETUA
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+model Employee {
+  id              String   @id @default(uuid())
+  employeeNumber  String   @unique @map("employee_number") // Nomor Induk Karyawan Angka 9 digit
+  fullName        String   @map("full_name")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+
+  @@map("employees")
+}
+
 model User {
   id                      String    @id @default(uuid())
   name                    String
   email                   String    @unique
-  nik                     String?   @unique
+  nik                     String?   @unique // Nomor Induk Kependudukan angka 16 digit
+  npwp                    String?   @unique // angka 16 digit
   password                String
-  
+
+  // Link ke master karyawan (WAJIB, unik per user)
+  employeeId              String    @unique @map("employee_id")
+  employee                Employee  @relation(fields: [employeeId], references: [id])
+
   // Email Verification
   emailVerified           Boolean   @default(false) @map("email_verified")
   emailVerifiedAt         DateTime? @map("email_verified_at")
   emailVerificationToken  String?   @unique @map("email_verification_token")
-  
-  // Member Verification
+
+  // Member Verification (flip true saat final approval)
   memberVerified          Boolean   @default(false) @map("member_verified")
   memberVerifiedAt        DateTime? @map("member_verified_at")
-  
-  // Additional Info (required for member verification)
+
+  // Additional Info (diisi pada step pengajuan member)
   departmentId            String?   @map("department_id")
   department              Department? @relation(fields: [departmentId], references: [id])
   dateOfBirth             DateTime? @map("date_of_birth") @db.Date
   birthPlace              String?   @map("birth_place")
   permanentEmployeeDate   DateTime? @map("permanent_employee_date") @db.Date
   installmentPlan         Int?      @map("installment_plan") // 1 or 2
-  
+
   // Password Reset
   passwordResetToken      String?   @unique @map("password_reset_token")
   passwordResetExpires    DateTime? @map("password_reset_expires")
-  
+
   // Timestamps
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
-  
+
   roles                   UserRole[]
-  
+  memberApplications      MemberApplication[]
+  approvals               ApplicationApproval[] @relation("approval_approver")
+
   @@map("users")
+}
+
+model MemberApplication {
+  id             String            @id @default(uuid())
+  userId         String            @map("user_id")
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status         ApplicationStatus @default(UNDER_REVIEW)
+  currentStep    ApprovalStep?     @map("current_step")
+
+  submittedAt    DateTime?         @map("submitted_at")
+  approvedAt     DateTime?         @map("approved_at")
+  rejectedAt     DateTime?         @map("rejected_at")
+  rejectionReason String?          @map("rejection_reason")
+
+  approvals      ApplicationApproval[]
+
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@unique([userId])
+  @@map("member_applications")
+}
+
+model ApplicationApproval {
+  id             String           @id @default(uuid())
+  applicationId  String           @map("application_id")
+  application    MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  step           ApprovalStep     @map("step")
+  decision       ApprovalDecision? @map("decision")
+  decidedAt      DateTime?        @map("decided_at")
+  approverId     String?          @map("approver_id") // user id dari approver
+  approver       User?            @relation("approval_approver", fields: [approverId], references: [id])
+  notes          String?
+
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@map("application_approvals")
 }
 
 model Department {
@@ -50,9 +124,9 @@ model Department {
   departmentName  String   @unique @map("department_name")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
-  
+
   users           User[]
-  
+
   @@map("departments")
 }
 
@@ -62,9 +136,9 @@ model Level {
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   userRoles   UserRole[]
-  
+
   @@map("levels")
 }
 
@@ -75,7 +149,7 @@ model UserRole {
   levelId   String   @map("level_id")
   level     Level    @relation(fields: [levelId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
-  
+
   @@unique([userId, levelId])
   @@map("user_roles")
 }

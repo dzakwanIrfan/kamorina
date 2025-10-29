@@ -28,11 +28,39 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const { name, email, password, confPassword } = registerDto;
+    const { name, email, password, confPassword, employeeNumber } = registerDto;
 
     // Validate password confirmation
     if (password !== confPassword) {
       throw new BadRequestException('Password dan konfirmasi password tidak cocok');
+    }
+
+    // Check if employee number exists and is active
+    const employee = await this.prisma.employee.findUnique({
+      where: { employeeNumber },
+    });
+
+    if (!employee) {
+      throw new BadRequestException(
+        'Nomor Induk Karyawan tidak ditemukan di sistem. Hubungi HR/Admin.',
+      );
+    }
+
+    if (!employee.isActive) {
+      throw new BadRequestException(
+        'Nomor Induk Karyawan tidak aktif. Hubungi HR/Admin.',
+      );
+    }
+
+    // Check if employee number already used by another user
+    const existingUserWithEmployee = await this.prisma.user.findFirst({
+      where: { employeeId: employee.id },
+    });
+
+    if (existingUserWithEmployee) {
+      throw new ConflictException(
+        'Nomor Induk Karyawan sudah terdaftar oleh user lain.',
+      );
     }
 
     // Check if email already exists
@@ -62,6 +90,7 @@ export class AuthService {
             email,
             password: hashedPassword,
             emailVerificationToken,
+            employeeId: employee.id,
           },
         });
 
@@ -202,6 +231,7 @@ export class AuthService {
           },
         },
         department: true,
+        employee: true,
       },
     });
 

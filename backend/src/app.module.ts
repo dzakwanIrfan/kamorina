@@ -4,9 +4,9 @@ import { ConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
 import { LevelsModule } from './levels/levels.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { MemberApplicationModule } from './member-application/member-application.module';
 
 @Module({
   imports: [
@@ -14,9 +14,9 @@ import { DepartmentsModule } from './departments/departments.module';
     PrismaModule,
     MailModule,
     AuthModule,
-    UsersModule,
     LevelsModule,
     DepartmentsModule,
+    MemberApplicationModule,
   ],
 })
 export class AppModule {}

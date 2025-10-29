@@ -64,4 +64,132 @@ export class MailService {
       `,
     });
   }
+
+  /**
+   * Send approval request notification to approver
+   */
+  async sendApprovalRequest(
+    email: string,
+    approverName: string,
+    applicantName: string,
+    employeeNumber: string,
+    roleName: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/member-applications`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Member Baru Menunggu Persetujuan - Koperasi',
+      html: `
+        <h2>Halo ${approverName},</h2>
+        <p>Ada pengajuan member baru yang menunggu persetujuan Anda.</p>
+        <br>
+        <h3>Detail Pemohon:</h3>
+        <ul>
+          <li><strong>Nama:</strong> ${applicantName}</li>
+          <li><strong>NIK:</strong> ${employeeNumber}</li>
+        </ul>
+        <br>
+        <p>Sebagai <strong>${roleName.toUpperCase().replace('_', ' ')}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Lihat Pengajuan
+        </a>
+        <p>Atau akses dashboard di: ${dashboardUrl}</p>
+        <br>
+        <p>Terima kasih atas perhatian Anda.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send rejection notification to applicant
+   */
+  async sendApplicationRejected(
+    email: string,
+    applicantName: string,
+    reason: string,
+  ) {
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Keanggotaan Ditolak - Koperasi',
+      html: `
+        <h2>Halo ${applicantName},</h2>
+        <p>Kami informasikan bahwa pengajuan keanggotaan Anda di Koperasi Simpan Pinjam telah <strong>DITOLAK</strong>.</p>
+        <br>
+        <h3>Alasan Penolakan:</h3>
+        <p style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336;">
+          ${reason}
+        </p>
+        <br>
+        <p>Jika Anda memiliki pertanyaan atau ingin mengajukan ulang, silakan hubungi admin koperasi.</p>
+        <br>
+        <p>Terima kasih atas pengertian Anda.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send final approval notification to new member
+   */
+  async sendMembershipApproved(email: string, memberName: string) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Selamat! Keanggotaan Anda Disetujui - Koperasi',
+      html: `
+        <h2>Selamat ${memberName}! 🎉</h2>
+        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Simpan Pinjam telah <strong>DISETUJUI</strong>!</p>
+        <br>
+        <p>Sekarang Anda dapat mengakses seluruh fitur member koperasi, termasuk:</p>
+        <ul>
+          <li>✓ Simpanan Wajib & Sukarela</li>
+          <li>✓ Pengajuan Pinjaman</li>
+          <li>✓ Belanja di Toko Koperasi</li>
+          <li>✓ Dan banyak lagi...</li>
+        </ul>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Akses Dashboard
+        </a>
+        <p>Atau kunjungi: ${dashboardUrl}</p>
+        <br>
+        <p>Selamat bergabung dengan keluarga besar Koperasi!</p>
+      `,
+    });
+  }
+
+  /**
+   * Send notification to pengawas and payroll about new member
+   */
+  async sendNewMemberNotification(
+    email: string,
+    recipientName: string,
+    memberName: string,
+    memberEmail: string,
+  ) {
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Member Baru Telah Disetujui - Koperasi',
+      html: `
+        <h2>Halo ${recipientName},</h2>
+        <p>Kami informasikan bahwa ada member baru yang telah disetujui oleh Ketua Koperasi.</p>
+        <br>
+        <h3>Detail Member Baru:</h3>
+        <ul>
+          <li><strong>Nama:</strong> ${memberName}</li>
+          <li><strong>Email:</strong> ${memberEmail}</li>
+        </ul>
+        <br>
+        <p>Mohon untuk diproses lebih lanjut sesuai dengan prosedur yang berlaku.</p>
+        <br>
+        <p>Terima kasih atas perhatian Anda.</p>
+      `,
+    });
+  }
 }
