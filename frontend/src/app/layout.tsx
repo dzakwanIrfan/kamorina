@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { AuthProvider } from '@/providers/auth-provider';
+import { ProgressProvider } from '@/providers/progress-provider';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
@@ -16,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Kamorina - Koperasi Kalbe',
-  description: 'Sistem Informasi Koperasi Kalbe',
+  title: 'Surya Niaga Kamorina',
+  description: 'Sistem Informasi Koperasi Surya Niaga Kamorina',
 };
 
 export default function RootLayout({
@@ -37,7 +38,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
+            <ProgressProvider>
+              {children}
+            </ProgressProvider>
             <Toaster position="top-right" richColors />
           </AuthProvider>
         </ThemeProvider>

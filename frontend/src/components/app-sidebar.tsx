@@ -37,6 +37,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const menuItems = [
   {
@@ -92,12 +93,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Building2 className="size-4" />
-                </div>
+                <Image src="assets/logo.svg" alt="Logo" width={32} height={32} />
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Kamorina</span>
-                  <span className="text-xs text-muted-foreground">Koperasi Kalbe</span>
+                  <span className="font-semibold">Koperasi</span>
+                  <span className="text-xs text-muted-foreground">Surya Niaga Kamorina</span>
                 </div>
               </Link>
             </SidebarMenuButton>

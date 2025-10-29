@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Building2, ArrowRight } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import Image from 'next/image';
 
 export default function HomePage() {
   return (
@@ -14,19 +15,17 @@ export default function HomePage() {
         <div className="flex flex-col items-center justify-center text-center space-y-8">
           {/* Logo */}
           <div className="flex items-center justify-center">
-            <div className="h-20 w-20 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Building2 className="h-12 w-12 text-primary" />
-            </div>
+            <Image src="assets/logo.svg" alt="Kamorina Logo" width={80} height={80} />
           </div>
 
           {/* Hero Text */}
           <div className="space-y-4 max-w-3xl">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
               Selamat Datang di{' '}
-              <span className="text-primary">Kamorina</span>
+              <div className="text-primary">Surya Niaga Kamorina</div>
             </h1>
             <p className="text-xl text-muted-foreground">
-              Sistem Informasi Koperasi Kalbe
+              Sistem Informasi Koperasi Surya Niaga Kamorina
             </p>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Platform modern untuk mengelola koperasi dengan mudah dan efisien. 

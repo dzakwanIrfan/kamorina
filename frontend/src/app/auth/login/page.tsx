@@ -97,7 +97,7 @@ export default function LoginPage() {
             Selamat Datang
           </CardTitle>
           <CardDescription className="text-center">
-            Masuk ke akun Kamorina Anda
+            Masuk ke akun Surya Niaga Kamorina Anda
           </CardDescription>
         </CardHeader>
 
