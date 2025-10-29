@@ -33,6 +33,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 import { authService } from '@/services/auth.service';
 import { handleApiError } from '@/lib/axios';
+import Image from 'next/image';
 
 const registerSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter'),
@@ -111,15 +112,13 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <UserPlus className="h-8 w-8 text-primary" />
-            </div>
+            <Image src="assets/logo.svg" alt="Kamorina Logo" width={64} height={64} />
           </div>
           <CardTitle className="text-2xl font-bold text-center">
             Daftar Akun
           </CardTitle>
           <CardDescription className="text-center">
-            Buat akun Kamorina baru
+            Buat akun Surya Niaga Kamorina baru
           </CardDescription>
         </CardHeader>
 

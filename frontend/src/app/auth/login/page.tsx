@@ -33,6 +33,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import { handleApiError } from '@/lib/axios';
+import Image from 'next/image';
 
 const loginSchema = z.object({
   emailOrNik: z.string().min(1, 'Email atau NIK harus diisi'),
@@ -89,9 +90,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <Mail className="h-8 w-8 text-primary" />
-            </div>
+            <Image src="assets/logo.svg" alt="Kamorina Logo" width={64} height={64} />
           </div>
           <CardTitle className="text-2xl font-bold text-center">
             Selamat Datang
