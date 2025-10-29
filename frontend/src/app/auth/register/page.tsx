@@ -36,7 +36,11 @@ import { handleApiError } from '@/lib/axios';
 
 const registerSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter'),
-  email: z.string().email('Format email tidak valid'),
+  email: z.email('Format email tidak valid'),
+  employeeNumber: z
+    .string()
+    .length(9, 'Nomor Induk Karyawan harus 9 digit')
+    .regex(/^[0-9]+$/, 'Nomor Induk Karyawan harus berupa angka'),
   password: z
     .string()
     .min(8, 'Password minimal 8 karakter')
@@ -65,6 +69,7 @@ export default function RegisterPage() {
     defaultValues: {
       name: '',
       email: '',
+      employeeNumber: '',
       password: '',
       confPassword: '',
     },
@@ -166,6 +171,25 @@ export default function RegisterPage() {
                       <Input
                         type="email"
                         placeholder="email@example.com"
+                        {...field}
+                        disabled={isLoading || !!success}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="employeeNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nomor Induk Karyawan</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="100000001"
                         {...field}
                         disabled={isLoading || !!success}
                       />

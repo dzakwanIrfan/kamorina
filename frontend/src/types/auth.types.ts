@@ -25,6 +25,7 @@ export interface AuthResponse {
 export interface RegisterRequest {
   name: string;
   email: string;
+  employeeNumber: string;
   password: string;
   confPassword: string;
 }
