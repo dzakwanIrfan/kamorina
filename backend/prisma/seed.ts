@@ -30,11 +30,15 @@ async function main() {
 
   // Create Departments
   const departments = [
-    { departmentName: 'IT' },
-    { departmentName: 'HR' },
+    { departmentName: 'MDP' },
+    { departmentName: 'HCGA' },
     { departmentName: 'Finance' },
-    { departmentName: 'Operations' },
-    { departmentName: 'Marketing' },
+    { departmentName: 'BDA' },
+    { departmentName: 'Production' },
+    { departmentName: 'Warehouse' },
+    { departmentName: 'QC' },
+    { departmentName: 'Engineering' },
+    { departmentName: 'IOS' },
   ];
 
   for (const dept of departments) {
@@ -59,13 +63,13 @@ async function main() {
     throw new Error('Ketua level not found. Please check the levels creation.');
   }
 
-  // Get IT department
-  const itDept = await prisma.department.findFirst({
-    where: { departmentName: 'IT' },
+  // Get MDP department
+  const mdpDept = await prisma.department.findFirst({
+    where: { departmentName: 'MDP' },
   });
 
-  if (!itDept) {
-    throw new Error('IT department not found. Please check the departments creation.');
+  if (!mdpDept) {
+    throw new Error('MDP department not found. Please check the departments creation.');
   }
 
   const adminUser = await prisma.user.upsert({
@@ -80,7 +84,7 @@ async function main() {
       emailVerifiedAt: new Date(),
       memberVerified: true,
       memberVerifiedAt: new Date(),
-      departmentId: itDept.id,
+      departmentId: mdpDept.id,
       dateOfBirth: new Date('1990-01-01'),
       birthPlace: 'Jakarta',
       permanentEmployeeDate: new Date('2020-01-01'),

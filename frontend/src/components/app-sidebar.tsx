@@ -12,6 +12,7 @@ import {
   ChevronsUpDown,
   LogOut,
   Building2,
+  Shield,
 } from 'lucide-react';
 
 import {
@@ -34,7 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -60,10 +61,20 @@ const menuItems = [
     icon: FileText,
     href: '/dashboard/transactions',
   },
+];
+
+const managementItems = [
   {
-    title: 'Departemen',
+    title: 'Departments',
     icon: Building2,
     href: '/dashboard/departments',
+    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
+  },
+  {
+    title: 'Levels',
+    icon: Shield,
+    href: '/dashboard/levels',
+    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
   },
 ];
 
@@ -84,6 +95,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const hasAccess = (roles?: string[]) => {
+    if (!roles) return true;
+    return user?.roles?.some((role) => roles.includes(role));
   };
 
   return (
@@ -122,6 +138,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </SidebarMenuItem>
                 );
               })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {managementItems
+                .filter((item) => hasAccess(item.roles))
+                .map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton asChild isActive={isActive}>
+                        <Link href={item.href}>
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
