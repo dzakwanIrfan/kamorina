@@ -37,13 +37,8 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" asChild>
               <Link href="/auth/login">
-                Masuk
+                Daftar Anggota Koperasi
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/auth/register">
-                Daftar Sekarang
               </Link>
             </Button>
           </div>
