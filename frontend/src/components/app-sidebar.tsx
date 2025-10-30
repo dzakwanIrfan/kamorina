@@ -1,3 +1,4 @@
+// frontend/src/components/app-sidebar.tsx
 'use client';
 
 import * as React from 'react';
@@ -13,6 +14,7 @@ import {
   LogOut,
   Building2,
   Shield,
+  AlertCircle,
 } from 'lucide-react';
 
 import {
@@ -36,6 +38,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -45,21 +49,25 @@ const menuItems = [
     title: 'Dashboard',
     icon: LayoutDashboard,
     href: '/dashboard',
+    requiresMemberVerified: false, // Always accessible
   },
   {
     title: 'Anggota',
     icon: Users,
     href: '/dashboard/members',
+    requiresMemberVerified: true,
   },
   {
     title: 'Produk',
     icon: Package,
     href: '/dashboard/products',
+    requiresMemberVerified: true,
   },
   {
     title: 'Transaksi',
     icon: FileText,
     href: '/dashboard/transactions',
+    requiresMemberVerified: true,
   },
 ];
 
@@ -69,12 +77,14 @@ const managementItems = [
     icon: Building2,
     href: '/dashboard/departments',
     roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
+    requiresMemberVerified: true,
   },
   {
     title: 'Levels',
     icon: Shield,
     href: '/dashboard/levels',
     roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
+    requiresMemberVerified: true,
   },
 ];
 
@@ -102,6 +112,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return user?.roles?.some((role) => roles.includes(role));
   };
 
+  const isMemberVerified = user?.memberVerified || false;
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -118,6 +130,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* Member Status Badge */}
+        {!isMemberVerified && (
+          <div className="px-3 py-2">
+            <Alert variant="default" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Akun belum terverifikasi. Lengkapi pendaftaran anggota.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent>
@@ -127,13 +151,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const isActive = pathname === item.href;
+                const isDisabled = item.requiresMemberVerified && !isMemberVerified;
+                
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link href={item.href}>
-                        <item.icon className="size-4" />
-                        <span>{item.title}</span>
-                      </Link>
+                    <SidebarMenuButton
+                      asChild={!isDisabled}
+                      isActive={isActive}
+                      disabled={isDisabled}
+                      className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                    >
+                      {isDisabled ? (
+                        <div className="flex items-center gap-3">
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </div>
+                      ) : (
+                        <Link href={item.href}>
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </Link>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -142,28 +180,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {managementItems
-                .filter((item) => hasAccess(item.roles))
-                .map((item) => {
-                  const isActive = pathname === item.href;
-                  return (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link href={item.href}>
-                          <item.icon className="size-4" />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Only show management menu if member is verified */}
+        {isMemberVerified && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {managementItems
+                  .filter((item) => hasAccess(item.roles))
+                  .map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton asChild isActive={isActive}>
+                          <Link href={item.href}>
+                            <item.icon className="size-4" />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Pengaturan</SidebarGroupLabel>

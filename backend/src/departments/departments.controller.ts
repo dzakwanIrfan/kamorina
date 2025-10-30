@@ -32,7 +32,7 @@ export class DepartmentsController {
   }
 
   @Get()
-  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll')
+  // @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll')
   findAll(@Query() query: QueryDepartmentDto) {
     return this.departmentsService.findAll(query);
   }
