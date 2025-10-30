@@ -56,6 +56,9 @@ importers:
       nodemailer:
         specifier: ^7.0.10
         version: 7.0.10
+      papaparse:
+        specifier: ^5.5.3
+        version: 5.5.3
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -108,6 +111,9 @@ importers:
       '@types/nodemailer':
         specifier: ^7.0.3
         version: 7.0.3
+      '@types/papaparse':
+        specifier: ^5.3.16
+        version: 5.3.16
       '@types/passport-jwt':
         specifier: ^4.0.1
         version: 4.0.1
@@ -1385,6 +1391,9 @@ packages:
 
   '@types/nodemailer@7.0.3':
     resolution: {integrity: sha512-fC8w49YQ868IuPWRXqPfLf+MuTRex5Z1qxMoG8rr70riqqbOp2F5xgOKE9fODEBPzpnvjkJXFgK6IL2xgMSTnA==}
+
+  '@types/papaparse@5.3.16':
+    resolution: {integrity: sha512-T3VuKMC2H0lgsjI9buTB3uuKj3EMD2eap1MOuEQuBQ44EnDx/IkGhU6EwiTf9zG3za4SKlmwKAImdDKdNnCsXg==}
 
   '@types/passport-jwt@4.0.1':
     resolution: {integrity: sha512-Y0Ykz6nWP4jpxgEUYq8NoVZeCQPo1ZndJLfapI249g1jHChvRfZRO/LS3tqu26YgAS/laI1qx98sYGz0IalRXQ==}
@@ -3568,6 +3577,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  papaparse@5.5.3:
+    resolution: {integrity: sha512-5QvjGxYVjxO59MGU2lHVYpRWBBtKHnlIAcSe1uNFCkkptUh63NFRj0FJQm7nR67puEruUci/ZkjmEFrjCAyP4A==}
 
   param-case@2.1.1:
     resolution: {integrity: sha512-eQE845L6ot89sk2N8liD8HAuH4ca6Vvr7VWAWwt7+kvvG5aBcPmmphQ68JsEG2qa9n1TykS2DLeMt363AAH8/w==}
@@ -6230,6 +6242,10 @@ snapshots:
       '@types/node': 22.18.12
     transitivePeerDependencies:
       - aws-crt
+
+  '@types/papaparse@5.3.16':
+    dependencies:
+      '@types/node': 22.18.12
 
   '@types/passport-jwt@4.0.1':
     dependencies:
@@ -9014,6 +9030,8 @@ snapshots:
     optional: true
 
   package-json-from-dist@1.0.1: {}
+
+  papaparse@5.5.3: {}
 
   param-case@2.1.1:
     dependencies:

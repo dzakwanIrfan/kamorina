@@ -80,6 +80,13 @@ const managementItems = [
     requiresMemberVerified: true,
   },
   {
+    title: 'Employees',
+    icon: Users,
+    href: '/dashboard/employees',
+    roles: ['ketua', 'divisi_simpan_pinjam'],
+    requiresMemberVerified: true,
+  },
+  {
     title: 'Departments',
     icon: Building2,
     href: '/dashboard/departments',
