@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Plus, Eye, Pencil, Trash2, Power, PowerOff } from 'lucide-react';
+import { Plus, Eye, Pencil, Trash2, Power, PowerOff, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { DataTableAdvanced } from '@/components/data-table/data-table-advanced';
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeFormDialog } from '@/components/employees/employee-form-dialog';
 import { EmployeeDetailDialog } from '@/components/employees/employee-detail-dialog';
+import { EmployeeImportDialog } from '@/components/employees/employee-import-dialog';
 import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialog';
 import { ColumnActions } from '@/components/data-table/column-actions';
 
@@ -32,8 +33,10 @@ export default function EmployeesPage() {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Pagination state
   const [meta, setMeta] = useState({
@@ -52,6 +55,8 @@ export default function EmployeesPage() {
   const canCreate = hasRole('ketua') || hasRole('divisi_simpan_pinjam') || hasRole('pengawas');
   const canEdit = hasRole('ketua') || hasRole('divisi_simpan_pinjam') || hasRole('pengawas');
   const canDelete = hasRole('ketua') || hasRole('divisi_simpan_pinjam');
+  const canExport = hasRole('ketua') || hasRole('divisi_simpan_pinjam') || hasRole('pengawas') || hasRole('bendahara') || hasRole('payroll');
+  const canImport = hasRole('ketua') || hasRole('divisi_simpan_pinjam') || hasRole('pengawas');
 
   const fetchData = async () => {
     try {
@@ -108,6 +113,37 @@ export default function EmployeesPage() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal mengubah status');
     }
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      
+      const params: any = {
+        search: searchValue || undefined,
+        isActive: filters.isActive !== undefined ? filters.isActive === 'true' : undefined,
+      };
+
+      const blob = await employeeService.exportToCSV(params);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `employees-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success('Data berhasil diekspor');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal mengekspor data');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImport = () => {
+    setImportDialogOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -196,6 +232,36 @@ export default function EmployeesPage() {
     [canEdit, canDelete]
   );
 
+  const toolbarActions = [];
+  
+  if (canImport) {
+    toolbarActions.push({
+      label: 'Import',
+      onClick: handleImport,
+      icon: Upload,
+      variant: 'outline' as const,
+    });
+  }
+
+  if (canExport) {
+    toolbarActions.push({
+      label: 'Export',
+      onClick: handleExport,
+      icon: Download,
+      variant: 'outline' as const,
+      disabled: isExporting,
+    });
+  }
+
+  if (canCreate) {
+    toolbarActions.push({
+      label: 'Tambah Karyawan',
+      onClick: handleCreate,
+      icon: Plus,
+      variant: 'default' as const,
+    });
+  }
+
   const tableConfig: DataTableConfig<Employee> = {
     searchable: true,
     searchPlaceholder: 'Cari berdasarkan nomor atau nama karyawan...',
@@ -213,16 +279,7 @@ export default function EmployeesPage() {
         ],
       },
     ],
-    toolbarActions: canCreate
-      ? [
-          {
-            label: 'Tambah Karyawan',
-            onClick: handleCreate,
-            icon: Plus,
-            variant: 'default',
-          },
-        ]
-      : undefined,
+    toolbarActions: toolbarActions.length > 0 ? toolbarActions : undefined,
   };
 
   return (
@@ -267,6 +324,12 @@ export default function EmployeesPage() {
         employeeId={selectedEmployeeId}
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+      />
+
+      <EmployeeImportDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        onSuccess={fetchData}
       />
 
       <DeleteConfirmationDialog

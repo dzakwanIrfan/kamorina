@@ -37,4 +37,40 @@ export const employeeService = {
     const response = await apiClient.delete(`/employees/${id}`);
     return response.data;
   },
+
+  async exportToCSV(params?: QueryEmployeeParams): Promise<Blob> {
+    const response = await apiClient.get('/employees/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  async downloadTemplate(): Promise<Blob> {
+    const response = await apiClient.get('/employees/template/csv', {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
+  async importFromCSV(file: File): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      success: number;
+      failed: number;
+      errors: Array<{ row: number; employeeNumber: string; error: string }>;
+    };
+    errors?: string[];
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.post('/employees/import/csv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };

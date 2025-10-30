@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { QueryEmployeeDto } from './dto/query-employee.dto';
+import { EmployeeCsvService, EmployeeCSVRow } from './employees-csv.service';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
 @Injectable()
@@ -270,5 +271,57 @@ export class EmployeeService {
       console.error('Toggle active error:', error);
       throw new BadRequestException('Gagal mengubah status karyawan');
     }
+  }
+
+  /**
+   * Import employees from CSV
+   */
+  async importFromCSV(csvData: EmployeeCSVRow[], csvService: EmployeeCsvService) {
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [] as Array<{ row: number; employeeNumber: string; error: string }>,
+    };
+
+    for (let i = 0; i < csvData.length; i++) {
+      const row = csvData[i];
+      const rowNumber = i + 2; // +2 because index starts at 0 and we skip header
+
+      try {
+        const employeeDto = csvService.convertToEmployeeDto(row);
+
+        // Check if employee already exists
+        const existingEmployee = await this.prisma.employee.findUnique({
+          where: { employeeNumber: employeeDto.employeeNumber },
+        });
+
+        if (existingEmployee) {
+          // Update existing employee
+          await this.prisma.employee.update({
+            where: { employeeNumber: employeeDto.employeeNumber },
+            data: {
+              fullName: employeeDto.fullName,
+              isActive: employeeDto.isActive,
+            },
+          });
+        } else {
+          // Create new employee
+          await this.prisma.employee.create({
+            data: employeeDto,
+          });
+        }
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: rowNumber,
+          employeeNumber: row.employeeNumber,
+          error: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return results;
   }
 }
