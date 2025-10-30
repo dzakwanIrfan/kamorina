@@ -73,6 +73,13 @@ const menuItems = [
 
 const managementItems = [
   {
+    title: 'Member Applications',
+    icon: FileText,
+    href: '/dashboard/member-application',
+    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
+    requiresMemberVerified: true,
+  },
+  {
     title: 'Departments',
     icon: Building2,
     href: '/dashboard/departments',

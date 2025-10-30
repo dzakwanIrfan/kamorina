@@ -12,6 +12,7 @@ import {
 import { MemberApplicationService } from './member-application.service';
 import { SubmitApplicationDto } from './dto/submit-application.dto';
 import { ApproveRejectDto } from './dto/approve-reject.dto';
+import { BulkApproveRejectDto } from './dto/bulk-approve-reject.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -51,7 +52,7 @@ export class MemberApplicationController {
    */
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll')
   @HttpCode(HttpStatus.OK)
   async getApplications(@Query() query: QueryApplicationDto) {
     return this.memberApplicationService.getApplications(query);
@@ -62,14 +63,14 @@ export class MemberApplicationController {
    */
   @Get(':id')
   @UseGuards(RolesGuard)
-  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll')
   @HttpCode(HttpStatus.OK)
   async getApplicationById(@Param('id') id: string) {
     return this.memberApplicationService.getApplicationById(id);
   }
 
   /**
-   * Approve or reject application
+   * Approve or reject application (single)
    */
   @Post(':id/process')
   @UseGuards(RolesGuard)
@@ -82,6 +83,24 @@ export class MemberApplicationController {
   ) {
     return this.memberApplicationService.processApproval(
       id,
+      user.userId,
+      user.roles,
+      dto,
+    );
+  }
+
+  /**
+   * Bulk approve or reject applications
+   */
+  @Post('bulk-process')
+  @UseGuards(RolesGuard)
+  @Roles('ketua', 'divisi_simpan_pinjam')
+  @HttpCode(HttpStatus.OK)
+  async bulkProcessApproval(
+    @CurrentUser() user: any,
+    @Body() dto: BulkApproveRejectDto,
+  ) {
+    return this.memberApplicationService.bulkProcessApproval(
       user.userId,
       user.roles,
       dto,

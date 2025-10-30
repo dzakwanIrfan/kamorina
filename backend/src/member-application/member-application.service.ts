@@ -10,6 +10,7 @@ import { MailService } from '../mail/mail.service';
 import { SubmitApplicationDto } from './dto/submit-application.dto';
 import { ApproveRejectDto } from './dto/approve-reject.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
+import { BulkApproveRejectDto } from './dto/bulk-approve-reject.dto';
 import { ApplicationStatus, ApprovalStep, ApprovalDecision } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
@@ -208,7 +209,18 @@ export class MemberApplicationService {
   }
 
   async getApplications(query: QueryApplicationDto): Promise<PaginatedResult<any>> {
-    const { page = 1, limit = 10, status, userId, search, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      userId, 
+      search, 
+      sortBy = 'createdAt', 
+      sortOrder = 'desc',
+      startDate,
+      endDate,
+      step,
+    } = query;
 
     const skip = (page - 1) * limit;
 
@@ -222,14 +234,32 @@ export class MemberApplicationService {
       where.userId = userId;
     }
 
+    if (step) {
+      where.currentStep = step;
+    }
+
     if (search) {
       where.user = {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { nik: { contains: search, mode: 'insensitive' } },
+          { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } },
         ],
       };
+    }
+
+    // Date range filter
+    if (startDate || endDate) {
+      where.submittedAt = {};
+      if (startDate) {
+        where.submittedAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        where.submittedAt.lte = endDateTime;
+      }
     }
 
     const [applications, total] = await Promise.all([
@@ -487,6 +517,43 @@ export class MemberApplicationService {
       console.error('Process approval error:', error);
       throw new BadRequestException('Terjadi kesalahan saat memproses approval');
     }
+  }
+
+  async bulkProcessApproval(
+    approverId: string,
+    approverRoles: string[],
+    dto: BulkApproveRejectDto,
+  ) {
+    const { applicationIds, decision, notes } = dto;
+
+    if (applicationIds.length === 0) {
+      throw new BadRequestException('Tidak ada aplikasi yang dipilih');
+    }
+
+    const results = {
+      success: [] as string[],
+      failed: [] as { id: string; reason: string }[],
+    };
+
+    for (const applicationId of applicationIds) {
+      try {
+        await this.processApproval(applicationId, approverId, approverRoles, {
+          decision,
+          notes,
+        });
+        results.success.push(applicationId);
+      } catch (error) {
+        results.failed.push({
+          id: applicationId,
+          reason: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      message: `Berhasil memproses ${results.success.length} pengajuan, ${results.failed.length} gagal`,
+      results,
+    };
   }
 
   private async notifyNextApprover(applicationId: string, step: ApprovalStep) {

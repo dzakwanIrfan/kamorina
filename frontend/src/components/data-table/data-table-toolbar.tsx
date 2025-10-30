@@ -48,7 +48,7 @@ export function DataTableToolbar<TData>({
 
   const handleFilterChange = (filterId: string, value: any) => {
     const newFilters = { ...filters };
-    if (value === undefined || value === null || value === '') {
+    if (value === undefined || value === null || value === '' || value === 'all') {
       delete newFilters[filterId];
     } else {
       newFilters[filterId] = value;
@@ -147,13 +147,17 @@ export function DataTableToolbar<TData>({
                       <label className="text-sm font-medium">{field.label}</label>
                       {field.type === 'select' && field.options ? (
                         <Select
-                          value={filters[field.id] || ''}
+                          value={filters[field.id] || 'all'}
                           onValueChange={(value) =>
                             handleFilterChange(field.id, value)
                           }
                         >
                           <SelectTrigger className="h-8">
-                            <SelectValue placeholder={field.placeholder} />
+                            <SelectValue>
+                              {filters[field.id] 
+                                ? field.options.find(opt => opt.value === filters[field.id])?.label 
+                                : field.placeholder || 'Pilih...'}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {field.options.map((option) => (

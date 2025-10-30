@@ -76,3 +76,21 @@ export interface ApproveRejectRequest {
   decision: ApprovalDecision;
   notes?: string;
 }
+
+export interface BulkApproveRejectRequest {
+  applicationIds: string[];
+  decision: ApprovalDecision;
+  notes?: string;
+}
+
+export interface QueryApplicationParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  status?: ApplicationStatus;
+  step?: ApprovalStep;
+  startDate?: string;
+  endDate?: string;
+}
