@@ -68,8 +68,20 @@ export class EmployeeService {
     const where: any = {};
 
     // Filter by active status
-    if (isActive !== undefined) {
-      where.isActive = isActive;
+    if (isActive !== undefined && isActive !== null) {
+      // Cast ke any dulu biar gak error TypeScript
+      const rawValue: any = isActive;
+      let boolValue: boolean;
+      
+      if (typeof rawValue === 'boolean') {
+        boolValue = rawValue;
+      } else if (typeof rawValue === 'string') {
+        boolValue = rawValue.toLowerCase() === 'true';
+      } else {
+        boolValue = Boolean(rawValue);
+      }
+      
+      where.isActive = boolValue;
     }
 
     // Filter by employee number

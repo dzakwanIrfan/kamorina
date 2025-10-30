@@ -14,6 +14,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response, Express } from 'express';
@@ -52,7 +53,7 @@ export class EmployeeController {
   @UseGuards(RolesGuard)
   @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll')
   @HttpCode(HttpStatus.OK)
-  findAll(@Query() query: QueryEmployeeDto) {
+  findAll(@Query(new ValidationPipe({ transform: true })) query: QueryEmployeeDto) {
     return this.employeeService.findAll(query);
   }
 
