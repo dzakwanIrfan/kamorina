@@ -7,6 +7,7 @@ import {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   VerifyEmailRequest,
+  User,
 } from '@/types/auth.types';
 
 export const authService = {
@@ -33,6 +34,17 @@ export const authService = {
     }
     
     return response.data;
+  },
+
+  async refreshUserSession(): Promise<User> {
+    const response = await apiClient.get('/auth/me');
+    
+    // Update localStorage with fresh user data
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
+    return response.data.user;
   },
 
   async forgotPassword(data: ForgotPasswordRequest): Promise<{ message: string }> {

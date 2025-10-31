@@ -27,6 +27,42 @@ export class AuthService {
     private configService: ConfigService<EnvironmentVariables>,
   ) {}
 
+  async getUserProfile(userId: string) {
+    console.log('Fetching user profile for userId:', userId);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          include: {
+            level: true,
+          },
+        },
+        department: true,
+        employee: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User tidak ditemukan');
+    }
+
+    // Remove sensitive data
+    const {
+      password: _,
+      emailVerificationToken,
+      passwordResetToken,
+      passwordResetExpires,
+      ...userWithoutSensitiveData
+    } = user;
+
+    return {
+      user: {
+        ...userWithoutSensitiveData,
+        roles: user.roles.map((r) => r.level.levelName),
+      },
+    };
+  }
+
   async register(registerDto: RegisterDto) {
     const { name, email, password, confPassword, employeeNumber } = registerDto;
 

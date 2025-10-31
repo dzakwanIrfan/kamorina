@@ -11,6 +11,7 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
   logout: () => void;
   initializeAuth: () => void;
+  refreshUserSession: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -57,6 +58,22 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: false,
         isLoading: false,
       });
+    }
+  },
+
+  refreshUserSession: async () => {
+    try {
+      set({ isLoading: true });
+      const updatedUser = await authService.refreshUserSession();
+      set({
+        user: updatedUser,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error('Failed to refresh user session:', error);
+      set({ isLoading: false });
+      throw error;
     }
   },
 }));

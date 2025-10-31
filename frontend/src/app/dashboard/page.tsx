@@ -18,7 +18,6 @@ import Image from 'next/image';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [application, setApplication] = useState<MemberApplication | null>(null);
   const [isLoading, setIsLoading] = useState(true);

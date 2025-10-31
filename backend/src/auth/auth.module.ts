@@ -1,4 +1,3 @@
-// src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -21,7 +20,7 @@ import { EnvironmentVariables } from '../config/env.config';
         },
       }),
     }),
-    MailModule, // ← Tambahkan ini!
+    MailModule, 
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

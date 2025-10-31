@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import {
@@ -12,14 +13,17 @@ import {
   Calendar,
   CreditCard,
   FileText,
-  ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/auth.store';
 import {
   MemberApplication,
   ApplicationStatus,
@@ -32,6 +36,9 @@ interface ApplicationStatusCardProps {
 }
 
 export function ApplicationStatusCard({ application }: ApplicationStatusCardProps) {
+  const { user, refreshUserSession } = useAuthStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const getStatusBadge = (status: ApplicationStatus) => {
     const config = {
       [ApplicationStatus.UNDER_REVIEW]: {
@@ -108,7 +115,20 @@ export function ApplicationStatusCard({ application }: ApplicationStatusCardProp
     };
   };
 
+  const handleRefreshSession = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshUserSession();
+      toast.success('Informasi akun Anda telah diperbarui.');
+    } catch (error) {
+      toast.error('Gagal memperbarui informasi akun. Silakan coba lagi.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const currentMessage = getCurrentStepMessage();
+  const showRefreshButton = application.status === ApplicationStatus.APPROVED;
 
   return (
     <div className="space-y-6">
@@ -118,6 +138,40 @@ export function ApplicationStatusCard({ application }: ApplicationStatusCardProp
         <AlertTitle>{currentMessage.title}</AlertTitle>
         <AlertDescription>{currentMessage.description}</AlertDescription>
       </Alert>
+
+      {/* Refresh Session Button */}
+      {showRefreshButton && (
+        <Card className="border-green-200">
+          <CardContent>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <CardTitle className="font-semibold">Akses Member Telah Aktif</CardTitle>
+                <CardDescription>
+                  Klik tombol di samping untuk memperbarui informasi akun Anda dan mengakses fitur member.
+                </CardDescription>
+              </div>
+              <Button
+                onClick={handleRefreshSession}
+                disabled={isRefreshing}
+                className="shrink-0"
+                size="sm"
+              >
+                {isRefreshing ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Memperbarui...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Perbarui Session
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Progress */}
       {application.status === ApplicationStatus.UNDER_REVIEW && (
