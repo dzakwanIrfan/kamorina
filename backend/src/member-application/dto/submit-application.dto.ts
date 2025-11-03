@@ -13,10 +13,6 @@ export class SubmitApplicationDto {
   @IsNotEmpty({ message: 'NPWP wajib diisi' })
   npwp: string;
 
-  @IsString()
-  @IsNotEmpty({ message: 'Department wajib diisi' })
-  departmentId: string;
-  
   @IsDateString({}, { message: 'Format tanggal lahir tidak valid' })
   @IsNotEmpty({ message: 'Tanggal lahir wajib diisi' })
   dateOfBirth: string;

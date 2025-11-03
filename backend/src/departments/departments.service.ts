@@ -83,6 +83,7 @@ export class DepartmentsService {
     }
 
     // Execute query with pagination
+    // Count EMPLOYEES instead of users
     const [data, total] = await Promise.all([
       this.prisma.department.findMany({
         where,
@@ -91,7 +92,7 @@ export class DepartmentsService {
         orderBy,
         include: {
           _count: {
-            select: { users: true },
+            select: { employees: true },
           },
         },
       }),
@@ -117,16 +118,31 @@ export class DepartmentsService {
     const department = await this.prisma.department.findUnique({
       where: { id },
       include: {
-        users: {
+        // Include EMPLOYEES (which have users)
+        employees: {
           select: {
             id: true,
-            name: true,
-            email: true,
-            nik: true,
+            employeeNumber: true,
+            fullName: true,
+            isActive: true,
+            employeeType: true,
+            golongan: {
+              select: {
+                golonganName: true,
+              },
+            },
+            users: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                memberVerified: true,
+              },
+            },
           },
         },
         _count: {
-          select: { users: true },
+          select: { employees: true },
         },
       },
     });
@@ -165,13 +181,14 @@ export class DepartmentsService {
   async remove(id: string): Promise<{ message: string }> {
     const department = await this.findOne(id);
 
-    const userCount = await this.prisma.user.count({
+    // Check if department has EMPLOYEES (not users)
+    const employeeCount = await this.prisma.employee.count({
       where: { departmentId: id },
     });
 
-    if (userCount > 0) {
+    if (employeeCount > 0) {
       throw new BadRequestException(
-        `Tidak dapat menghapus department. Masih ada ${userCount} user yang terdaftar di department ini.`,
+        `Tidak dapat menghapus department. Masih ada ${employeeCount} karyawan yang terdaftar di department ini.`,
       );
     }
 

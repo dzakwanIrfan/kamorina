@@ -19,9 +19,23 @@ import { DeleteConfirmationDialog } from '@/components/delete-confirmation-dialo
 import { ColumnActions } from '@/components/data-table/column-actions';
 
 import { employeeService } from '@/services/employee.service';
+import { departmentService } from '@/services/department.service';
+import { golonganService } from '@/services/golongan.service';
 import { usePermissions } from '@/hooks/use-permission';
-import { Employee } from '@/types/employee.types';
+import { Employee, EmployeeType } from '@/types/employee.types';
+import { Department } from '@/types/department.types';
+import { Golongan } from '@/types/golongan.types';
 import { DataTableConfig } from '@/types/data-table.types';
+
+const employeeTypeLabels: Record<EmployeeType, string> = {
+  [EmployeeType.TETAP]: 'Pegawai Tetap',
+  [EmployeeType.KONTRAK]: 'Kontrak',
+};
+
+const employeeTypeBadgeVariant: Record<EmployeeType, 'default' | 'secondary' | 'outline'> = {
+  [EmployeeType.TETAP]: 'default',
+  [EmployeeType.KONTRAK]: 'secondary',
+};
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -37,6 +51,9 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [golongans, setGolongans] = useState<Golongan[]>([]);
 
   // Pagination state
   const [meta, setMeta] = useState({
@@ -58,6 +75,29 @@ export default function EmployeesPage() {
   const canExport = hasRole('ketua') || hasRole('divisi_simpan_pinjam') || hasRole('pengawas') || hasRole('bendahara') || hasRole('payroll');
   const canImport = hasRole('ketua') || hasRole('divisi_simpan_pinjam') || hasRole('pengawas');
 
+  useEffect(() => {
+    fetchDepartments();
+    fetchGolongans();
+  }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await departmentService.getAll({ limit: 100 });
+      setDepartments(response.data);
+    } catch (error) {
+      console.error('Failed to fetch departments:', error);
+    }
+  };
+
+  const fetchGolongans = async () => {
+    try {
+      const response = await golonganService.getAll({ limit: 100 });
+      setGolongans(response.data);
+    } catch (error) {
+      console.error('Failed to fetch golongans:', error);
+    }
+  };
+
   const fetchData = async () => {
     try {
       setIsLoading(true);
@@ -67,6 +107,9 @@ export default function EmployeesPage() {
         limit: meta.limit,
         search: searchValue || undefined,
         isActive: filters.isActive !== undefined ? filters.isActive === 'true' : undefined,
+        departmentId: filters.departmentId && filters.departmentId !== 'all' ? filters.departmentId : undefined,
+        golonganId: filters.golonganId && filters.golonganId !== 'all' ? filters.golonganId : undefined,
+        employeeType: filters.employeeType && filters.employeeType !== 'all' ? filters.employeeType : undefined,
         sortBy: 'createdAt',
         sortOrder: 'desc',
       };
@@ -122,6 +165,9 @@ export default function EmployeesPage() {
       const params: any = {
         search: searchValue || undefined,
         isActive: filters.isActive !== undefined ? filters.isActive === 'true' : undefined,
+        departmentId: filters.departmentId && filters.departmentId !== 'all' ? filters.departmentId : undefined,
+        golonganId: filters.golonganId && filters.golonganId !== 'all' ? filters.golonganId : undefined,
+        employeeType: filters.employeeType && filters.employeeType !== 'all' ? filters.employeeType : undefined,
       };
 
       const blob = await employeeService.exportToCSV(params);
@@ -174,6 +220,25 @@ export default function EmployeesPage() {
         cell: ({ row }) => row.original.fullName,
       },
       {
+        accessorKey: 'department.departmentName',
+        header: 'Department',
+        cell: ({ row }) => row.original.department?.departmentName || '-',
+      },
+      {
+        accessorKey: 'golongan.golonganName',
+        header: 'Golongan',
+        cell: ({ row }) => row.original.golongan?.golonganName || '-',
+      },
+      {
+        accessorKey: 'employeeType',
+        header: 'Tipe',
+        cell: ({ row }) => (
+          <Badge variant={employeeTypeBadgeVariant[row.original.employeeType]}>
+            {employeeTypeLabels[row.original.employeeType]}
+          </Badge>
+        ),
+      },
+      {
         accessorKey: 'isActive',
         header: 'Status',
         cell: ({ row }) => (
@@ -184,21 +249,10 @@ export default function EmployeesPage() {
       },
       {
         accessorKey: '_count.users',
-        header: 'Jumlah User',
+        header: 'User',
         cell: ({ row }) => (
           <span className="text-muted-foreground">
-            {row.original._count?.users || 0} user
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: 'Tanggal Dibuat',
-        cell: ({ row }) => (
-          <span className="text-sm">
-            {format(new Date(row.original.createdAt), 'dd MMM yyyy', {
-              locale: id,
-            })}
+            {row.original._count?.users || 0}
           </span>
         ),
       },
@@ -276,6 +330,43 @@ export default function EmployeesPage() {
           { label: 'Semua Status', value: 'all' },
           { label: 'Aktif', value: 'true' },
           { label: 'Tidak Aktif', value: 'false' },
+        ],
+      },
+      {
+        id: 'departmentId',
+        label: 'Department',
+        type: 'select',
+        placeholder: 'Semua Department',
+        options: [
+          { label: 'Semua Department', value: 'all' },
+          ...departments.map(dept => ({
+            label: dept.departmentName,
+            value: dept.id,
+          })),
+        ],
+      },
+      {
+        id: 'golonganId',
+        label: 'Golongan',
+        type: 'select',
+        placeholder: 'Semua Golongan',
+        options: [
+          { label: 'Semua Golongan', value: 'all' },
+          ...golongans.map(gol => ({
+            label: gol.golonganName,
+            value: gol.id,
+          })),
+        ],
+      },
+      {
+        id: 'employeeType',
+        label: 'Tipe Karyawan',
+        type: 'select',
+        placeholder: 'Semua Tipe',
+        options: [
+          { label: 'Semua Tipe', value: 'all' },
+          { label: 'Pegawai Tetap', value: EmployeeType.TETAP },
+          { label: 'Kontrak', value: EmployeeType.KONTRAK },
         ],
       },
     ],

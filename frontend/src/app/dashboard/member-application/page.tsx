@@ -239,7 +239,7 @@ export default function MemberApplicationsPage() {
       {
         accessorKey: 'user.department.departmentName',
         header: 'Department',
-        cell: ({ row }) => row.original.user?.department?.departmentName || '-',
+        cell: ({ row }) => row.original.user?.employee.department?.departmentName || '-',
       },
       {
         accessorKey: 'status',

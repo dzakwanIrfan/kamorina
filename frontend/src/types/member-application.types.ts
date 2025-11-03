@@ -53,11 +53,15 @@ export interface MemberApplication {
       id: string;
       employeeNumber: string;
       fullName: string;
+      department?: {
+        id: string;
+        departmentName: string;
+      };
+      golongan?: {
+        id: string;
+        golonganName: string;
+      };
     };
-    department?: {
-      id: string;
-      departmentName: string;
-    } | null;
   };
   approvals: ApplicationApproval[];
 }
@@ -65,7 +69,6 @@ export interface MemberApplication {
 export interface SubmitApplicationRequest {
   nik: string;
   npwp: string;
-  departmentId: string;
   dateOfBirth: string;
   birthPlace: string;
   permanentEmployeeDate: string;

@@ -1,4 +1,9 @@
-import { IsString, IsBoolean, IsOptional, Length, Matches, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, Length, Matches, IsEnum } from 'class-validator';
+
+export enum EmployeeType {
+  PERMANENT = 'TETAP',
+  CONTRACT = 'KONTRAK',
+}
 
 export class CreateEmployeeDto {
   @IsString()
@@ -11,7 +16,15 @@ export class CreateEmployeeDto {
   @IsNotEmpty({ message: 'Nama lengkap wajib diisi' })
   fullName: string;
 
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
+  @IsString()
+  @IsNotEmpty({ message: 'Department wajib diisi' })
+  departmentId: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Golongan wajib diisi' })
+  golonganId: string;
+
+  @IsEnum(EmployeeType, { message: 'Tipe karyawan tidak valid' })
+  @IsNotEmpty({ message: 'Tipe karyawan wajib diisi' })
+  employeeType: EmployeeType;
 }

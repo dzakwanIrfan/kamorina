@@ -25,9 +25,19 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { employeeService } from '@/services/employee.service';
-import { Employee } from '@/types/employee.types';
+import { departmentService } from '@/services/department.service';
+import { golonganService } from '@/services/golongan.service';
+import { Employee, EmployeeType } from '@/types/employee.types';
+import { Department } from '@/types/department.types';
+import { Golongan } from '@/types/golongan.types';
 
 const formSchema = z.object({
   employeeNumber: z
@@ -35,7 +45,11 @@ const formSchema = z.object({
     .length(9, 'Nomor karyawan harus 9 digit')
     .regex(/^[0-9]+$/, 'Nomor karyawan harus berupa angka'),
   fullName: z.string().min(1, 'Nama lengkap wajib diisi'),
-  isActive: z.boolean(),
+  departmentId: z.string().min(1, 'Department wajib dipilih'),
+  golonganId: z.string().min(1, 'Golongan wajib dipilih'),
+  employeeType: z.enum(EmployeeType, {
+    error: () => ({ message: 'Tipe karyawan wajib dipilih' }),
+  }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -47,6 +61,11 @@ interface EmployeeFormDialogProps {
   onSuccess?: () => void;
 }
 
+const employeeTypeLabels: Record<EmployeeType, string> = {
+  [EmployeeType.TETAP]: 'Pegawai Tetap',
+  [EmployeeType.KONTRAK]: 'Kontrak',
+};
+
 export function EmployeeFormDialog({
   open,
   onOpenChange,
@@ -54,6 +73,10 @@ export function EmployeeFormDialog({
   onSuccess,
 }: EmployeeFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [golongans, setGolongans] = useState<Golongan[]>([]);
+  const [isLoadingDepts, setIsLoadingDepts] = useState(true);
+  const [isLoadingGolongans, setIsLoadingGolongans] = useState(true);
   const isEdit = !!employee;
 
   const form = useForm<FormValues>({
@@ -61,25 +84,62 @@ export function EmployeeFormDialog({
     defaultValues: {
       employeeNumber: '',
       fullName: '',
-      isActive: true,
+      departmentId: '',
+      golonganId: '',
+      employeeType: EmployeeType.TETAP,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      fetchDepartments();
+      fetchGolongans();
+    }
+  }, [open]);
 
   useEffect(() => {
     if (employee) {
       form.reset({
         employeeNumber: employee.employeeNumber,
         fullName: employee.fullName,
-        isActive: employee.isActive,
+        departmentId: employee.departmentId,
+        golonganId: employee.golonganId,
+        employeeType: employee.employeeType,
       });
     } else {
       form.reset({
         employeeNumber: '',
         fullName: '',
-        isActive: true,
+        departmentId: '',
+        golonganId: '',
+        employeeType: EmployeeType.TETAP,
       });
     }
   }, [employee, form]);
+
+  const fetchDepartments = async () => {
+    try {
+      setIsLoadingDepts(true);
+      const response = await departmentService.getAll({ limit: 100 });
+      setDepartments(response.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memuat data department');
+    } finally {
+      setIsLoadingDepts(false);
+    }
+  };
+
+  const fetchGolongans = async () => {
+    try {
+      setIsLoadingGolongans(true);
+      const response = await golonganService.getAll({ limit: 100 });
+      setGolongans(response.data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Gagal memuat data golongan');
+    } finally {
+      setIsLoadingGolongans(false);
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -105,7 +165,7 @@ export function EmployeeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Karyawan' : 'Tambah Karyawan'}</DialogTitle>
           <DialogDescription>
@@ -128,7 +188,7 @@ export function EmployeeFormDialog({
                       placeholder="100000001"
                       maxLength={9}
                       {...field}
-                      disabled={isEdit}
+                      disabled={isEdit || isSubmitting}
                     />
                   </FormControl>
                   <FormDescription>9 digit angka</FormDescription>
@@ -144,7 +204,7 @@ export function EmployeeFormDialog({
                 <FormItem>
                   <FormLabel>Nama Lengkap</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="John Doe" {...field} disabled={isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,21 +213,87 @@ export function EmployeeFormDialog({
 
             <FormField
               control={form.control}
-              name="isActive"
+              name="departmentId"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">Status Aktif</FormLabel>
-                    <FormDescription>
-                      Karyawan yang aktif dapat digunakan dalam sistem
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isLoadingDepts || isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih department" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.departmentName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="golonganId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Golongan</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isLoadingGolongans || isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih golongan" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {golongans.map((gol) => (
+                        <SelectItem key={gol.id} value={gol.id}>
+                          {gol.golonganName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="employeeType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipe Karyawan</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih tipe karyawan" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.entries(employeeTypeLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />

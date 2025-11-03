@@ -20,7 +20,7 @@ import {
 } from '@/types/member-application.types';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CheckCircle2, XCircle, Clock, User, Building2, Calendar } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, User, Building2, Calendar, Award } from 'lucide-react';
 import { memberApplicationService } from '@/services/member-application.service';
 import { toast } from 'sonner';
 
@@ -154,7 +154,18 @@ export function ApplicationDetailDialog({
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Department</p>
-                <p className="font-medium">{application.user?.department?.departmentName || '-'}</p>
+                <p className="font-medium">
+                  {application.user?.employee?.department?.departmentName || '-'}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground flex items-center gap-1">
+                  <Award className="h-3 w-3" />
+                  Golongan
+                </p>
+                <p className="font-medium">
+                  {application.user?.employee?.golongan?.golonganName || '-'}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Tanggal Pegawai Tetap</p>
@@ -166,7 +177,7 @@ export function ApplicationDetailDialog({
               </div>
               <div>
                 <p className="text-muted-foreground">Rencana Cicilan</p>
-                <p className="font-medium">{application.user?.installmentPlan || '-'}</p>
+                <p className="font-medium">{application.user?.installmentPlan || '-'}x per bulan</p>
               </div>
             </div>
           </div>

@@ -7,6 +7,7 @@ import { LevelsModule } from './levels/levels.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { MemberApplicationModule } from './member-application/member-application.module';
 import { EmployeeModule } from './employees/employees.module';
+import { GolonganModule } from './golongan/golongan.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EmployeeModule } from './employees/employees.module';
     DepartmentsModule,
     MemberApplicationModule,
     EmployeeModule,
+    GolonganModule,
   ],
 })
 export class AppModule {}

@@ -25,14 +25,37 @@ export class EmployeeService {
       throw new ConflictException('Nomor karyawan sudah terdaftar');
     }
 
+    // Verify department exists
+    const department = await this.prisma.department.findUnique({
+      where: { id: createEmployeeDto.departmentId },
+    });
+
+    if (!department) {
+      throw new NotFoundException('Department tidak ditemukan');
+    }
+
+    // Verify golongan exists
+    const golongan = await this.prisma.golongan.findUnique({
+      where: { id: createEmployeeDto.golonganId },
+    });
+
+    if (!golongan) {
+      throw new NotFoundException('Golongan tidak ditemukan');
+    }
+
     try {
       const employee = await this.prisma.employee.create({
         data: {
           employeeNumber: createEmployeeDto.employeeNumber,
           fullName: createEmployeeDto.fullName,
-          isActive: createEmployeeDto.isActive ?? true,
+          departmentId: createEmployeeDto.departmentId,
+          golonganId: createEmployeeDto.golonganId,
+          employeeType: createEmployeeDto.employeeType,
+          isActive: true,
         },
         include: {
+          department: true,
+          golongan: true,
           _count: {
             select: { users: true },
           },
@@ -59,6 +82,9 @@ export class EmployeeService {
       isActive,
       employeeNumber,
       fullName,
+      departmentId,
+      golonganId,
+      employeeType,
       startDate,
       endDate,
     } = query;
@@ -69,7 +95,6 @@ export class EmployeeService {
 
     // Filter by active status
     if (isActive !== undefined && isActive !== null) {
-      // Cast ke any dulu biar gak error TypeScript
       const rawValue: any = isActive;
       let boolValue: boolean;
       
@@ -100,11 +125,28 @@ export class EmployeeService {
       };
     }
 
+    // Filter by department
+    if (departmentId) {
+      where.departmentId = departmentId;
+    }
+
+    // Filter by golongan
+    if (golonganId) {
+      where.golonganId = golonganId;
+    }
+
+    // Filter by employee type
+    if (employeeType) {
+      where.employeeType = employeeType;
+    }
+
     // Search across multiple fields
     if (search) {
       where.OR = [
         { employeeNumber: { contains: search, mode: 'insensitive' } },
         { fullName: { contains: search, mode: 'insensitive' } },
+        { department: { departmentName: { contains: search, mode: 'insensitive' } } },
+        { golongan: { golonganName: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -128,6 +170,8 @@ export class EmployeeService {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
         include: {
+          department: true,
+          golongan: true,
           _count: {
             select: { users: true },
           },
@@ -153,6 +197,8 @@ export class EmployeeService {
     const employee = await this.prisma.employee.findUnique({
       where: { id },
       include: {
+        department: true,
+        golongan: true,
         users: {
           select: {
             id: true,
@@ -197,11 +243,35 @@ export class EmployeeService {
       }
     }
 
+    // Verify department if provided
+    if (updateEmployeeDto.departmentId) {
+      const department = await this.prisma.department.findUnique({
+        where: { id: updateEmployeeDto.departmentId },
+      });
+
+      if (!department) {
+        throw new NotFoundException('Department tidak ditemukan');
+      }
+    }
+
+    // Verify golongan if provided
+    if (updateEmployeeDto.golonganId) {
+      const golongan = await this.prisma.golongan.findUnique({
+        where: { id: updateEmployeeDto.golonganId },
+      });
+
+      if (!golongan) {
+        throw new NotFoundException('Golongan tidak ditemukan');
+      }
+    }
+
     try {
       const updatedEmployee = await this.prisma.employee.update({
         where: { id },
         data: updateEmployeeDto,
         include: {
+          department: true,
+          golongan: true,
           _count: {
             select: { users: true },
           },
@@ -269,6 +339,8 @@ export class EmployeeService {
           isActive: !employee.isActive,
         },
         include: {
+          department: true,
+          golongan: true,
           _count: {
             select: { users: true },
           },
@@ -302,6 +374,34 @@ export class EmployeeService {
       try {
         const employeeDto = csvService.convertToEmployeeDto(row);
 
+        // Find department by name
+        const department = await this.prisma.department.findFirst({
+          where: {
+            departmentName: {
+              equals: employeeDto.departmentName,
+              mode: 'insensitive',
+            },
+          },
+        });
+
+        if (!department) {
+          throw new Error(`Department "${employeeDto.departmentName}" tidak ditemukan`);
+        }
+
+        // Find golongan by name
+        const golongan = await this.prisma.golongan.findFirst({
+          where: {
+            golonganName: {
+              equals: employeeDto.golonganName,
+              mode: 'insensitive',
+            },
+          },
+        });
+
+        if (!golongan) {
+          throw new Error(`Golongan "${employeeDto.golonganName}" tidak ditemukan`);
+        }
+
         // Check if employee already exists
         const existingEmployee = await this.prisma.employee.findUnique({
           where: { employeeNumber: employeeDto.employeeNumber },
@@ -313,13 +413,23 @@ export class EmployeeService {
             where: { employeeNumber: employeeDto.employeeNumber },
             data: {
               fullName: employeeDto.fullName,
+              departmentId: department.id,
+              golonganId: golongan.id,
+              employeeType: employeeDto.employeeType as any,
               isActive: employeeDto.isActive,
             },
           });
         } else {
           // Create new employee
           await this.prisma.employee.create({
-            data: employeeDto,
+            data: {
+              employeeNumber: employeeDto.employeeNumber,
+              fullName: employeeDto.fullName,
+              departmentId: department.id,
+              golonganId: golongan.id,
+              employeeType: employeeDto.employeeType as any,
+              isActive: employeeDto.isActive,
+            },
           });
         }
 

@@ -1,5 +1,5 @@
 // prisma/seed.ts
-import { PrismaClient, ApplicationStatus, ApprovalStep, ApprovalDecision } from '@prisma/client';
+import { PrismaClient, ApplicationStatus, ApprovalStep, ApprovalDecision, EmployeeType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -51,36 +51,97 @@ async function main() {
 
   console.log('✅ Departments created');
 
-  // Create Employees (Admin + Test Users)
-  const employees = [
-    { employeeNumber: '100000001', fullName: 'Admin Koperasi', isActive: true },
-    { employeeNumber: '100000002', fullName: 'Divisi Simpan Pinjam', isActive: true },
-    { employeeNumber: '100000003', fullName: 'Pengawas Koperasi', isActive: true },
-    { employeeNumber: '100000004', fullName: 'Payroll Staff', isActive: true },
-    // Test users - aplikasi waiting DSP approval
-    { employeeNumber: '100000005', fullName: 'Budi Santoso', isActive: true },
-    { employeeNumber: '100000006', fullName: 'Siti Nurhaliza', isActive: true },
-    { employeeNumber: '100000007', fullName: 'Ahmad Dahlan', isActive: true },
-    { employeeNumber: '100000008', fullName: 'Rina Wijaya', isActive: true },
-    { employeeNumber: '100000009', fullName: 'Joko Widodo', isActive: true },
-    // Test users - aplikasi waiting Ketua approval
-    { employeeNumber: '100000010', fullName: 'Dewi Sartika', isActive: true },
-    { employeeNumber: '100000011', fullName: 'Andi Setiawan', isActive: true },
-    { employeeNumber: '100000012', fullName: 'Sri Mulyani', isActive: true },
-    { employeeNumber: '100000013', fullName: 'Bambang Pamungkas', isActive: true },
-    // Test users - aplikasi approved
-    { employeeNumber: '100000014', fullName: 'Mega Wati', isActive: true },
-    { employeeNumber: '100000015', fullName: 'Hendra Gunawan', isActive: true },
-    { employeeNumber: '100000016', fullName: 'Lestari Indah', isActive: true },
-    { employeeNumber: '100000017', fullName: 'Rizki Ramadhan', isActive: true },
-    { employeeNumber: '100000018', fullName: 'Fitri Handayani', isActive: true },
-    { employeeNumber: '100000019', fullName: 'Arief Budiman', isActive: true },
-    // Test users - aplikasi rejected
-    { employeeNumber: '100000020', fullName: 'Doni Pratama', isActive: true },
-    { employeeNumber: '100000021', fullName: 'Yuni Shara', isActive: true },
-    { employeeNumber: '100000022', fullName: 'Wawan Setiawan', isActive: true },
-    { employeeNumber: '100000023', fullName: 'Dzakwan Irfan Ramdhani', isActive: true },
+  // Create Golongan
+  const golongans = [
+    { golonganName: 'I', description: 'Golongan I - Staff Junior' },
+    { golonganName: 'II', description: 'Golongan II - Staff Senior' },
+    { golonganName: 'III', description: 'Golongan III - Supervisor' },
+    { golonganName: 'IV', description: 'Golongan IV - Manager' },
   ];
+
+  for (const gol of golongans) {
+    await prisma.golongan.upsert({
+      where: { golonganName: gol.golonganName },
+      update: {},
+      create: gol,
+    });
+  }
+
+  console.log('✅ Golongan created');
+
+  // Get all departments and golongan for employee creation
+  const allDepartments = await prisma.department.findMany();
+  const allGolongans = await prisma.golongan.findMany();
+  
+  const mdpDept = allDepartments.find(d => d.departmentName === 'MDP')!;
+  const hcgaDept = allDepartments.find(d => d.departmentName === 'HCGA')!;
+  const financeDept = allDepartments.find(d => d.departmentName === 'Finance')!;
+  const golongan3 = allGolongans.find(g => g.golonganName === 'III')!;
+  const golongan2 = allGolongans.find(g => g.golonganName === 'II')!;
+  const golongan1 = allGolongans.find(g => g.golonganName === 'I')!;
+
+  // Helper to get random department and golongan
+  const getRandomDept = () => allDepartments[Math.floor(Math.random() * allDepartments.length)];
+  const getRandomGolongan = () => allGolongans[Math.floor(Math.random() * allGolongans.length)];
+
+  // Create Employees (Admin + Test Users) with department, golongan, and employeeType
+  const employees = [
+    { 
+      employeeNumber: '100000001', 
+      fullName: 'Admin Koperasi', 
+      departmentId: mdpDept.id,
+      golonganId: golongan3.id,
+      employeeType: EmployeeType.TETAP,
+      isActive: true 
+    },
+    { 
+      employeeNumber: '100000002', 
+      fullName: 'Divisi Simpan Pinjam', 
+      departmentId: financeDept.id,
+      golonganId: golongan3.id,
+      employeeType: EmployeeType.TETAP, 
+      isActive: true 
+    },
+    { 
+      employeeNumber: '100000003', 
+      fullName: 'Pengawas Koperasi', 
+      departmentId: hcgaDept.id,
+      golonganId: golongan3.id,
+      employeeType: EmployeeType.TETAP, 
+      isActive: true 
+    },
+    { 
+      employeeNumber: '100000004', 
+      fullName: 'Payroll Staff', 
+      departmentId: hcgaDept.id,
+      golonganId: golongan2.id,
+      employeeType: EmployeeType.TETAP, 
+      isActive: true 
+    },
+  ];
+
+  // Test users - varying departments, golongan, and types
+  const testUserNames = [
+    'Budi Santoso', 'Siti Nurhaliza', 'Ahmad Dahlan', 'Rina Wijaya', 'Joko Widodo',
+    'Dewi Sartika', 'Andi Setiawan', 'Sri Mulyani', 'Bambang Pamungkas',
+    'Mega Wati', 'Hendra Gunawan', 'Lestari Indah', 'Rizki Ramadhan', 'Fitri Handayani', 'Arief Budiman',
+    'Doni Pratama', 'Yuni Shara', 'Wawan Setiawan', 'Dzakwan Irfan Ramdhani'
+  ];
+
+  const employeeTypes = [EmployeeType.TETAP, EmployeeType.KONTRAK];
+
+  for (let i = 5; i <= 23; i++) {
+    const randomType = employeeTypes[Math.floor(Math.random() * employeeTypes.length)];
+    
+    employees.push({
+      employeeNumber: `100000${i.toString().padStart(3, '0')}`,
+      fullName: testUserNames[i - 5] || `Test User ${i}`,
+      departmentId: getRandomDept().id,
+      golonganId: getRandomGolongan().id,
+      employeeType: randomType as any,
+      isActive: true,
+    });
+  }
 
   for (const emp of employees) {
     await prisma.employee.upsert({
@@ -102,15 +163,9 @@ async function main() {
     throw new Error('Required levels not found');
   }
 
-  // Get departments
-  const allDepartments = await prisma.department.findMany();
-  const mdpDept = allDepartments.find(d => d.departmentName === 'MDP')!;
-  const hcgaDept = allDepartments.find(d => d.departmentName === 'HCGA')!;
-  const financeDept = allDepartments.find(d => d.departmentName === 'Finance')!;
-
   const hashedPassword = await bcrypt.hash('Admin123!', 12);
 
-  // ==================== CREATE ADMIN USERS ====================
+  // ==================== CREATE ADMIN USERS (NO departmentId in users!) ====================
   
   // 1. Admin User (Ketua)
   const adminEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000001' } });
@@ -128,7 +183,7 @@ async function main() {
       memberVerified: true,
       memberVerifiedAt: new Date(),
       employeeId: adminEmployee!.id,
-      departmentId: mdpDept.id,
+      // NO departmentId here - it's in employee!
       dateOfBirth: new Date('1990-01-01'),
       birthPlace: 'Jakarta',
       permanentEmployeeDate: new Date('2020-01-01'),
@@ -160,7 +215,6 @@ async function main() {
       memberVerified: true,
       memberVerifiedAt: new Date(),
       employeeId: divisiEmployee!.id,
-      departmentId: financeDept.id,
       dateOfBirth: new Date('1991-01-01'),
       birthPlace: 'Bandung',
       permanentEmployeeDate: new Date('2020-02-01'),
@@ -192,7 +246,6 @@ async function main() {
       memberVerified: true,
       memberVerifiedAt: new Date(),
       employeeId: pengawasEmployee!.id,
-      departmentId: hcgaDept.id,
       dateOfBirth: new Date('1992-01-01'),
       birthPlace: 'Surabaya',
       permanentEmployeeDate: new Date('2020-03-01'),
@@ -224,7 +277,6 @@ async function main() {
       memberVerified: true,
       memberVerifiedAt: new Date(),
       employeeId: payrollEmployee!.id,
-      departmentId: hcgaDept.id,
       dateOfBirth: new Date('1993-01-01'),
       birthPlace: 'Medan',
       permanentEmployeeDate: new Date('2020-04-01'),
@@ -242,7 +294,7 @@ async function main() {
 
   // ==================== CREATE TEST USERS WITH APPLICATIONS ====================
 
-  // Helper function to create user with application
+  // Helper function to create user with application (NO departmentId param!)
   async function createUserWithApplication(
     employeeNumber: string,
     userData: {
@@ -250,7 +302,6 @@ async function main() {
       email: string;
       nik: string;
       npwp: string;
-      departmentId: string;
       dateOfBirth: Date;
       birthPlace: string;
       installmentPlan: number;
@@ -284,6 +335,7 @@ async function main() {
         memberVerifiedAt: applicationData.status === ApplicationStatus.APPROVED ? applicationData.approvedAt : null,
         employeeId: employee.id,
         permanentEmployeeDate: new Date('2021-06-01'),
+        // NO departmentId!
       },
     });
 
@@ -315,9 +367,6 @@ async function main() {
     return { user, application };
   }
 
-  // Get random department
-  const getRandomDept = () => allDepartments[Math.floor(Math.random() * allDepartments.length)];
-
   console.log('🔄 Creating test users with applications...');
 
   // ===== 1. UNDER_REVIEW - Waiting DSP Approval (5 users) =====
@@ -337,7 +386,6 @@ async function main() {
         email: testUser.email,
         nik: testUser.nik,
         npwp: testUser.npwp,
-        departmentId: getRandomDept().id,
         dateOfBirth: new Date('1990-05-15'),
         birthPlace: 'Jakarta',
         installmentPlan: 1,
@@ -345,7 +393,7 @@ async function main() {
       {
         status: ApplicationStatus.UNDER_REVIEW,
         currentStep: ApprovalStep.DIVISI_SIMPAN_PINJAM,
-        submittedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // Random last 7 days
+        submittedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
         approvals: [
           { step: ApprovalStep.DIVISI_SIMPAN_PINJAM },
           { step: ApprovalStep.KETUA },
@@ -365,8 +413,8 @@ async function main() {
   ];
 
   for (const testUser of waitingKetuaUsers) {
-    const submittedDate = new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000); // Random last 10 days
-    const dspApprovedDate = new Date(submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days after submit
+    const submittedDate = new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000);
+    const dspApprovedDate = new Date(submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     await createUserWithApplication(
       testUser.empNum,
@@ -375,7 +423,6 @@ async function main() {
         email: testUser.email,
         nik: testUser.nik,
         npwp: testUser.npwp,
-        departmentId: getRandomDept().id,
         dateOfBirth: new Date('1991-06-20'),
         birthPlace: 'Bandung',
         installmentPlan: 2,
@@ -411,7 +458,7 @@ async function main() {
   ];
 
   for (const testUser of approvedUsers) {
-    const submittedDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000); // Random last 30 days
+    const submittedDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
     const dspApprovedDate = new Date(submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000);
     const ketuaApprovedDate = new Date(dspApprovedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
 
@@ -422,7 +469,6 @@ async function main() {
         email: testUser.email,
         nik: testUser.nik,
         npwp: testUser.npwp,
-        departmentId: getRandomDept().id,
         dateOfBirth: new Date('1992-07-10'),
         birthPlace: 'Surabaya',
         installmentPlan: Math.random() > 0.5 ? 1 : 2,
@@ -472,7 +518,6 @@ async function main() {
         email: testUser.email,
         nik: testUser.nik,
         npwp: testUser.npwp,
-        departmentId: getRandomDept().id,
         dateOfBirth: new Date('1993-08-25'),
         birthPlace: 'Medan',
         installmentPlan: 1,

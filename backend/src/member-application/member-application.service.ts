@@ -25,7 +25,13 @@ export class MemberApplicationService {
     // Check if user exists
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { employee: true },
+      include: { 
+        employee: {
+          include: {
+            department: true,
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -65,15 +71,6 @@ export class MemberApplicationService {
       }
     }
 
-    // Check if department exists
-    const department = await this.prisma.department.findUnique({
-      where: { id: dto.departmentId },
-    });
-
-    if (!department) {
-      throw new NotFoundException('Department tidak ditemukan');
-    }
-
     // Check if application already exists
     const existingApplication = await this.prisma.memberApplication.findUnique({
       where: { userId },
@@ -90,13 +87,12 @@ export class MemberApplicationService {
 
     try {
       const result = await this.prisma.$transaction(async (tx) => {
-        // Update user data
+        // Update user data (no departmentId)
         const updatedUser = await tx.user.update({
           where: { id: userId },
           data: {
             nik: dto.nik,
             npwp: dto.npwp,
-            departmentId: dto.departmentId,
             dateOfBirth: new Date(dto.dateOfBirth),
             birthPlace: dto.birthPlace,
             permanentEmployeeDate: new Date(dto.permanentEmployeeDate),
@@ -182,8 +178,12 @@ export class MemberApplicationService {
       include: {
         user: {
           include: {
-            employee: true,
-            department: true,
+            employee: {
+              include: {
+                department: true,
+                golongan: true,
+              },
+            },
           },
         },
         approvals: {
@@ -245,6 +245,7 @@ export class MemberApplicationService {
           { email: { contains: search, mode: 'insensitive' } },
           { nik: { contains: search, mode: 'insensitive' } },
           { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } },
+          { employee: { fullName: { contains: search, mode: 'insensitive' } } },
         ],
       };
     }
@@ -271,8 +272,12 @@ export class MemberApplicationService {
         include: {
           user: {
             include: {
-              employee: true,
-              department: true,
+              employee: {
+                include: {
+                  department: true,
+                  golongan: true,
+                },
+              },
             },
           },
           approvals: {
@@ -311,8 +316,12 @@ export class MemberApplicationService {
       include: {
         user: {
           include: {
-            employee: true,
-            department: true,
+            employee: {
+              include: {
+                department: true,
+                golongan: true,
+              },
+            },
           },
         },
         approvals: {

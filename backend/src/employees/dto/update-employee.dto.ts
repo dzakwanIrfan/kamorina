@@ -1,4 +1,9 @@
-import { IsString, IsBoolean, IsOptional, Length, Matches } from 'class-validator';
+import { IsString, IsBoolean, IsOptional, Length, Matches, IsEnum } from 'class-validator';
+
+export enum EmployeeType {
+  PERMANENT = 'TETAP',
+  CONTRACT = 'KONTRAK',
+}
 
 export class UpdateEmployeeDto {
   @IsString()
@@ -10,6 +15,18 @@ export class UpdateEmployeeDto {
   @IsString()
   @IsOptional()
   fullName?: string;
+
+  @IsString()
+  @IsOptional()
+  departmentId?: string;
+
+  @IsString()
+  @IsOptional()
+  golonganId?: string;
+
+  @IsEnum(EmployeeType, { message: 'Tipe karyawan tidak valid' })
+  @IsOptional()
+  employeeType?: EmployeeType;
 
   @IsBoolean()
   @IsOptional()

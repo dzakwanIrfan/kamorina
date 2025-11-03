@@ -4,6 +4,9 @@ import { parse, unparse } from 'papaparse';
 export interface EmployeeCSVRow {
   employeeNumber: string;
   fullName: string;
+  departmentName: string;
+  golonganName: string;
+  employeeType: string;
   isActive: string;
 }
 
@@ -16,11 +19,14 @@ export class EmployeeCsvService {
     const csvData: EmployeeCSVRow[] = employees.map((employee) => ({
       employeeNumber: employee.employeeNumber,
       fullName: employee.fullName,
+      departmentName: employee.department?.departmentName || '',
+      golonganName: employee.golongan?.golonganName || '',
+      employeeType: this.getEmployeeTypeLabel(employee.employeeType),
       isActive: employee.isActive ? 'Aktif' : 'Tidak Aktif',
     }));
 
     const csv = unparse(csvData, {
-      columns: ['employeeNumber', 'fullName', 'isActive'],
+      columns: ['employeeNumber', 'fullName', 'departmentName', 'golonganName', 'employeeType', 'isActive'],
       header: true,
     });
 
@@ -35,17 +41,23 @@ export class EmployeeCsvService {
       {
         employeeNumber: '123456789',
         fullName: 'John Doe',
+        departmentName: 'MDP',
+        golonganName: 'I',
+        employeeType: 'Pegawai Tetap',
         isActive: 'Aktif',
       },
       {
         employeeNumber: '987654321',
         fullName: 'Jane Smith',
-        isActive: 'Tidak Aktif',
+        departmentName: 'Finance',
+        golonganName: 'II',
+        employeeType: 'Kontrak',
+        isActive: 'Aktif',
       },
     ];
 
     const csv = unparse(template, {
-      columns: ['employeeNumber', 'fullName', 'isActive'],
+      columns: ['employeeNumber', 'fullName', 'departmentName', 'golonganName', 'employeeType', 'isActive'],
       header: true,
     });
 
@@ -60,7 +72,6 @@ export class EmployeeCsvService {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header) => {
-        // Normalize header names
         const headerMap: Record<string, string> = {
           'employeenumber': 'employeeNumber',
           'employee_number': 'employeeNumber',
@@ -68,6 +79,17 @@ export class EmployeeCsvService {
           'fullname': 'fullName',
           'full_name': 'fullName',
           'nama lengkap': 'fullName',
+          'departmentname': 'departmentName',
+          'department_name': 'departmentName',
+          'department': 'departmentName',
+          'dept': 'departmentName',
+          'golonganname': 'golonganName',
+          'golongan_name': 'golonganName',
+          'golongan': 'golonganName',
+          'employeetype': 'employeeType',
+          'employee_type': 'employeeType',
+          'tipe karyawan': 'employeeType',
+          'tipe': 'employeeType',
           'isactive': 'isActive',
           'is_active': 'isActive',
           'status': 'isActive',
@@ -106,6 +128,26 @@ export class EmployeeCsvService {
         errors.push(`Baris ${rowNumber}: Nama lengkap tidak boleh kosong`);
       }
 
+      // Validate department name
+      if (!row.departmentName || row.departmentName.trim() === '') {
+        errors.push(`Baris ${rowNumber}: Department tidak boleh kosong`);
+      }
+
+      // Validate golongan name
+      if (!row.golonganName || row.golonganName.trim() === '') {
+        errors.push(`Baris ${rowNumber}: Golongan tidak boleh kosong`);
+      }
+
+      // Validate employee type
+      if (!row.employeeType || row.employeeType.trim() === '') {
+        errors.push(`Baris ${rowNumber}: Tipe karyawan tidak boleh kosong`);
+      } else {
+        const normalizedType = row.employeeType.toLowerCase().trim();
+        if (!['pegawai tetap', 'kontrak', 'probation', 'permanent', 'contract', 'probation'].includes(normalizedType)) {
+          errors.push(`Baris ${rowNumber}: Tipe karyawan harus "Pegawai Tetap", "Kontrak", atau "Probation"`);
+        }
+      }
+
       // Validate isActive
       if (row.isActive) {
         const normalizedStatus = row.isActive.toLowerCase().trim();
@@ -131,7 +173,38 @@ export class EmployeeCsvService {
     return {
       employeeNumber: row.employeeNumber.trim(),
       fullName: row.fullName.trim(),
+      departmentName: row.departmentName.trim(),
+      golonganName: row.golonganName.trim(),
+      employeeType: this.parseEmployeeType(row.employeeType),
       isActive,
     };
+  }
+
+  /**
+   * Parse employee type from CSV
+   */
+  private parseEmployeeType(type: string): string {
+    const normalized = type.toLowerCase().trim();
+    const typeMap: Record<string, string> = {
+      'pegawai tetap': 'TETAP',
+      'permanent': 'TETAP',
+      'tetap': 'TETAP',
+      'kontrak': 'KONTRAK',
+      'contract': 'KONTRAK',
+    };
+
+    return typeMap[normalized] || 'TETAP';
+  }
+
+  /**
+   * Get employee type label for export
+   */
+  private getEmployeeTypeLabel(type: string): string {
+    const labelMap: Record<string, string> = {
+      'TETAP': 'Pegawai Tetap',
+      'KONTRAK': 'Kontrak',
+    };
+
+    return labelMap[type] || type;
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -30,10 +30,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { departmentService } from '@/services/department.service';
 import { memberApplicationService } from '@/services/member-application.service';
 import { handleApiError } from '@/lib/axios';
-import { Department } from '@/types/department.types';
 
 const formSchema = z.object({
   nik: z
@@ -44,7 +42,6 @@ const formSchema = z.object({
     .string()
     .length(16, 'NPWP harus 16 digit')
     .regex(/^[0-9]+$/, 'NPWP harus berupa angka'),
-  departmentId: z.string().min(1, 'Department wajib dipilih'),
   dateOfBirth: z.date({
     error: 'Tanggal lahir wajib diisi',
   }),
@@ -62,8 +59,6 @@ interface MemberApplicationFormProps {
 }
 
 export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps) {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [isLoadingDepts, setIsLoadingDepts] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormData>({
@@ -71,28 +66,10 @@ export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps)
     defaultValues: {
       nik: '',
       npwp: '',
-      departmentId: '',
       birthPlace: '',
       installmentPlan: 1,
     },
   });
-
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
-  const fetchDepartments = async () => {
-    try {
-      setIsLoadingDepts(true);
-      const response = await departmentService.getAll({ limit: 100 });
-      setDepartments(response.data);
-    } catch (error) {
-      const errorMessage = handleApiError(error);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoadingDepts(false);
-    }
-  };
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -164,37 +141,6 @@ export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps)
                     />
                   </FormControl>
                   <FormDescription>16 digit angka NPWP</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Department */}
-            <FormField
-              control={form.control}
-              name="departmentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Department</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isLoadingDepts || isSubmitting}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih department" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>
-                          {dept.departmentName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>Department tempat Anda bekerja</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

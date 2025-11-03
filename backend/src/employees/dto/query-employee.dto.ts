@@ -1,6 +1,11 @@
-import { IsOptional } from 'class-validator';
+import { IsOptional, IsEnum } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+
+export enum EmployeeType {
+  PERMANENT = 'TETAP',
+  CONTRACT = 'KONTRAK',
+}
 
 export class QueryEmployeeDto extends PaginationDto {
   @IsOptional()
@@ -16,4 +21,14 @@ export class QueryEmployeeDto extends PaginationDto {
 
   @IsOptional()
   fullName?: string;
+
+  @IsOptional()
+  departmentId?: string;
+
+  @IsOptional()
+  golonganId?: string;
+
+  @IsOptional()
+  @IsEnum(EmployeeType)
+  employeeType?: EmployeeType;
 }

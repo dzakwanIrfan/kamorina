@@ -36,8 +36,12 @@ export class AuthService {
             level: true,
           },
         },
-        department: true,
-        employee: true,
+        employee: {
+          include: {
+            department: true,
+            golongan: true,
+          },
+        },
       },
     });
 
@@ -73,6 +77,10 @@ export class AuthService {
     // Check if employee number exists and is active
     const employee = await this.prisma.employee.findUnique({
       where: { employeeNumber },
+      include: {
+        department: true,
+        golongan: true,
+      },
     });
 
     if (!employee) {
@@ -118,7 +126,7 @@ export class AuthService {
     try {
       // Create user with default role "anggota"
       user = await this.prisma.$transaction(async (tx) => {
-        // Create user
+        // Create user (NO departmentId field)
         const newUser = await tx.user.create({
           data: {
             name,
@@ -265,8 +273,12 @@ export class AuthService {
             level: true,
           },
         },
-        department: true,
-        employee: true,
+        employee: {
+          include: {
+            department: true,
+            golongan: true,
+          },
+        },
       },
     });
 

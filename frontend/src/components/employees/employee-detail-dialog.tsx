@@ -12,9 +12,9 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { User, Calendar, CheckCircle2, XCircle } from 'lucide-react';
+import { User, Calendar, CheckCircle2, XCircle, Building2, Award } from 'lucide-react';
 import { employeeService } from '@/services/employee.service';
-import { Employee } from '@/types/employee.types';
+import { Employee, EmployeeType } from '@/types/employee.types';
 import { toast } from 'sonner';
 
 interface EmployeeDetailDialogProps {
@@ -22,6 +22,16 @@ interface EmployeeDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const employeeTypeLabels: Record<EmployeeType, string> = {
+  [EmployeeType.TETAP]: 'Pegawai Tetap',
+  [EmployeeType.KONTRAK]: 'Kontrak',
+};
+
+const employeeTypeBadgeVariant: Record<EmployeeType, 'default' | 'secondary' | 'outline'> = {
+  [EmployeeType.TETAP]: 'default',
+  [EmployeeType.KONTRAK]: 'secondary',
+};
 
 export function EmployeeDetailDialog({
   employeeId,
@@ -67,8 +77,8 @@ export function EmployeeDetailDialog({
           </div>
         ) : employee ? (
           <div className="space-y-6">
-            {/* Status Badge */}
-            <div className="flex items-center gap-2">
+            {/* Status Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge variant={employee.isActive ? 'default' : 'secondary'}>
                 {employee.isActive ? (
                   <>
@@ -81,6 +91,9 @@ export function EmployeeDetailDialog({
                     Tidak Aktif
                   </>
                 )}
+              </Badge>
+              <Badge variant={employeeTypeBadgeVariant[employee.employeeType]}>
+                {employeeTypeLabels[employee.employeeType]}
               </Badge>
             </div>
 
@@ -107,8 +120,34 @@ export function EmployeeDetailDialog({
                   </p>
                 </div>
                 <div>
+                  <p className="text-muted-foreground">Tipe Karyawan</p>
+                  <p className="font-medium">{employeeTypeLabels[employee.employeeType]}</p>
+                </div>
+                <div>
                   <p className="text-muted-foreground">Jumlah User</p>
                   <p className="font-medium">{employee._count?.users || 0} user</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Department & Golongan */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Department & Golongan
+              </h3>
+              <Separator />
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Department</p>
+                  <p className="font-medium">{employee.department?.departmentName || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground flex items-center gap-1">
+                    <Award className="h-3 w-3" />
+                    Golongan
+                  </p>
+                  <p className="font-medium">{employee.golongan?.golonganName || '-'}</p>
                 </div>
               </div>
             </div>

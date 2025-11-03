@@ -14,6 +14,7 @@ import {
   CreditCard,
   FileText,
   RefreshCw,
+  Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -142,10 +143,10 @@ export function ApplicationStatusCard({ application }: ApplicationStatusCardProp
       {/* Refresh Session Button */}
       {showRefreshButton && (
         <Card className="border-green-200">
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <CardTitle className="font-semibold">Akses Member Telah Aktif</CardTitle>
+                <CardTitle className="text-base font-semibold">Akses Member Telah Aktif</CardTitle>
                 <CardDescription>
                   Klik tombol di samping untuk memperbarui informasi akun Anda dan mengakses fitur member.
                 </CardDescription>
@@ -235,7 +236,17 @@ export function ApplicationStatusCard({ application }: ApplicationStatusCardProp
                 <span>Department</span>
               </div>
               <p className="font-medium">
-                {application.user?.department?.departmentName || '-'}
+                {application.user?.employee?.department?.departmentName || '-'}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Award className="h-4 w-4" />
+                <span>Golongan</span>
+              </div>
+              <p className="font-medium">
+                {application.user?.employee?.golongan?.golonganName || '-'}
               </p>
             </div>
 
