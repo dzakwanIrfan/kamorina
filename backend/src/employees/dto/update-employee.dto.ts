@@ -1,14 +1,14 @@
 import { IsString, IsBoolean, IsOptional, Length, Matches, IsEnum } from 'class-validator';
 
 export enum EmployeeType {
-  PERMANENT = 'TETAP',
-  CONTRACT = 'KONTRAK',
+  TETAP = 'TETAP',
+  KONTRAK = 'KONTRAK',
 }
 
 export class UpdateEmployeeDto {
   @IsString()
-  @Length(9, 9, { message: 'Nomor karyawan harus 9 digit' })
-  @Matches(/^[0-9]+$/, { message: 'Nomor karyawan harus berupa angka' })
+  @Length(9, 10, { message: 'Nomor karyawan harus 9-10 karakter' })
+  @Matches(/^[K]?[0-9]+$/, { message: 'Nomor karyawan harus berupa angka atau diawali huruf K diikuti angka' })
   @IsOptional()
   employeeNumber?: string;
 

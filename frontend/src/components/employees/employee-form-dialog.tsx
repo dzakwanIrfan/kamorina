@@ -42,8 +42,8 @@ import { Golongan } from '@/types/golongan.types';
 const formSchema = z.object({
   employeeNumber: z
     .string()
-    .length(9, 'Nomor karyawan harus 9 digit')
-    .regex(/^[0-9]+$/, 'Nomor karyawan harus berupa angka'),
+    .length(10, 'Nomor Induk karyawan maksimal 10 digit')
+    .regex(/^[K]?[0-9]+$/, 'Nomor Induk Karyawan harus berupa angka'),
   fullName: z.string().min(1, 'Nama lengkap wajib diisi'),
   departmentId: z.string().min(1, 'Department wajib dipilih'),
   golonganId: z.string().min(1, 'Golongan wajib dipilih'),
@@ -182,11 +182,11 @@ export function EmployeeFormDialog({
               name="employeeNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nomor Karyawan</FormLabel>
+                  <FormLabel>Nomor Induk Karyawan</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="100000001"
-                      maxLength={9}
+                      maxLength={10}
                       {...field}
                       disabled={isEdit || isSubmitting}
                     />

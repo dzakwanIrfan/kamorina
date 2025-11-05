@@ -43,11 +43,11 @@ export class EmployeeCsvService {
         fullName: 'John Doe',
         departmentName: 'MDP',
         golonganName: 'I',
-        employeeType: 'Pegawai Tetap',
+        employeeType: 'Tetap',
         isActive: 'Aktif',
       },
       {
-        employeeNumber: '987654321',
+        employeeNumber: 'K987654321',
         fullName: 'Jane Smith',
         departmentName: 'Finance',
         golonganName: 'II',
@@ -75,7 +75,7 @@ export class EmployeeCsvService {
         const headerMap: Record<string, string> = {
           'employeenumber': 'employeeNumber',
           'employee_number': 'employeeNumber',
-          'nomor karyawan': 'employeeNumber',
+          'Nomor Induk Karyawan': 'employeeNumber',
           'fullname': 'fullName',
           'full_name': 'fullName',
           'nama lengkap': 'fullName',
@@ -118,9 +118,9 @@ export class EmployeeCsvService {
 
       // Validate employee number
       if (!row.employeeNumber || row.employeeNumber.trim() === '') {
-        errors.push(`Baris ${rowNumber}: Nomor karyawan tidak boleh kosong`);
-      } else if (!/^\d{9}$/.test(row.employeeNumber.trim())) {
-        errors.push(`Baris ${rowNumber}: Nomor karyawan harus 9 digit angka`);
+        errors.push(`Baris ${rowNumber}: Nomor Induk Karyawan tidak boleh kosong`);
+      } else if (!/^[K]?[0-9]+$/.test(row.employeeNumber.trim())) {
+        errors.push(`Baris ${rowNumber}: Nomor Induk Karyawan maksimal 10 digit angka`);
       }
 
       // Validate full name
@@ -143,8 +143,8 @@ export class EmployeeCsvService {
         errors.push(`Baris ${rowNumber}: Tipe karyawan tidak boleh kosong`);
       } else {
         const normalizedType = row.employeeType.toLowerCase().trim();
-        if (!['pegawai tetap', 'kontrak', 'probation', 'permanent', 'contract', 'probation'].includes(normalizedType)) {
-          errors.push(`Baris ${rowNumber}: Tipe karyawan harus "Pegawai Tetap", "Kontrak", atau "Probation"`);
+        if (!['pegawai tetap', 'tetap', 'kontrak', 'probation', 'permanent', 'contract', 'probation'].includes(normalizedType)) {
+          errors.push(`Baris ${rowNumber}: Tipe karyawan harus "Tetap" atau "Kontrak"`);
         }
       }
 

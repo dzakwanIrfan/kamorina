@@ -138,7 +138,7 @@ export default function DepartmentsPage() {
       ...dataToExport.map((dept) => [
         dept.id,
         dept.departmentName,
-        dept._count?.users || 0,
+        dept._count?.employees || 0,
         format(new Date(dept.createdAt), 'dd/MM/yyyy'),
       ]),
     ]
@@ -288,10 +288,10 @@ export default function DepartmentsPage() {
       ),
     },
     {
-      accessorKey: '_count.users',
-      header: 'Jumlah User',
+      accessorKey: '_count.employee',
+      header: 'Jumlah Karyawan',
       cell: ({ row }) => (
-        <Badge variant="outline">{row.original._count?.users || 0} User</Badge>
+        <Badge variant="outline">{row.original._count?.employees || 0} Karyawan</Badge>
       ),
     },
     {

@@ -30,7 +30,7 @@ enum EmployeeType {
 
 model Employee {
   id              String        @id @default(uuid())
-  employeeNumber  String        @unique @map("employee_number") // Nomor Induk Karyawan Angka 9 digit
+  employeeNumber  String        @unique @map("employee_number") // Nomor Induk Karyawan 9 digit
   fullName        String        @map("full_name")
   
   departmentId    String        @map("department_id")

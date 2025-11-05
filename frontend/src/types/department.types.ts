@@ -1,12 +1,14 @@
+import { Employee } from "./employee.types";
+
 export interface Department {
   id: string;
   departmentName: string;
   createdAt: string;
   updatedAt: string;
   _count?: {
-    users: number;
+    employees: number;
   };
-  users?: User[];
+  employees?: Employee[];
 }
 
 export interface CreateDepartmentRequest {
@@ -26,11 +28,4 @@ export interface QueryDepartmentParams {
   startDate?: string;
   endDate?: string;
   departmentName?: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  nik?: string;
 }

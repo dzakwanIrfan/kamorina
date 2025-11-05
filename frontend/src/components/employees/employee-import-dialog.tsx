@@ -162,7 +162,7 @@ export function EmployeeImportDialog({
             <AlertDescription className="space-y-2">
               <p>File CSV harus memiliki kolom berikut:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li><strong>employeeNumber</strong>: Nomor karyawan (9 digit angka)</li>
+                <li><strong>employeeNumber</strong>: Nomor Induk Karyawan (Maksimal 10 digit)</li>
                 <li><strong>fullName</strong>: Nama lengkap karyawan</li>
                 <li><strong>isActive</strong>: Status (Aktif / Tidak Aktif)</li>
               </ul>
