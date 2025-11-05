@@ -1,5 +1,4 @@
-// prisma/seed.ts
-import { PrismaClient, ApplicationStatus, ApprovalStep, ApprovalDecision, EmployeeType } from '@prisma/client';
+import { PrismaClient, ApplicationStatus, ApprovalStep, ApprovalDecision, EmployeeType, SettingCategory, SettingType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -543,6 +542,170 @@ async function main() {
   }
 
   console.log('✅ Created 3 rejected users');
+
+  const defaultSettings = [
+    // MEMBERSHIP
+    {
+      key: 'initial_membership_fee',
+      value: '500000',
+      type: SettingType.NUMBER,
+      category: SettingCategory.MEMBERSHIP,
+      label: 'Iuran Awal Anggota',
+      description: 'Biaya pendaftaran anggota baru koperasi',
+      unit: 'Rupiah',
+      validation: { min: 0, required: true },
+    },
+    {
+      key: 'monthly_membership_fee',
+      value: '50000',
+      type: SettingType.NUMBER,
+      category: SettingCategory.MEMBERSHIP,
+      label: 'Iuran Bulanan Anggota',
+      description: 'Iuran wajib bulanan untuk anggota',
+      unit: 'Rupiah',
+      validation: { min: 0, required: true },
+    },
+    
+    // SAVINGS
+    {
+      key: 'minimum_savings_balance',
+      value: '100000',
+      type: SettingType.NUMBER,
+      category: SettingCategory.SAVINGS,
+      label: 'Saldo Simpanan Minimum',
+      description: 'Saldo minimum yang harus dijaga anggota',
+      unit: 'Rupiah',
+      validation: { min: 0, required: true },
+    },
+    {
+      key: 'savings_interest_rate',
+      value: '2.5',
+      type: SettingType.NUMBER,
+      category: SettingCategory.SAVINGS,
+      label: 'Bunga Simpanan',
+      description: 'Persentase bunga simpanan per tahun',
+      unit: 'Persen',
+      validation: { min: 0, max: 100, required: true },
+    },
+    
+    // LOAN
+    {
+      key: 'max_loan_amount',
+      value: '50000000',
+      type: SettingType.NUMBER,
+      category: SettingCategory.LOAN,
+      label: 'Maksimal Pinjaman',
+      description: 'Jumlah maksimal pinjaman yang dapat diajukan',
+      unit: 'Rupiah',
+      validation: { min: 0, required: true },
+    },
+    {
+      key: 'min_loan_amount',
+      value: '1000000',
+      type: SettingType.NUMBER,
+      category: SettingCategory.LOAN,
+      label: 'Minimal Pinjaman',
+      description: 'Jumlah minimal pinjaman yang dapat diajukan',
+      unit: 'Rupiah',
+      validation: { min: 0, required: true },
+    },
+    {
+      key: 'max_loan_tenor',
+      value: '36',
+      type: SettingType.NUMBER,
+      category: SettingCategory.LOAN,
+      label: 'Maksimal Tenor Pinjaman',
+      description: 'Jangka waktu maksimal pinjaman',
+      unit: 'Bulan',
+      validation: { min: 1, max: 120, required: true },
+    },
+    
+    // INTEREST
+    {
+      key: 'loan_interest_rate',
+      value: '12',
+      type: SettingType.NUMBER,
+      category: SettingCategory.INTEREST,
+      label: 'Bunga Pinjaman',
+      description: 'Persentase bunga pinjaman per tahun',
+      unit: 'Persen',
+      validation: { min: 0, max: 100, required: true },
+    },
+    {
+      key: 'interest_calculation_method',
+      value: 'FLAT',
+      type: SettingType.STRING,
+      category: SettingCategory.INTEREST,
+      label: 'Metode Perhitungan Bunga',
+      description: 'Metode perhitungan bunga pinjaman (FLAT/EFFECTIVE)',
+      unit: null,
+      validation: { required: true, enum: ['FLAT', 'EFFECTIVE'] },
+    },
+    
+    // PENALTY
+    {
+      key: 'late_payment_penalty_rate',
+      value: '0.5',
+      type: SettingType.NUMBER,
+      category: SettingCategory.PENALTY,
+      label: 'Denda Keterlambatan',
+      description: 'Persentase denda per hari keterlambatan pembayaran',
+      unit: 'Persen',
+      validation: { min: 0, max: 10, required: true },
+    },
+    {
+      key: 'max_late_payment_days',
+      value: '90',
+      type: SettingType.NUMBER,
+      category: SettingCategory.PENALTY,
+      label: 'Maksimal Hari Keterlambatan',
+      description: 'Batas maksimal hari keterlambatan sebelum tindakan lebih lanjut',
+      unit: 'Hari',
+      validation: { min: 1, required: true },
+    },
+    
+    // GENERAL
+    {
+      key: 'cooperative_name',
+      value: 'Koperasi Surya Niaga Kamorina',
+      type: SettingType.STRING,
+      category: SettingCategory.GENERAL,
+      label: 'Nama Koperasi',
+      description: 'Nama resmi koperasi',
+      unit: null,
+      validation: { required: true },
+    },
+    {
+      key: 'allow_multiple_loans',
+      value: 'false',
+      type: SettingType.BOOLEAN,
+      category: SettingCategory.GENERAL,
+      label: 'Izinkan Multiple Pinjaman',
+      description: 'Apakah anggota boleh memiliki lebih dari 1 pinjaman aktif',
+      unit: null,
+      validation: { required: true },
+    },
+    {
+      key: 'auto_approve_loans',
+      value: 'false',
+      type: SettingType.BOOLEAN,
+      category: SettingCategory.GENERAL,
+      label: 'Auto Approve Pinjaman',
+      description: 'Otomatis menyetujui pinjaman di bawah limit tertentu',
+      unit: null,
+      validation: { required: true },
+    },
+  ];
+
+  for (const setting of defaultSettings) {
+    await prisma.cooperativeSetting.upsert({
+      where: { key: setting.key },
+      update: {},
+      create: setting,
+    });
+  }
+
+  console.log('✅ Cooperative settings created');
 
   console.log('');
   console.log('🎉 Seeding completed successfully!');

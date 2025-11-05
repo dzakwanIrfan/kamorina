@@ -7,6 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum SettingType {
+  NUMBER
+  STRING
+  BOOLEAN
+  JSON
+}
+
+enum SettingCategory {
+  MEMBERSHIP      // Keanggotaan
+  SAVINGS         // Simpanan
+  LOAN           // Pinjaman
+  INTEREST       // Bunga
+  PENALTY        // Denda
+  GENERAL        // Umum
+}
+
 enum ApplicationStatus {
   UNDER_REVIEW
   APPROVED
@@ -88,6 +104,7 @@ model User {
   roles                   UserRole[]
   memberApplications      MemberApplication[]
   approvals               ApplicationApproval[] @relation("approval_approver")
+  cooperativeSettings CooperativeSetting[]
 
   @@map("users")
 }
@@ -176,4 +193,31 @@ model UserRole {
 
   @@unique([userId, levelId])
   @@map("user_roles")
+}
+
+model CooperativeSetting {
+  id          String          @id @default(uuid())
+  key         String          @unique // e.g., "initial_membership_fee"
+  value       String          // Stored as string, parsed based on type
+  type        SettingType     @default(STRING)
+  category    SettingCategory
+  
+  label       String          // Label untuk UI: "Iuran Awal Anggota"
+  description String?         // Deskripsi untuk helper text
+  unit        String?         // e.g., "Rupiah", "Persen", "Hari"
+  
+  isEditable  Boolean         @default(true) @map("is_editable")
+  isActive    Boolean         @default(true) @map("is_active")
+  
+  // Validation rules (stored as JSON)
+  validation  Json?           // { "min": 0, "max": 100, "required": true }
+  
+  // Audit trail
+  updatedBy   String?         @map("updated_by")
+  updatedByUser User?         @relation(fields: [updatedBy], references: [id])
+  
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  
+  @@map("cooperative_settings")
 }

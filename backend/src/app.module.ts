@@ -8,6 +8,7 @@ import { DepartmentsModule } from './departments/departments.module';
 import { MemberApplicationModule } from './member-application/member-application.module';
 import { EmployeeModule } from './employees/employees.module';
 import { GolonganModule } from './golongan/golongan.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { GolonganModule } from './golongan/golongan.module';
     MemberApplicationModule,
     EmployeeModule,
     GolonganModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}

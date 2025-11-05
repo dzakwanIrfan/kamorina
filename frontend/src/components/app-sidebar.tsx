@@ -100,6 +100,13 @@ const managementItems = [
     roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
     requiresMemberVerified: true,
   },
+  {
+    title: 'Settings',
+    icon: Settings,
+    href: '/dashboard/settings',
+    roles: ['ketua', 'divisi_simpan_pinjam'],
+    requiresMemberVerified: true,
+  },
 ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -219,22 +226,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupContent>
           </SidebarGroup>
         )}
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Pengaturan</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname === '/dashboard/settings'}>
-                  <Link href="/dashboard/settings">
-                    <Settings className="size-4" />
-                    <span>Pengaturan</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
