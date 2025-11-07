@@ -28,6 +28,28 @@ export interface ApplicationApproval {
   } | null;
 }
 
+export interface ApplicationHistory {
+  id: string;
+  status: ApplicationStatus;
+  nik: string | null;
+  npwp: string | null;
+  dateOfBirth: string | null;
+  birthPlace: string | null;
+  permanentEmployeeDate: string | null;
+  installmentPlan: number | null;
+  submittedAt: string;
+  rejectedAt: string | null;
+  approvedAt: string | null;
+  rejectionReason: string | null;
+  submissionNumber: number;
+  processedByUser?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  createdAt: string;
+}
+
 export interface MemberApplication {
   id: string;
   userId: string;
@@ -37,6 +59,8 @@ export interface MemberApplication {
   approvedAt: string | null;
   rejectedAt: string | null;
   rejectionReason: string | null;
+  submissionCount: number;
+  lastSubmittedAt: string | null;
   createdAt: string;
   updatedAt: string;
   user?: {
@@ -64,6 +88,7 @@ export interface MemberApplication {
     };
   };
   approvals: ApplicationApproval[];
+  history?: ApplicationHistory[];
 }
 
 export interface SubmitApplicationRequest {
@@ -96,4 +121,10 @@ export interface QueryApplicationParams {
   step?: ApprovalStep;
   startDate?: string;
   endDate?: string;
+}
+
+export interface ApplicationHistoryResponse {
+  currentApplication: MemberApplication;
+  submissionCount: number;
+  history: ApplicationHistory[];
 }

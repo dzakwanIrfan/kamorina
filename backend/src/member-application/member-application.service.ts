@@ -87,7 +87,27 @@ export class MemberApplicationService {
 
     try {
       const result = await this.prisma.$transaction(async (tx) => {
-        // Update user data (no departmentId)
+        // SAVE HISTORY sebelum update (jika re-submit)
+        if (existingApplication && existingApplication.status === ApplicationStatus.REJECTED) {
+          await tx.applicationHistory.create({
+            data: {
+              applicationId: existingApplication.id,
+              status: existingApplication.status,
+              nik: user.nik,
+              npwp: user.npwp,
+              dateOfBirth: user.dateOfBirth,
+              birthPlace: user.birthPlace,
+              permanentEmployeeDate: user.permanentEmployeeDate,
+              installmentPlan: user.installmentPlan,
+              submittedAt: existingApplication.submittedAt || new Date(),
+              rejectedAt: existingApplication.rejectedAt,
+              rejectionReason: existingApplication.rejectionReason,
+              submissionNumber: existingApplication.submissionCount,
+            },
+          });
+        }
+
+        // Update user data
         const updatedUser = await tx.user.update({
           where: { id: userId },
           data: {
@@ -102,15 +122,20 @@ export class MemberApplicationService {
 
         // Create or update application
         let application;
+        const now = new Date();
+
         if (existingApplication) {
           application = await tx.memberApplication.update({
             where: { userId },
             data: {
               status: ApplicationStatus.UNDER_REVIEW,
               currentStep: ApprovalStep.DIVISI_SIMPAN_PINJAM,
-              submittedAt: new Date(),
+              submittedAt: now,
+              lastSubmittedAt: now,
+              submissionCount: { increment: 1 },
               rejectedAt: null,
               rejectionReason: null,
+              approvedAt: null,
             },
           });
 
@@ -124,7 +149,9 @@ export class MemberApplicationService {
               userId,
               status: ApplicationStatus.UNDER_REVIEW,
               currentStep: ApprovalStep.DIVISI_SIMPAN_PINJAM,
-              submittedAt: new Date(),
+              submittedAt: now,
+              lastSubmittedAt: now,
+              submissionCount: 1,
             },
           });
         }
@@ -154,9 +181,14 @@ export class MemberApplicationService {
         // Don't fail the transaction if email fails
       }
 
+      const message = result.application.submissionCount > 1 
+        ? `Pengajuan member berhasil disubmit kembali (Pengajuan ke-${result.application.submissionCount}). Menunggu approval dari Divisi Simpan Pinjam.`
+        : 'Pengajuan member berhasil disubmit. Menunggu approval dari Divisi Simpan Pinjam.';
+
       return {
-        message: 'Pengajuan member berhasil disubmit. Menunggu approval dari Divisi Simpan Pinjam.',
+        message,
         applicationId: result.application.id,
+        submissionCount: result.application.submissionCount,
       };
     } catch (error) {
       if (
@@ -198,6 +230,18 @@ export class MemberApplicationService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        history: {
+          include: {
+            processedByUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
@@ -206,6 +250,36 @@ export class MemberApplicationService {
     }
 
     return application;
+  }
+
+  async getApplicationHistory(userId: string) {
+    const application = await this.prisma.memberApplication.findUnique({
+      where: { userId },
+    });
+
+    if (!application) {
+      throw new NotFoundException('Aplikasi tidak ditemukan');
+    }
+
+    const history = await this.prisma.applicationHistory.findMany({
+      where: { applicationId: application.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        processedByUser: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return {
+      currentApplication: application,
+      submissionCount: application.submissionCount,
+      history,
+    };
   }
 
   async getApplications(query: QueryApplicationDto): Promise<PaginatedResult<any>> {
@@ -336,6 +410,18 @@ export class MemberApplicationService {
           },
           orderBy: { createdAt: 'asc' },
         },
+        history: {
+          include: {
+            processedByUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
@@ -428,6 +514,25 @@ export class MemberApplicationService {
               currentStep: null,
             },
           });
+
+          // Save to history
+          await tx.applicationHistory.create({
+            data: {
+              applicationId: application.id,
+              status: ApplicationStatus.REJECTED,
+              nik: application.user.nik,
+              npwp: application.user.npwp,
+              dateOfBirth: application.user.dateOfBirth,
+              birthPlace: application.user.birthPlace,
+              permanentEmployeeDate: application.user.permanentEmployeeDate,
+              installmentPlan: application.user.installmentPlan,
+              submittedAt: application.submittedAt || new Date(),
+              rejectedAt: new Date(),
+              rejectionReason: dto.notes,
+              processedBy: approverId,
+              submissionNumber: application.submissionCount,
+            },
+          });
         });
 
         // Send rejection email to applicant
@@ -476,6 +581,24 @@ export class MemberApplicationService {
                 status: ApplicationStatus.APPROVED,
                 approvedAt: new Date(),
                 currentStep: null,
+              },
+            });
+
+            // Save to history
+            await tx.applicationHistory.create({
+              data: {
+                applicationId: application.id,
+                status: ApplicationStatus.APPROVED,
+                nik: application.user.nik,
+                npwp: application.user.npwp,
+                dateOfBirth: application.user.dateOfBirth,
+                birthPlace: application.user.birthPlace,
+                permanentEmployeeDate: application.user.permanentEmployeeDate,
+                installmentPlan: application.user.installmentPlan,
+                submittedAt: application.submittedAt || new Date(),
+                approvedAt: new Date(),
+                processedBy: approverId,
+                submissionNumber: application.submissionCount,
               },
             });
           } else {

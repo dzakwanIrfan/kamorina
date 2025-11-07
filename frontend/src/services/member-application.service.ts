@@ -5,17 +5,27 @@ import {
   ApproveRejectRequest,
   BulkApproveRejectRequest,
   QueryApplicationParams,
+  ApplicationHistoryResponse,
 } from '@/types/member-application.types';
 import { PaginatedResponse } from '@/types/pagination.types';
 
 export const memberApplicationService = {
-  async submitApplication(data: SubmitApplicationRequest): Promise<{ message: string; applicationId: string }> {
+  async submitApplication(data: SubmitApplicationRequest): Promise<{ 
+    message: string; 
+    applicationId: string;
+    submissionCount: number;
+  }> {
     const response = await apiClient.post('/member-applications/submit', data);
     return response.data;
   },
 
   async getMyApplication(): Promise<MemberApplication> {
     const response = await apiClient.get('/member-applications/my-application');
+    return response.data;
+  },
+
+  async getMyApplicationHistory(): Promise<ApplicationHistoryResponse> {
+    const response = await apiClient.get('/member-applications/my-application/history');
     return response.data;
   },
 

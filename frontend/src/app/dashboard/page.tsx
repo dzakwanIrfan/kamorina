@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, UserPlus, CheckCircle2 } from 'lucide-react';
+import { Loader2, UserPlus, CheckCircle2, RefreshCw, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth.store';
 import { MemberApplicationForm } from '@/components/member-application/member-application-form';
-import { ApplicationStatusCard } from '@/components/member-application/application-status-card';
+import { MyApplicationDetail } from '@/components/member-application/my-application-detail';
 import { memberApplicationService } from '@/services/member-application.service';
 import { handleApiError } from '@/lib/axios';
-import { MemberApplication } from '@/types/member-application.types';
+import { MemberApplication, ApplicationStatus } from '@/types/member-application.types';
 import Image from 'next/image';
 
 export default function DashboardPage() {
@@ -50,6 +50,10 @@ export default function DashboardPage() {
     setShowForm(false);
     checkApplication();
     toast.success('Pendaftaran berhasil disubmit!');
+  };
+
+  const handleResubmit = () => {
+    setShowForm(true);
   };
 
   // Loading state
@@ -168,20 +172,70 @@ export default function DashboardPage() {
     );
   }
 
-  // If user has submitted application, show status
+  // If user has submitted application, show detailed status
   if (application) {
+    // If form is shown for resubmission
+    if (showForm) {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Ajukan Ulang Pendaftaran</h1>
+              <p className="text-muted-foreground">
+                Perbaiki data dan ajukan kembali pendaftaran anggota koperasi
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => setShowForm(false)}>
+              Batal
+            </Button>
+          </div>
+
+          <MemberApplicationForm onSuccess={handleFormSuccess} />
+        </div>
+      );
+    }
+
+    // Show application detail with resubmit button if rejected
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Status Pendaftaran</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Status Pendaftaran Anggota</h1>
             <p className="text-muted-foreground">
-              Pantau status pendaftaran anggota koperasi Anda
+              Pantau dan kelola pengajuan keanggotaan koperasi Anda
             </p>
           </div>
+
+          {/* Show resubmit button if rejected */}
+          {application.status === ApplicationStatus.REJECTED && (
+            <Button onClick={handleResubmit} className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Ajukan Ulang Pendaftaran
+            </Button>
+          )}
         </div>
 
-        <ApplicationStatusCard application={application} />
+        {/* Alert for rejected status */}
+        {application.status === ApplicationStatus.REJECTED && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className="font-semibold mb-1">Pengajuan Anda Ditolak</p>
+                  <p className="text-sm mb-3">
+                    Alasan: {application.rejectionReason || 'Tidak ada keterangan'}
+                  </p>
+                  <p className="text-sm">
+                    Silakan perbaiki data Anda dan ajukan ulang pendaftaran dengan mengklik tombol 
+                    <strong> "Ajukan Ulang Pendaftaran"</strong> di atas.
+                  </p>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <MyApplicationDetail />
       </div>
     );
   }
@@ -214,20 +268,30 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center justify-center space-y-8 text-center">
           {/* Logo */}
           <div className="flex items-center justify-center">
-            <Image
-              src="/assets/logo.svg"
-              alt="Kamorina Logo"
-              width={100}
-              height={100}
-              className="opacity-90"
-            />
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-12 w-12 text-primary"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
           </div>
 
           {/* Hero Text */}
           <div className="space-y-4 max-w-2xl">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
               Selamat Datang di{' '}
-              <div className="text-primary">Surya Niaga Kamorina</div>
+              <span className="text-primary">Koperasi Surya Niaga Kamorina</span>
             </h1>
             <p className="text-xl text-muted-foreground">
               Halo, <strong>{user?.name}</strong>!
@@ -240,11 +304,12 @@ export default function DashboardPage() {
           </div>
 
           {/* Info Alert */}
-          <Alert className="max-w-2xl flex justify-center">
+          <Alert className="max-w-2xl">
+            <FileText className="h-4 w-4" />
             <AlertDescription>
               <div className="space-y-2">
                 <p className="font-medium">Proses Pendaftaran:</p>
-                <ol className="list-decimal list-inside space-y-1 text-sm">
+                <ol className="list-decimal list-inside space-y-1 text-sm text-left">
                   <li>Lengkapi formulir pendaftaran dengan data yang valid</li>
                   <li>Menunggu verifikasi dari Divisi Simpan Pinjam</li>
                   <li>Menunggu persetujuan final dari Ketua Koperasi</li>

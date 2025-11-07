@@ -48,6 +48,15 @@ export class MemberApplicationController {
   }
 
   /**
+   * Get my application history
+   */
+  @Get('my-application/history')
+  @HttpCode(HttpStatus.OK)
+  async getMyApplicationHistory(@CurrentUser() user: any) {
+    return this.memberApplicationService.getApplicationHistory(user.userId);
+  }
+
+  /**
    * Get all applications (for approvers)
    */
   @Get()

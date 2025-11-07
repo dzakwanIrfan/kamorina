@@ -104,7 +104,8 @@ model User {
   roles                   UserRole[]
   memberApplications      MemberApplication[]
   approvals               ApplicationApproval[] @relation("approval_approver")
-  cooperativeSettings CooperativeSetting[]
+  applicationHistory      ApplicationHistory[]  @relation("history_processor")
+  cooperativeSettings     CooperativeSetting[]
 
   @@map("users")
 }
@@ -122,7 +123,12 @@ model MemberApplication {
   rejectedAt     DateTime?         @map("rejected_at")
   rejectionReason String?          @map("rejection_reason")
 
+  // Tracking submission
+  submissionCount Int              @default(1) @map("submission_count")
+  lastSubmittedAt DateTime?        @map("last_submitted_at")
+  
   approvals      ApplicationApproval[]
+  history        ApplicationHistory[]
 
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
@@ -146,6 +152,38 @@ model ApplicationApproval {
   createdAt      DateTime         @default(now()) @map("created_at")
 
   @@map("application_approvals")
+}
+
+model ApplicationHistory {
+  id             String            @id @default(uuid())
+  applicationId  String            @map("application_id")
+  application    MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  // Snapshot data saat submit
+  status         ApplicationStatus
+  nik            String?
+  npwp           String?
+  dateOfBirth    DateTime?         @db.Date
+  birthPlace     String?
+  permanentEmployeeDate DateTime?  @db.Date
+  installmentPlan Int?
+
+  // Metadata
+  submittedAt    DateTime          @map("submitted_at")
+  rejectedAt     DateTime?         @map("rejected_at")
+  approvedAt     DateTime?         @map("approved_at")
+  rejectionReason String?          @map("rejection_reason")
+  
+  // Who processed (rejected/approved)
+  processedBy    String?           @map("processed_by")
+  processedByUser User?            @relation("history_processor", fields: [processedBy], references: [id])
+  
+  // Submission number
+  submissionNumber Int             @default(1) @map("submission_number")
+
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@map("application_history")
 }
 
 model Department {

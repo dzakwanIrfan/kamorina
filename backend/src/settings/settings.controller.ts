@@ -32,7 +32,6 @@ export class SettingsController {
   }
 
   @Get(':key')
-  @Roles('ketua', 'divisi_simpan_pinjam')
   async findByKey(@Param('key') key: string) {
     return this.settingsService.findByKey(key);
   }
