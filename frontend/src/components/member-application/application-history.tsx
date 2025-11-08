@@ -35,9 +35,9 @@ export function ApplicationHistory() {
 
   const getStatusBadge = (status: ApplicationStatus) => {
     const badges = {
-      UNDER_REVIEW: <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Dalam Review</Badge>,
-      APPROVED: <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">Disetujui</Badge>,
-      REJECTED: <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">Ditolak</Badge>,
+      UNDER_REVIEW: <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-400 dark:border-yellow-800">Dalam Review</Badge>,
+      APPROVED: <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-800">Disetujui</Badge>,
+      REJECTED: <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-800">Ditolak</Badge>,
     };
     return badges[status];
   };
@@ -51,7 +51,7 @@ export function ApplicationHistory() {
     }).format(amount);
   };
 
-  const getInstallmentText = (plan: number | null): string => {
+  const getInstallmentText = (plan: number | null | undefined): string => {
     if (!plan) return '-';
     return plan === 1 ? 'Angsuran I - Lunas Langsung' : 'Angsuran II - Bayar 2x';
   };
@@ -76,6 +76,23 @@ export function ApplicationHistory() {
       </Alert>
     );
   }
+
+  // DEDUPLICATE: Remove duplicate histories based on submissionNumber and status
+  const uniqueHistory = historyData.history.reduce((acc, current) => {
+    const isDuplicate = acc.find(
+      item => item.submissionNumber === current.submissionNumber && 
+              item.status === current.status
+    );
+    if (!isDuplicate) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as typeof historyData.history);
+
+  // Sort by submission number descending (newest first)
+  const sortedHistory = [...uniqueHistory].sort((a, b) => 
+    b.submissionNumber - a.submissionNumber
+  );
 
   return (
     <div className="space-y-6">
@@ -114,24 +131,24 @@ export function ApplicationHistory() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {historyData.history.map((history, index) => (
-              <div key={history.id} className="relative">
+            {sortedHistory.map((history, index) => (
+              <div key={`${history.id}-${history.submissionNumber}`} className="relative">
                 {/* Timeline Line */}
-                {index !== historyData.history.length - 1 && (
+                {index !== sortedHistory.length - 1 && (
                   <div className="absolute left-4 top-12 bottom-0 w-0.5 bg-border" />
                 )}
 
                 <div className="flex gap-4">
                   {/* Icon */}
-                  <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-border bg-background">
+                  <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-border bg-background z-10">
                     {history.status === 'APPROVED' && (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                     )}
                     {history.status === 'REJECTED' && (
-                      <XCircle className="h-4 w-4 text-red-600" />
+                      <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                     )}
                     {history.status === 'UNDER_REVIEW' && (
-                      <Clock className="h-4 w-4 text-yellow-600" />
+                      <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
                     )}
                   </div>
 
@@ -195,13 +212,13 @@ export function ApplicationHistory() {
                       {/* Status Details */}
                       {history.status === 'REJECTED' && history.rejectionReason && (
                         <div className="mt-3">
-                          <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 border border-red-200">
-                            <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
+                          <div className="flex items-start gap-2 p-3 rounded-md bg-red-50 border border-red-200 dark:bg-red-950/30 dark:border-red-800">
+                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
                             <div className="flex-1">
-                              <p className="text-xs font-medium text-red-900 mb-1">
+                              <p className="text-xs font-medium text-red-900 dark:text-red-300 mb-1">
                                 Alasan Penolakan
                               </p>
-                              <p className="text-sm text-red-800">
+                              <p className="text-sm text-red-800 dark:text-red-400">
                                 {history.rejectionReason}
                               </p>
                             </div>
@@ -221,10 +238,10 @@ export function ApplicationHistory() {
 
                       {history.status === 'APPROVED' && (
                         <div className="mt-3">
-                          <div className="flex items-start gap-2 p-3 rounded-md bg-green-50 border border-green-200">
-                            <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+                          <div className="flex items-start gap-2 p-3 rounded-md bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800">
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
                             <div className="flex-1">
-                              <p className="text-sm font-medium text-green-900">
+                              <p className="text-sm font-medium text-green-900 dark:text-green-300">
                                 Pengajuan Disetujui
                               </p>
                             </div>

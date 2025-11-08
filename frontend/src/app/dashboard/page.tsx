@@ -306,10 +306,10 @@ export default function DashboardPage() {
           {/* Info Alert */}
           <Alert className="max-w-2xl">
             <FileText className="h-4 w-4" />
-            <AlertDescription>
+            <AlertDescription className='flex flex-col justify-center items-center'>
               <div className="space-y-2">
                 <p className="font-medium">Proses Pendaftaran:</p>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-left">
+                <ol className="list-decimal list-inside space-y-1 text-sm text-center">
                   <li>Lengkapi formulir pendaftaran dengan data yang valid</li>
                   <li>Menunggu verifikasi dari Divisi Simpan Pinjam</li>
                   <li>Menunggu persetujuan final dari Ketua Koperasi</li>
