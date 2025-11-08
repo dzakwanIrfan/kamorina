@@ -16,5 +16,6 @@ export interface EnvironmentVariables {
 
   // App
   FRONTEND_URL: string;
+  API_URL: string;
   APP_PORT: number;
 }

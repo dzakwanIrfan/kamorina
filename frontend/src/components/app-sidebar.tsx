@@ -37,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth.store';
@@ -238,6 +238,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src={user?.avatar || ''} alt={user?.name} className='object-cover object-center' />
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
                       {user ? getInitials(user.name) : 'U'}
                     </AvatarFallback>

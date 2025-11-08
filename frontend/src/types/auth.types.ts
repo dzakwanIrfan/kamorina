@@ -1,12 +1,32 @@
+export interface Employee {
+  id: string;
+  employeeNumber: string;
+  fullName: string;
+  employeeType: string;
+  isActive: boolean;
+  department?: {
+    id: string;
+    departmentName: string;
+  };
+  golongan?: {
+    id: string;
+    golonganName: string;
+  };
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   nik?: string;
+  avatar?: string; 
   emailVerified: boolean;
   emailVerifiedAt?: Date;
   memberVerified: boolean;
+  dateOfBirth?: Date; 
+  birthPlace?: string; 
   departmentId?: string;
+  employee?: Employee; 
   department?: {
     id: string;
     name: string;

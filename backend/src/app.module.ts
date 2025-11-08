@@ -9,10 +9,22 @@ import { MemberApplicationModule } from './member-application/member-application
 import { EmployeeModule } from './employees/employees.module';
 import { GolonganModule } from './golongan/golongan.module';
 import { SettingsModule } from './settings/settings.module';
+import { UploadModule } from './upload/upload.module';
+import { ProfileModule } from './profile/profile.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
     ConfigModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'uploads'), // Perbaiki path ini
+      serveRoot: '/uploads',
+      serveStaticOptions: {
+        index: false, // Disable directory index
+        fallthrough: true,
+      },
+    }),
     PrismaModule,
     MailModule,
     AuthModule,
@@ -22,6 +34,8 @@ import { SettingsModule } from './settings/settings.module';
     EmployeeModule,
     GolonganModule,
     SettingsModule,
+    UploadModule,
+    ProfileModule,
   ],
 })
 export class AppModule {}

@@ -14,23 +14,19 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('accessToken')?.value;
   const { pathname } = request.nextUrl;
 
-  // Always allow these routes (no auth required, no redirect if logged in)
   const alwaysPublicRoutes = [
     '/auth/reset-password',
     '/auth/verify-email',
   ];
 
-  // Public routes - redirect to dashboard if already logged in
   const publicAuthRoutes = [
     '/auth/login',
     '/auth/register',
     '/auth/forgot-password',
   ];
 
-  // Protected routes pattern
   const protectedRoutesPattern = /^\/dashboard/;
 
-  // Role-based routes
   const roleBasedRoutes: Record<string, string[]> = {
     '/dashboard/settings': ['ketua', 'divisi_simpan_pinjam'],
     '/dashboard/employees': ['ketua', 'divisi_simpan_pinjam'],
@@ -39,12 +35,15 @@ export function middleware(request: NextRequest) {
     '/dashboard/member-application': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
   };
 
-  // Check route type
   const isAlwaysPublic = alwaysPublicRoutes.some((route) => pathname.startsWith(route));
   const isPublicAuth = publicAuthRoutes.some((route) => pathname.startsWith(route));
   const isProtected = protectedRoutesPattern.test(pathname);
 
-  // Root path - redirect based on auth status
+  // Allow unauthorized page
+  if (pathname === '/dashboard/unauthorized') {
+    return NextResponse.next();
+  }
+
   if (pathname === '/') {
     if (token) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -52,12 +51,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  // Always public routes - allow everyone
   if (isAlwaysPublic) {
     return NextResponse.next();
   }
 
-  // Public auth routes - redirect to dashboard if logged in
   if (isPublicAuth) {
     if (token) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -65,13 +62,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protected routes - require authentication
   if (isProtected) {
     if (!token) {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
 
-    // Check role-based access
     const roleBasedRoute = Object.keys(roleBasedRoutes).find((route) =>
       pathname.startsWith(route)
     );
@@ -83,13 +78,10 @@ export function middleware(request: NextRequest) {
         const hasAccess = decoded.roles?.some((role) => requiredRoles.includes(role));
 
         if (!hasAccess) {
-          // Redirect to dashboard with error message
-          const url = new URL('/dashboard', request.url);
-          url.searchParams.set('error', 'unauthorized');
-          return NextResponse.redirect(url);
+          // Redirect to unauthorized page
+          return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url));
         }
       } catch (error) {
-        // Invalid token, redirect to login
         return NextResponse.redirect(new URL('/auth/login', request.url));
       }
     }
@@ -97,7 +89,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Default: allow
   return NextResponse.next();
 }
 

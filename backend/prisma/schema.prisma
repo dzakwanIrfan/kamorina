@@ -73,6 +73,7 @@ model User {
   nik                     String?   @unique // Nomor Induk Kependudukan angka 16 digit
   npwp                    String?   @unique // angka 16 digit
   password                String
+  avatar                  String?
 
   // Link ke master karyawan (WAJIB, unik per user)
   employeeId              String    @unique @map("employee_id")

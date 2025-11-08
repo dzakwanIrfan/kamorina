@@ -12,7 +12,6 @@ export const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('accessToken');
       if (token) {
@@ -26,26 +25,46 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor - HANYA handle token cleanup, JANGAN auto redirect
+// Response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorResponse>) => {
-    // Handle 401 Unauthorized - cleanup saja, biar component yang handle redirect
-    if (error.response?.status === 401) {
-      // Hanya cleanup token jika benar-benar unauthorized
-      // Tapi JANGAN redirect otomatis karena bisa jadi user salah password
-      
-      // Cek apakah ini error dari protected endpoint (ada token tapi invalid)
-      // Bukan dari login/register endpoint
+    // Network error
+    if (!error.response) {
+      console.error('Network Error:', error.message);
+      return Promise.reject({
+        message: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+        statusCode: 0,
+      });
+    }
+
+    const status = error.response.status;
+    
+    // Handle 401 Unauthorized
+    if (status === 401) {
       const isAuthEndpoint = error.config?.url?.includes('/auth/');
       
       if (!isAuthEndpoint && typeof window !== 'undefined') {
-        // Ini protected endpoint dengan token invalid - cleanup dan redirect
+        // Protected endpoint with invalid token
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
         window.location.href = '/auth/login';
       }
-      // Jika auth endpoint (login/register), biarkan error pass ke component
+    }
+    
+    // Handle 403 Forbidden
+    if (status === 403) {
+      console.error('Access Denied:', error.response.data.message);
+    }
+    
+    // Handle 404 Not Found
+    if (status === 404) {
+      console.error('Not Found:', error.response.data.message);
+    }
+    
+    // Handle 500 Server Error
+    if (status >= 500) {
+      console.error('Server Error:', error.response.data.message);
     }
     
     return Promise.reject(error);
