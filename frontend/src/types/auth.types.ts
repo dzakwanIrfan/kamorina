@@ -20,6 +20,7 @@ export interface User {
   email: string;
   nik?: string;
   avatar?: string; 
+  bankAccountNumber?: string;
   emailVerified: boolean;
   emailVerifiedAt?: Date;
   memberVerified: boolean;

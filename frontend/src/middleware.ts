@@ -34,13 +34,16 @@ export function middleware(request: NextRequest) {
     '/dashboard/departments': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
     '/dashboard/member-application': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
     '/dashboard/golongan': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
+    // ADD THESE - Loan routes
+    '/dashboard/loans/approvals': ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
+    '/dashboard/loans/disbursement': ['shopkeeper'],
+    '/dashboard/loans/authorization': ['ketua'],
   };
 
   const isAlwaysPublic = alwaysPublicRoutes.some((route) => pathname.startsWith(route));
   const isPublicAuth = publicAuthRoutes.some((route) => pathname.startsWith(route));
   const isProtected = protectedRoutesPattern.test(pathname);
 
-  // Allow unauthorized page
   if (pathname === '/dashboard/unauthorized') {
     return NextResponse.next();
   }
@@ -79,7 +82,6 @@ export function middleware(request: NextRequest) {
         const hasAccess = decoded.roles?.some((role) => requiredRoles.includes(role));
 
         if (!hasAccess) {
-          // Redirect to unauthorized page
           return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url));
         }
       } catch (error) {

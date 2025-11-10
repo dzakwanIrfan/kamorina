@@ -25,10 +25,10 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Verifikasi Email - Koperasi',
+      subject: 'Verifikasi Email - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${name},</h2>
-        <p>Terima kasih telah mendaftar di Koperasi Simpan Pinjam.</p>
+        <p>Terima kasih telah mendaftar di Koperasi Kamorina Surya Niaga.</p>
         <p>Silakan klik link berikut untuk memverifikasi email Anda:</p>
         <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Verifikasi Email
@@ -48,7 +48,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Reset Password - Koperasi',
+      subject: 'Reset Password - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${name},</h2>
         <p>Kami menerima permintaan untuk reset password akun Anda.</p>
@@ -80,7 +80,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Member Baru Menunggu Persetujuan - Koperasi',
+      subject: 'Pengajuan Member Baru Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${approverName},</h2>
         <p>Ada pengajuan member baru yang menunggu persetujuan Anda.</p>
@@ -114,10 +114,10 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Keanggotaan Ditolak - Koperasi',
+      subject: 'Pengajuan Keanggotaan Ditolak - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${applicantName},</h2>
-        <p>Kami informasikan bahwa pengajuan keanggotaan Anda di Koperasi Simpan Pinjam telah <strong>DITOLAK</strong>.</p>
+        <p>Kami informasikan bahwa pengajuan keanggotaan Anda di Koperasi Kamorina Surya Niaga telah <strong>DITOLAK</strong>.</p>
         <br>
         <h3>Alasan Penolakan:</h3>
         <p style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336;">
@@ -140,10 +140,10 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Selamat! Keanggotaan Anda Disetujui - Koperasi',
+      subject: 'Selamat! Keanggotaan Anda Disetujui - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Selamat ${memberName}! 🎉</h2>
-        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Simpan Pinjam telah <strong>DISETUJUI</strong>!</p>
+        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Kamorina Surya Niaga telah <strong>DISETUJUI</strong>!</p>
         <br>
         <p>Sekarang Anda dapat mengakses seluruh fitur member koperasi, termasuk:</p>
         <ul>
@@ -175,7 +175,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Member Baru Telah Disetujui - Koperasi',
+      subject: 'Member Baru Telah Disetujui - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${recipientName},</h2>
         <p>Kami informasikan bahwa ada member baru yang telah disetujui oleh Ketua Koperasi.</p>
@@ -211,7 +211,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Pinjaman Menunggu Persetujuan - Koperasi',
+      subject: 'Pengajuan Pinjaman Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${approverName},</h2>
         <p>Ada pengajuan pinjaman baru yang menunggu persetujuan Anda.</p>
@@ -249,7 +249,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Pinjaman Anda Direvisi - Koperasi',
+      subject: 'Pengajuan Pinjaman Anda Direvisi - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${applicantName},</h2>
         <p>Pengajuan pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah direvisi oleh Divisi Simpan Pinjam.</p>
@@ -283,7 +283,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Pinjaman Ditolak - Koperasi',
+      subject: 'Pengajuan Pinjaman Ditolak - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${applicantName},</h2>
         <p>Kami informasikan bahwa pengajuan pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DITOLAK</strong>.</p>
@@ -321,7 +321,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pinjaman Menunggu Pencairan - Koperasi',
+      subject: 'Pinjaman Menunggu Pencairan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${shopkeeperName},</h2>
         <p>Ada pinjaman yang sudah disetujui dan menunggu untuk dicairkan.</p>
@@ -366,7 +366,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pinjaman Menunggu Otorisasi - Koperasi',
+      subject: 'Pinjaman Menunggu Otorisasi - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${ketuaName},</h2>
         <p>Ada pinjaman yang sudah dicairkan oleh Shopkeeper dan menunggu otorisasi dari Anda.</p>
@@ -409,7 +409,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pinjaman Anda Telah Dicairkan - Koperasi',
+      subject: 'Pinjaman Anda Telah Dicairkan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Selamat ${applicantName}! 🎉</h2>
         <p>Pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DICAIRKAN</strong>!</p>
@@ -450,7 +450,7 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pinjaman Telah Selesai Dicairkan - Koperasi',
+      subject: 'Pinjaman Telah Selesai Dicairkan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Notifikasi Pencairan Pinjaman</h2>
         <p>Pinjaman berikut telah selesai diproses dan dicairkan:</p>

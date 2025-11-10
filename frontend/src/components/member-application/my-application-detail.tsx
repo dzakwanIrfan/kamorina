@@ -112,14 +112,14 @@ export function MyApplicationDetail() {
     <div className="space-y-6">
       {/* Refresh Session Card - Show when approved */}
       {showRefreshButton && (
-        <Card className="border-green-200 bg-green-50/50">
+        <Card>
           <CardContent>
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <CardTitle className="text-base font-semibold text-green-900">
+                <CardTitle className="text-base font-semibold">
                   Akses Member Telah Aktif
                 </CardTitle>
-                <CardDescription className="text-green-700">
+                <CardDescription>
                   Klik tombol di samping untuk memperbarui informasi akun Anda dan mengakses fitur member.
                 </CardDescription>
               </div>
@@ -199,9 +199,9 @@ export function MyApplicationDetail() {
               )}
 
               {application.status === 'APPROVED' && application.approvedAt && (
-                <Alert className="bg-green-50 border-green-200">
-                  <AlertDescription className="text-green-800">
-                    <p className="font-semibold mb-1">Selamat! Pengajuan Anda telah disetujui.</p>
+                <Alert className='bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800'>
+                  <AlertDescription>
+                    <p className="font-semibold mb-1 text-green-900 dark:text-green-300">Selamat! Pengajuan Anda telah disetujui.</p>
                     <p className="text-sm">
                       Disetujui pada: {format(new Date(application.approvedAt), 'dd MMMM yyyy, HH:mm', { locale: id })}
                     </p>

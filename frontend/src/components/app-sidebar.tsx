@@ -1,4 +1,3 @@
-// frontend/src/components/app-sidebar.tsx
 'use client';
 
 import * as React from 'react';
@@ -16,6 +15,9 @@ import {
   Shield,
   AlertCircle,
   AlignVerticalJustifyEnd,
+  DollarSign,
+  CheckCircle2,
+  Banknote,
 } from 'lucide-react';
 
 import {
@@ -49,7 +51,14 @@ const menuItems = [
     title: 'Dashboard',
     icon: LayoutDashboard,
     href: '/dashboard',
-    requiresMemberVerified: false, // Always accessible
+    requiresMemberVerified: false,
+  },
+  // ADD THIS - Loan menu for members
+  {
+    title: 'Pinjaman Saya',
+    icon: DollarSign,
+    href: '/dashboard/loans',
+    requiresMemberVerified: true,
   },
   {
     title: 'Anggota',
@@ -77,6 +86,27 @@ const managementItems = [
     icon: FileText,
     href: '/dashboard/member-application',
     roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Loan Approvals',
+    icon: CheckCircle2,
+    href: '/dashboard/loans/approvals',
+    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Loan Disbursement',
+    icon: Banknote,
+    href: '/dashboard/loans/disbursement',
+    roles: ['shopkeeper'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Loan Authorization',
+    icon: Shield,
+    href: '/dashboard/loans/authorization',
+    roles: ['ketua'],
     requiresMemberVerified: true,
   },
   {
@@ -180,7 +210,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               {menuItems.map((item) => {
                 const isActive = pathname === item.href;
                 const isDisabled = item.requiresMemberVerified && !isMemberVerified;
-                
+
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -245,7 +275,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user?.avatar || ''} alt={user?.name} className='object-cover object-center' />
+                    <AvatarImage src={user?.avatar || ''} alt={user?.name} className="object-cover object-center" />
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
                       {user ? getInitials(user.name) : 'U'}
                     </AvatarFallback>
