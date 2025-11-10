@@ -33,6 +33,7 @@ export function middleware(request: NextRequest) {
     '/dashboard/levels': ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
     '/dashboard/departments': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
     '/dashboard/member-application': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
+    '/dashboard/golongan': ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
   };
 
   const isAlwaysPublic = alwaysPublicRoutes.some((route) => pathname.startsWith(route));

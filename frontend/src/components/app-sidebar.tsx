@@ -15,6 +15,7 @@ import {
   Building2,
   Shield,
   AlertCircle,
+  AlignVerticalJustifyEnd,
 } from 'lucide-react';
 
 import {
@@ -38,7 +39,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -98,6 +98,13 @@ const managementItems = [
     icon: Shield,
     href: '/dashboard/levels',
     roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Golongan',
+    icon: AlignVerticalJustifyEnd,
+    href: '/dashboard/golongan',
+    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
     requiresMemberVerified: true,
   },
   {

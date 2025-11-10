@@ -52,10 +52,10 @@ async function main() {
 
   // Create Golongan
   const golongans = [
-    { golonganName: 'I', description: 'Golongan I - Staff Junior' },
-    { golonganName: 'II', description: 'Golongan II - Staff Senior' },
-    { golonganName: 'III', description: 'Golongan III - Supervisor' },
-    { golonganName: 'IV', description: 'Golongan IV - Manager' },
+    { golonganName: 'I', description: 'Golongan I' },
+    { golonganName: 'II', description: 'Golongan II' },
+    { golonganName: 'III', description: 'Golongan III' },
+    { golonganName: 'IV', description: 'Golongan IV' },
   ];
 
   for (const gol of golongans) {
