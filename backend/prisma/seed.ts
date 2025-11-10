@@ -117,6 +117,14 @@ async function main() {
       employeeType: EmployeeType.TETAP, 
       isActive: true 
     },
+    {
+      employeeNumber: '100000005',
+      fullName: 'Shopkeeper',
+      departmentId: financeDept.id,
+      golonganId: golongan1.id,
+      employeeType: EmployeeType.TETAP,
+      isActive: true
+    }
   ];
 
   // Test users - varying departments, golongan, and types
@@ -129,7 +137,7 @@ async function main() {
 
   const employeeTypes = [EmployeeType.TETAP, EmployeeType.KONTRAK];
 
-  for (let i = 5; i <= 23; i++) {
+  for (let i = 6; i <= 24; i++) {
     const randomType = employeeTypes[Math.floor(Math.random() * employeeTypes.length)];
     
     employees.push({
@@ -157,6 +165,7 @@ async function main() {
   const divisiSimpanPinjamLevel = await prisma.level.findFirst({ where: { levelName: 'divisi_simpan_pinjam' } });
   const pengawasLevel = await prisma.level.findFirst({ where: { levelName: 'pengawas' } });
   const payrollLevel = await prisma.level.findFirst({ where: { levelName: 'payroll' } });
+  const shopkeeperLevel = await prisma.level.findFirst({ where: { levelName: 'shopkeeper' } });
 
   if (!ketuaLevel || !divisiSimpanPinjamLevel || !pengawasLevel || !payrollLevel) {
     throw new Error('Required levels not found');
@@ -291,6 +300,36 @@ async function main() {
 
   console.log('✅ Payroll user created');
 
+  const shopkeeperEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000005' } });
+  const shopkeeperUser = await prisma.user.upsert({
+    where: { email: 'kostproduction1@gmail.com' },
+    update: {},
+    create: {
+      name: 'Shopkeeper',
+      email: 'kostproduction1@gmail.com',
+      nik: '1234567890123460',
+      npwp: '1234567890123460',
+      password: hashedPassword,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+      memberVerified: true,
+      memberVerifiedAt: new Date(),
+      employeeId: shopkeeperEmployee!.id,
+      dateOfBirth: new Date('1994-01-01'),
+      birthPlace: 'Yogyakarta',
+      permanentEmployeeDate: new Date('2020-05-01'),
+      installmentPlan: 1,
+    },
+  });
+
+  await prisma.userRole.upsert({
+    where: { userId_levelId: { userId: shopkeeperUser.id, levelId: shopkeeperLevel!.id } },
+    update: {},
+    create: { userId: shopkeeperUser.id, levelId: shopkeeperLevel!.id },
+  });
+
+  console.log('✅ Shopkeeper user created');
+
   // ==================== CREATE TEST USERS WITH APPLICATIONS ====================
 
   // Helper function to create user with application (NO departmentId param!)
@@ -370,11 +409,11 @@ async function main() {
 
   // ===== 1. UNDER_REVIEW - Waiting DSP Approval (5 users) =====
   const waitingDSPUsers = [
-    { empNum: '100000005', name: 'Budi Santoso', email: 'budi.santoso@test.com', nik: '3201011990010001', npwp: '1234567890123460' },
-    { empNum: '100000006', name: 'Siti Nurhaliza', email: 'siti.nur@test.com', nik: '3201011991020002', npwp: '1234567890123461' },
-    { empNum: '100000007', name: 'Ahmad Dahlan', email: 'ahmad.dahlan@test.com', nik: '3201011992030003', npwp: '1234567890123462' },
-    { empNum: '100000008', name: 'Rina Wijaya', email: 'rina.wijaya@test.com', nik: '3201011993040004', npwp: '1234567890123463' },
-    { empNum: '100000009', name: 'Joko Widodo', email: 'joko.widodo@test.com', nik: '3201011994050005', npwp: '1234567890123464' },
+    { empNum: '100000006', name: 'Budi Santoso', email: 'budi.santoso@test.com', nik: '3201011990010001', npwp: '1234567890123461' },
+    { empNum: '100000007', name: 'Siti Nurhaliza', email: 'siti.nur@test.com', nik: '3201011991020002', npwp: '1234567890123462' },
+    { empNum: '100000008', name: 'Ahmad Dahlan', email: 'ahmad.dahlan@test.com', nik: '3201011992030003', npwp: '1234567890123463' },
+    { empNum: '100000009', name: 'Rina Wijaya', email: 'rina.wijaya@test.com', nik: '3201011993040004', npwp: '1234567890123464' },
+    { empNum: '100000010', name: 'Joko Widodo', email: 'joko.widodo@test.com', nik: '3201011994050005', npwp: '1234567890123465' },
   ];
 
   for (const testUser of waitingDSPUsers) {
@@ -405,10 +444,10 @@ async function main() {
 
   // ===== 2. UNDER_REVIEW - Waiting Ketua Approval (4 users) =====
   const waitingKetuaUsers = [
-    { empNum: '100000010', name: 'Dewi Sartika', email: 'dewi.sartika@test.com', nik: '3201011995060006', npwp: '1234567890123465' },
-    { empNum: '100000011', name: 'Andi Setiawan', email: 'andi.setiawan@test.com', nik: '3201011996070007', npwp: '1234567890123466' },
-    { empNum: '100000012', name: 'Sri Mulyani', email: 'sri.mulyani@test.com', nik: '3201011997080008', npwp: '1234567890123467' },
-    { empNum: '100000013', name: 'Bambang Pamungkas', email: 'bambang.p@test.com', nik: '3201011998090009', npwp: '1234567890123468' },
+    { empNum: '100000011', name: 'Dewi Sartika', email: 'dewi.sartika@test.com', nik: '3201011995060006', npwp: '1234567890123466' },
+    { empNum: '100000012', name: 'Andi Setiawan', email: 'andi.setiawan@test.com', nik: '3201011996070007', npwp: '1234567890123467' },
+    { empNum: '100000013', name: 'Sri Mulyani', email: 'sri.mulyani@test.com', nik: '3201011997080008', npwp: '1234567890123468' },
+    { empNum: '100000014', name: 'Bambang Pamungkas', email: 'bambang.p@test.com', nik: '3201011998090009', npwp: '1234567890123469' },
   ];
 
   for (const testUser of waitingKetuaUsers) {
@@ -448,12 +487,12 @@ async function main() {
 
   // ===== 3. APPROVED (6 users) =====
   const approvedUsers = [
-    { empNum: '100000014', name: 'Mega Wati', email: 'mega.wati@test.com', nik: '3201011999100010', npwp: '1234567890123469' },
-    { empNum: '100000015', name: 'Hendra Gunawan', email: 'hendra.g@test.com', nik: '3201012000110011', npwp: '1234567890123470' },
-    { empNum: '100000016', name: 'Lestari Indah', email: 'lestari.indah@test.com', nik: '3201012001120012', npwp: '1234567890123471' },
-    { empNum: '100000017', name: 'Rizki Ramadhan', email: 'rizki.r@test.com', nik: '3201012002130013', npwp: '1234567890123472' },
-    { empNum: '100000018', name: 'Fitri Handayani', email: 'fitri.h@test.com', nik: '3201012003140014', npwp: '1234567890123473' },
-    { empNum: '100000019', name: 'Arief Budiman', email: 'arief.b@test.com', nik: '3201012004150015', npwp: '1234567890123474' },
+    { empNum: '100000015', name: 'Mega Wati', email: 'mega.wati@test.com', nik: '3201011999100010', npwp: '1234567890123470' },
+    { empNum: '100000016', name: 'Hendra Gunawan', email: 'hendra.g@test.com', nik: '3201012000110011', npwp: '1234567890123471' },
+    { empNum: '100000017', name: 'Lestari Indah', email: 'lestari.indah@test.com', nik: '3201012001120012', npwp: '1234567890123472' },
+    { empNum: '100000018', name: 'Rizki Ramadhan', email: 'rizki.r@test.com', nik: '3201012002130013', npwp: '1234567890123473' },
+    { empNum: '100000019', name: 'Fitri Handayani', email: 'fitri.h@test.com', nik: '3201012003140014', npwp: '1234567890123474' },
+    { empNum: '100000020', name: 'Arief Budiman', email: 'arief.b@test.com', nik: '3201012004150015', npwp: '1234567890123475' },
   ];
 
   for (const testUser of approvedUsers) {
@@ -501,9 +540,9 @@ async function main() {
 
   // ===== 4. REJECTED (3 users) =====
   const rejectedUsers = [
-    { empNum: '100000020', name: 'Doni Pratama', email: 'doni.p@test.com', nik: '3201012005160016', npwp: '1234567890123475', reason: 'Data tidak lengkap' },
-    { empNum: '100000021', name: 'Yuni Shara', email: 'yuni.shara@test.com', nik: '3201012006170017', npwp: '1234567890123476', reason: 'NIK tidak valid' },
-    { empNum: '100000022', name: 'Wawan Setiawan', email: 'wawan.s@test.com', nik: '3201012007180018', npwp: '1234567890123477', reason: 'Belum memenuhi syarat masa kerja' },
+    { empNum: '100000021', name: 'Doni Pratama', email: 'doni.p@test.com', nik: '3201012005160016', npwp: '1234567890123476', reason: 'Data tidak lengkap' },
+    { empNum: '100000022', name: 'Yuni Shara', email: 'yuni.shara@test.com', nik: '3201012006170017', npwp: '1234567890123477', reason: 'NIK tidak valid' },
+    { empNum: '100000023', name: 'Wawan Setiawan', email: 'wawan.s@test.com', nik: '3201012007180018', npwp: '1234567890123478', reason: 'Belum memenuhi syarat masa kerja' },
   ];
 
   for (const testUser of rejectedUsers) {

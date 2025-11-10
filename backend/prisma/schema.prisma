@@ -70,35 +70,30 @@ model User {
   id                      String    @id @default(uuid())
   name                    String
   email                   String    @unique
-  nik                     String?   @unique // Nomor Induk Kependudukan angka 16 digit
-  npwp                    String?   @unique // angka 16 digit
+  nik                     String?   @unique
+  npwp                    String?   @unique
   password                String
   avatar                  String?
+  bankAccountNumber       String?   @map("bank_account_number") 
 
-  // Link ke master karyawan (WAJIB, unik per user)
   employeeId              String    @unique @map("employee_id")
   employee                Employee  @relation(fields: [employeeId], references: [id])
 
-  // Email Verification
   emailVerified           Boolean   @default(false) @map("email_verified")
   emailVerifiedAt         DateTime? @map("email_verified_at")
   emailVerificationToken  String?   @unique @map("email_verification_token")
 
-  // Member Verification (flip true saat final approval)
   memberVerified          Boolean   @default(false) @map("member_verified")
   memberVerifiedAt        DateTime? @map("member_verified_at")
 
-  // Additional Info (diisi pada step pengajuan member)
   dateOfBirth             DateTime? @map("date_of_birth") @db.Date
   birthPlace              String?   @map("birth_place")
   permanentEmployeeDate   DateTime? @map("permanent_employee_date") @db.Date
-  installmentPlan         Int?      @map("installment_plan") // 1 or 2
+  installmentPlan         Int?      @map("installment_plan")
 
-  // Password Reset
   passwordResetToken      String?   @unique @map("password_reset_token")
   passwordResetExpires    DateTime? @map("password_reset_expires")
 
-  // Timestamps
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
 
@@ -107,6 +102,12 @@ model User {
   approvals               ApplicationApproval[] @relation("approval_approver")
   applicationHistory      ApplicationHistory[]  @relation("history_processor")
   cooperativeSettings     CooperativeSetting[]
+  
+  loanApplications        LoanApplication[]
+  loanApprovals          LoanApproval[] @relation("loan_approver")
+  loanHistory            LoanHistory[] @relation("loan_processor")
+  loanDisbursements      LoanDisbursement[] @relation("disbursement_processor")
+  loanAuthorizations     LoanAuthorization[] @relation("authorization_processor")
 
   @@map("users")
 }
@@ -259,4 +260,153 @@ model CooperativeSetting {
   updatedAt   DateTime        @updatedAt @map("updated_at")
   
   @@map("cooperative_settings")
+}
+
+enum LoanStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW_DSP
+  UNDER_REVIEW_KETUA
+  UNDER_REVIEW_PENGAWAS
+  APPROVED_PENDING_DISBURSEMENT
+  DISBURSEMENT_IN_PROGRESS
+  PENDING_AUTHORIZATION
+  DISBURSED
+  REJECTED
+  CANCELLED
+}
+
+enum LoanApprovalStep {
+  DIVISI_SIMPAN_PINJAM
+  KETUA
+  PENGAWAS
+}
+
+enum LoanApprovalDecision {
+  APPROVED
+  REJECTED
+  REVISED
+}
+
+model LoanApplication {
+  id                    String        @id @default(uuid())
+  loanNumber            String        @unique @map("loan_number")
+  
+  userId                String        @map("user_id")
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bankAccountNumber     String        @map("bank_account_number")
+  loanAmount            Decimal       @map("loan_amount") @db.Decimal(15, 2)
+  loanTenor             Int           @map("loan_tenor")
+  loanPurpose           String        @map("loan_purpose") @db.Text
+  attachments           Json?
+  
+  interestRate          Decimal?      @map("interest_rate") @db.Decimal(5, 2)
+  monthlyInstallment    Decimal?      @map("monthly_installment") @db.Decimal(15, 2)
+  totalRepayment        Decimal?      @map("total_repayment") @db.Decimal(15, 2)
+  
+  status                LoanStatus    @default(DRAFT)
+  currentStep           LoanApprovalStep? @map("current_step")
+  
+  submittedAt           DateTime?     @map("submitted_at")
+  approvedAt            DateTime?     @map("approved_at")
+  rejectedAt            DateTime?     @map("rejected_at")
+  disbursedAt           DateTime?     @map("disbursed_at")
+  rejectionReason       String?       @map("rejection_reason") @db.Text
+  
+  revisionCount         Int           @default(0) @map("revision_count")
+  lastRevisedAt         DateTime?     @map("last_revised_at")
+  lastRevisedBy         String?       @map("last_revised_by")
+  revisionNotes         String?       @map("revision_notes") @db.Text
+  
+  approvals             LoanApproval[]
+  history               LoanHistory[]
+  disbursement          LoanDisbursement?
+  authorization         LoanAuthorization?
+  
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  @@map("loan_applications")
+}
+
+model LoanApproval {
+  id                String              @id @default(uuid())
+  loanApplicationId String              @map("loan_application_id")
+  loanApplication   LoanApplication     @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  step              LoanApprovalStep
+  decision          LoanApprovalDecision?
+  decidedAt         DateTime?           @map("decided_at")
+  approverId        String?             @map("approver_id")
+  approver          User?               @relation("loan_approver", fields: [approverId], references: [id])
+  notes             String?             @db.Text
+  
+  revisedData       Json?               @map("revised_data")
+  
+  createdAt         DateTime            @default(now()) @map("created_at")
+  
+  @@map("loan_approvals")
+}
+
+model LoanHistory {
+  id                String              @id @default(uuid())
+  loanApplicationId String              @map("loan_application_id")
+  loanApplication   LoanApplication     @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  status            LoanStatus
+  loanAmount        Decimal             @db.Decimal(15, 2)
+  loanTenor         Int
+  loanPurpose       String              @db.Text
+  bankAccountNumber String
+  interestRate      Decimal?            @db.Decimal(5, 2)
+  monthlyInstallment Decimal?           @db.Decimal(15, 2)
+  
+  action            String
+  actionAt          DateTime            @map("action_at")
+  actionBy          String?             @map("action_by")
+  actionByUser      User?               @relation("loan_processor", fields: [actionBy], references: [id])
+  notes             String?             @db.Text
+  
+  createdAt         DateTime            @default(now()) @map("created_at")
+  
+  @@map("loan_history")
+}
+
+model LoanDisbursement {
+  id                String           @id @default(uuid())
+  loanApplicationId String           @unique @map("loan_application_id")
+  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  processedBy       String           @map("processed_by")
+  processedByUser   User             @relation("disbursement_processor", fields: [processedBy], references: [id])
+  
+  disbursementDate  DateTime         @map("disbursement_date")
+  disbursementTime  String           @map("disbursement_time")
+  
+  notes             String?          @db.Text
+  
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  
+  @@map("loan_disbursements")
+}
+
+model LoanAuthorization {
+  id                String           @id @default(uuid())
+  loanApplicationId String           @unique @map("loan_application_id")
+  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  authorizedBy      String           @map("authorized_by")
+  authorizedByUser  User             @relation("authorization_processor", fields: [authorizedBy], references: [id])
+  
+  authorizationDate DateTime         @map("authorization_date")
+  authorizationTime String           @map("authorization_time")
+  
+  notes             String?          @db.Text
+  
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  
+  @@map("loan_authorizations")
 }

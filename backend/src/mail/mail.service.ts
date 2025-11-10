@@ -192,4 +192,278 @@ export class MailService {
       `,
     });
   }
+
+  async sendLoanApprovalRequest(
+    email: string,
+    approverName: string,
+    applicantName: string,
+    loanNumber: string,
+    loanAmount: number,
+    roleName: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans`;
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(loanAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Pinjaman Menunggu Persetujuan - Koperasi',
+      html: `
+        <h2>Halo ${approverName},</h2>
+        <p>Ada pengajuan pinjaman baru yang menunggu persetujuan Anda.</p>
+        <br>
+        <h3>Detail Pinjaman:</h3>
+        <ul>
+          <li><strong>Nomor Pinjaman:</strong> ${loanNumber}</li>
+          <li><strong>Pemohon:</strong> ${applicantName}</li>
+          <li><strong>Jumlah Pinjaman:</strong> ${formattedAmount}</li>
+        </ul>
+        <br>
+        <p>Sebagai <strong>${roleName.toUpperCase().replace('_', ' ')}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Lihat Pengajuan
+        </a>
+        <p>Atau akses dashboard di: ${dashboardUrl}</p>
+        <br>
+        <p>Terima kasih atas perhatian Anda.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send loan revised notification to applicant
+   */
+  async sendLoanRevised(
+    email: string,
+    applicantName: string,
+    loanNumber: string,
+    revisionNotes: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans/my-loans`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Pinjaman Anda Direvisi - Koperasi',
+      html: `
+        <h2>Halo ${applicantName},</h2>
+        <p>Pengajuan pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah direvisi oleh Divisi Simpan Pinjam.</p>
+        <br>
+        <h3>Catatan Revisi:</h3>
+        <p style="background-color: #fff3e0; padding: 15px; border-left: 4px solid #ff9800;">
+          ${revisionNotes}
+        </p>
+        <br>
+        <p>Silakan cek detail pinjaman Anda di dashboard.</p>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Lihat Detail Pinjaman
+        </a>
+        <p>Atau akses: ${dashboardUrl}</p>
+        <br>
+        <p>Terima kasih.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send loan rejected notification to applicant
+   */
+  async sendLoanRejected(
+    email: string,
+    applicantName: string,
+    loanNumber: string,
+    reason: string,
+  ) {
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Pinjaman Ditolak - Koperasi',
+      html: `
+        <h2>Halo ${applicantName},</h2>
+        <p>Kami informasikan bahwa pengajuan pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DITOLAK</strong>.</p>
+        <br>
+        <h3>Alasan Penolakan:</h3>
+        <p style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336;">
+          ${reason}
+        </p>
+        <br>
+        <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam.</p>
+        <br>
+        <p>Terima kasih atas pengertian Anda.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send disbursement request to shopkeeper
+   */
+  async sendLoanDisbursementRequest(
+    email: string,
+    shopkeeperName: string,
+    applicantName: string,
+    loanNumber: string,
+    loanAmount: number,
+    bankAccountNumber: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans/disbursement`;
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(loanAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pinjaman Menunggu Pencairan - Koperasi',
+      html: `
+        <h2>Halo ${shopkeeperName},</h2>
+        <p>Ada pinjaman yang sudah disetujui dan menunggu untuk dicairkan.</p>
+        <br>
+        <h3>Detail Pinjaman:</h3>
+        <ul>
+          <li><strong>Nomor Pinjaman:</strong> ${loanNumber}</li>
+          <li><strong>Pemohon:</strong> ${applicantName}</li>
+          <li><strong>Jumlah:</strong> ${formattedAmount}</li>
+          <li><strong>No. Rekening:</strong> ${bankAccountNumber}</li>
+        </ul>
+        <br>
+        <p>Silakan proses transaksi BCA dan konfirmasi pencairan di sistem.</p>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Proses Pencairan
+        </a>
+        <p>Atau akses: ${dashboardUrl}</p>
+        <br>
+        <p>Terima kasih.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send authorization request to ketua
+   */
+  async sendLoanAuthorizationRequest(
+    email: string,
+    ketuaName: string,
+    applicantName: string,
+    loanNumber: string,
+    loanAmount: number,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans/authorization`;
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(loanAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pinjaman Menunggu Otorisasi - Koperasi',
+      html: `
+        <h2>Halo ${ketuaName},</h2>
+        <p>Ada pinjaman yang sudah dicairkan oleh Shopkeeper dan menunggu otorisasi dari Anda.</p>
+        <br>
+        <h3>Detail Pinjaman:</h3>
+        <ul>
+          <li><strong>Nomor Pinjaman:</strong> ${loanNumber}</li>
+          <li><strong>Pemohon:</strong> ${applicantName}</li>
+          <li><strong>Jumlah:</strong> ${formattedAmount}</li>
+        </ul>
+        <br>
+        <p>Silakan lakukan otorisasi transaksi BCA dan konfirmasi di sistem.</p>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #f44336; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Proses Otorisasi
+        </a>
+        <p>Atau akses: ${dashboardUrl}</p>
+        <br>
+        <p>Terima kasih.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send loan disbursed notification to applicant
+   */
+  async sendLoanDisbursed(
+    email: string,
+    applicantName: string,
+    loanNumber: string,
+    loanAmount: number,
+    bankAccountNumber: string,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(loanAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pinjaman Anda Telah Dicairkan - Koperasi',
+      html: `
+        <h2>Selamat ${applicantName}! 🎉</h2>
+        <p>Pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DICAIRKAN</strong>!</p>
+        <br>
+        <h3>Detail Pencairan:</h3>
+        <ul>
+          <li><strong>Jumlah:</strong> ${formattedAmount}</li>
+          <li><strong>No. Rekening:</strong> ${bankAccountNumber}</li>
+        </ul>
+        <br>
+        <p>Dana akan segera masuk ke rekening Anda. Harap periksa mutasi rekening Anda.</p>
+        <br>
+        <p style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3;">
+          <strong>Catatan Penting:</strong><br>
+          Jangan lupa untuk membayar cicilan sesuai jadwal yang telah ditentukan.
+        </p>
+        <br>
+        <p>Terima kasih telah menggunakan layanan koperasi.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send loan completion notification to all relevant parties
+   */
+  async sendLoanCompletionNotification(
+    email: string,
+    applicantName: string,
+    loanNumber: string,
+    loanAmount: number,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(loanAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pinjaman Telah Selesai Dicairkan - Koperasi',
+      html: `
+        <h2>Notifikasi Pencairan Pinjaman</h2>
+        <p>Pinjaman berikut telah selesai diproses dan dicairkan:</p>
+        <br>
+        <h3>Detail:</h3>
+        <ul>
+          <li><strong>Nomor Pinjaman:</strong> ${loanNumber}</li>
+          <li><strong>Pemohon:</strong> ${applicantName}</li>
+          <li><strong>Jumlah:</strong> ${formattedAmount}</li>
+        </ul>
+        <br>
+        <p>Terima kasih atas kontribusi Anda dalam proses ini.</p>
+      `,
+    });
+  }
 }
