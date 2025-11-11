@@ -53,29 +53,10 @@ const menuItems = [
     href: '/dashboard',
     requiresMemberVerified: false,
   },
-  // ADD THIS - Loan menu for members
   {
     title: 'Pinjaman Saya',
     icon: DollarSign,
     href: '/dashboard/loans',
-    requiresMemberVerified: true,
-  },
-  {
-    title: 'Anggota',
-    icon: Users,
-    href: '/dashboard/members',
-    requiresMemberVerified: true,
-  },
-  {
-    title: 'Produk',
-    icon: Package,
-    href: '/dashboard/products',
-    requiresMemberVerified: true,
-  },
-  {
-    title: 'Transaksi',
-    icon: FileText,
-    href: '/dashboard/transactions',
     requiresMemberVerified: true,
   },
 ];
@@ -171,6 +152,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   };
 
   const isMemberVerified = user?.memberVerified || false;
+  const isAdmin = user?.roles.find((role) => role === 'ketua' || role === 'divisi_simpan_pinjam' || role === 'pengawas' || role === 'bendahara' || role === 'payroll' || role === 'shopkeeper');
 
   return (
     <Sidebar {...props}>
@@ -239,7 +221,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {/* Only show management menu if member is verified */}
-        {isMemberVerified && (
+        {isMemberVerified && isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
             <SidebarGroupContent>
