@@ -8,6 +8,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateGolonganDto } from './dto/create-golongan.dto';
 import { UpdateGolonganDto } from './dto/update-golongan.dto';
 import { QueryGolonganDto } from './dto/query-golongan.dto';
+import { CreateLoanLimitDto } from './dto/create-loan-limit.dto';
+import { UpdateLoanLimitDto } from './dto/update-loan-limit.dto';
+import { BulkUpdateLoanLimitsDto } from './dto/bulk-update-loan-limits.dto';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 import { Golongan, Prisma } from '@prisma/client';
 
@@ -18,7 +21,6 @@ export class GolonganService {
   async create(createGolonganDto: CreateGolonganDto): Promise<Golongan> {
     const { golonganName, description } = createGolonganDto;
 
-    // Check if golongan already exists
     const existing = await this.prisma.golongan.findUnique({
       where: { golonganName },
     });
@@ -49,10 +51,8 @@ export class GolonganService {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
     const where: Prisma.GolonganWhereInput = {};
 
-    // Search filter (multiple fields)
     if (search) {
       where.OR = [
         {
@@ -70,12 +70,10 @@ export class GolonganService {
       ];
     }
 
-    // Exact golongan name filter
     if (golonganName) {
       where.golonganName = golonganName;
     }
 
-    // Date range filter
     if (startDate || endDate) {
       where.createdAt = {};
       if (startDate) {
@@ -88,13 +86,11 @@ export class GolonganService {
       }
     }
 
-    // Build orderBy clause
     const orderBy: Prisma.GolonganOrderByWithRelationInput = {};
     if (sortBy) {
       orderBy[sortBy] = sortOrder;
     }
 
-    // Execute query with pagination
     const [data, total] = await Promise.all([
       this.prisma.golongan.findMany({
         where,
@@ -103,7 +99,10 @@ export class GolonganService {
         orderBy,
         include: {
           _count: {
-            select: { employees: true },
+            select: { 
+              employees: true,
+              loanLimits: true,
+            },
           },
         },
       }),
@@ -137,10 +136,18 @@ export class GolonganService {
             employeeType: true,
             isActive: true,
           },
-          take: 10, // Limit employee list
+          take: 10,
+        },
+        loanLimits: {
+          orderBy: {
+            minYearsOfService: 'asc',
+          },
         },
         _count: {
-          select: { employees: true },
+          select: { 
+            employees: true,
+            loanLimits: true,
+          },
         },
       },
     });
@@ -153,12 +160,10 @@ export class GolonganService {
   }
 
   async update(id: string, updateGolonganDto: UpdateGolonganDto): Promise<Golongan> {
-    // Check if golongan exists
     await this.findOne(id);
 
     const { golonganName, description } = updateGolonganDto;
 
-    // Check if new name already exists (exclude current golongan)
     if (golonganName) {
       const existing = await this.prisma.golongan.findFirst({
         where: {
@@ -184,7 +189,6 @@ export class GolonganService {
   async remove(id: string): Promise<{ message: string }> {
     const golongan = await this.findOne(id);
 
-    // Check if golongan has employees
     const employeeCount = await this.prisma.employee.count({
       where: { golonganId: id },
     });
@@ -202,5 +206,178 @@ export class GolonganService {
     return {
       message: `Golongan "${golongan.golonganName}" berhasil dihapus`,
     };
+  }
+
+  // LOAN LIMIT MATRIX
+
+  async createLoanLimit(createLoanLimitDto: CreateLoanLimitDto) {
+    const { golonganId, minYearsOfService, maxYearsOfService, maxLoanAmount } = createLoanLimitDto;
+
+    // Verify golongan exists
+    await this.findOne(golonganId);
+
+    // Check for overlapping ranges
+    const existing = await this.prisma.loanLimitMatrix.findFirst({
+      where: {
+        golonganId,
+        minYearsOfService,
+        maxYearsOfService,
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('Plafond untuk range masa kerja ini sudah ada');
+    }
+
+    return this.prisma.loanLimitMatrix.create({
+      data: {
+        golonganId,
+        minYearsOfService,
+        maxYearsOfService,
+        maxLoanAmount,
+      },
+    });
+  }
+
+  async bulkUpdateLoanLimits(bulkUpdateDto: BulkUpdateLoanLimitsDto) {
+    const { golonganId, limits } = bulkUpdateDto;
+
+    // Verify golongan exists
+    await this.findOne(golonganId);
+
+    // Delete existing limits for this golongan
+    await this.prisma.loanLimitMatrix.deleteMany({
+      where: { golonganId },
+    });
+
+    // Create new limits
+    const createPromises = limits.map((limit) => {
+      const minYears = parseInt(limit.minYearsOfService);
+      const maxYears = limit.maxYearsOfService === 'null' ? null : parseInt(limit.maxYearsOfService);
+      const amount = parseFloat(limit.maxLoanAmount);
+
+      return this.prisma.loanLimitMatrix.create({
+        data: {
+          golonganId,
+          minYearsOfService: minYears,
+          maxYearsOfService: maxYears,
+          maxLoanAmount: amount,
+        },
+      });
+    });
+
+    await Promise.all(createPromises);
+
+    return {
+      message: 'Plafond pinjaman berhasil diupdate',
+      count: limits.length,
+    };
+  }
+
+  async getLoanLimitsByGolongan(golonganId: string) {
+    await this.findOne(golonganId);
+
+    return this.prisma.loanLimitMatrix.findMany({
+      where: { golonganId },
+      orderBy: {
+        minYearsOfService: 'asc',
+      },
+      include: {
+        golongan: {
+          select: {
+            id: true,
+            golonganName: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateLoanLimit(id: string, updateLoanLimitDto: UpdateLoanLimitDto) {
+    const existing = await this.prisma.loanLimitMatrix.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Plafond tidak ditemukan');
+    }
+
+    return this.prisma.loanLimitMatrix.update({
+      where: { id },
+      data: updateLoanLimitDto,
+    });
+  }
+
+  async deleteLoanLimit(id: string) {
+    const existing = await this.prisma.loanLimitMatrix.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Plafond tidak ditemukan');
+    }
+
+    await this.prisma.loanLimitMatrix.delete({
+      where: { id },
+    });
+
+    return {
+      message: 'Plafond berhasil dihapus',
+    };
+  }
+
+  // Helper method to get max loan amount for a user
+  async getMaxLoanAmountForUser(userId: string): Promise<number> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        employee: {
+          include: {
+            golongan: true,
+          },
+        },
+      },
+    });
+
+    if (!user || !user.employee) {
+      throw new NotFoundException('User atau employee tidak ditemukan');
+    }
+
+    if (!user.permanentEmployeeDate) {
+      throw new BadRequestException('Tanggal karyawan tetap belum diset');
+    }
+
+    // Calculate years of service
+    const now = new Date();
+    const permanentDate = new Date(user.permanentEmployeeDate);
+    const yearsDiff = now.getFullYear() - permanentDate.getFullYear();
+    const monthsDiff = now.getMonth() - permanentDate.getMonth();
+    const yearsOfService = monthsDiff < 0 ? yearsDiff - 1 : yearsDiff;
+
+    // Find matching loan limit
+    const loanLimit = await this.prisma.loanLimitMatrix.findFirst({
+      where: {
+        golonganId: user.employee.golonganId,
+        minYearsOfService: {
+          lte: yearsOfService,
+        },
+        OR: [
+          {
+            maxYearsOfService: {
+              gte: yearsOfService,
+            },
+          },
+          {
+            maxYearsOfService: null, // For > 9 years
+          },
+        ],
+      },
+    });
+
+    if (!loanLimit) {
+      return 0;
+    }
+
+    return Number(loanLimit.maxLoanAmount);
   }
 }

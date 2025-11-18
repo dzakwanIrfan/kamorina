@@ -46,7 +46,7 @@ enum EmployeeType {
 
 model Employee {
   id              String        @id @default(uuid())
-  employeeNumber  String        @unique @map("employee_number") // Nomor Induk Karyawan 9 digit
+  employeeNumber  String        @unique @map("employee_number")
   fullName        String        @map("full_name")
   
   departmentId    String        @map("department_id")
@@ -125,7 +125,6 @@ model MemberApplication {
   rejectedAt     DateTime?         @map("rejected_at")
   rejectionReason String?          @map("rejection_reason")
 
-  // Tracking submission
   submissionCount Int              @default(1) @map("submission_count")
   lastSubmittedAt DateTime?        @map("last_submitted_at")
   
@@ -147,7 +146,7 @@ model ApplicationApproval {
   step           ApprovalStep     @map("step")
   decision       ApprovalDecision? @map("decision")
   decidedAt      DateTime?        @map("decided_at")
-  approverId     String?          @map("approver_id") // user id dari approver
+  approverId     String?          @map("approver_id")
   approver       User?            @relation("approval_approver", fields: [approverId], references: [id])
   notes          String?
 
@@ -161,7 +160,6 @@ model ApplicationHistory {
   applicationId  String            @map("application_id")
   application    MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-  // Snapshot data saat submit
   status         ApplicationStatus
   nik            String?
   npwp           String?
@@ -170,17 +168,14 @@ model ApplicationHistory {
   permanentEmployeeDate DateTime?  @db.Date
   installmentPlan Int?
 
-  // Metadata
   submittedAt    DateTime          @map("submitted_at")
   rejectedAt     DateTime?         @map("rejected_at")
   approvedAt     DateTime?         @map("approved_at")
   rejectionReason String?          @map("rejection_reason")
   
-  // Who processed (rejected/approved)
   processedBy    String?           @map("processed_by")
   processedByUser User?            @relation("history_processor", fields: [processedBy], references: [id])
   
-  // Submission number
   submissionNumber Int             @default(1) @map("submission_number")
 
   createdAt      DateTime          @default(now()) @map("created_at")
@@ -200,15 +195,37 @@ model Department {
 }
 
 model Golongan {
-  id          String     @id @default(uuid())
-  golonganName String    @unique @map("golongan_name")
-  description String?
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  id              String              @id @default(uuid())
+  golonganName    String              @unique @map("golongan_name")
+  description     String?
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
 
-  employees   Employee[]
+  employees       Employee[]
+  loanLimits      LoanLimitMatrix[]
 
   @@map("golongan")
+}
+
+// Matrik Plafond Pinjaman
+model LoanLimitMatrix {
+  id                    String    @id @default(uuid())
+  
+  golonganId            String    @map("golongan_id")
+  golongan              Golongan  @relation(fields: [golonganId], references: [id], onDelete: Cascade)
+  
+  // Masa kerja dalam tahun
+  minYearsOfService     Int       @map("min_years_of_service") // 0, 1, 2, 3, 6
+  maxYearsOfService     Int?      @map("max_years_of_service") // 1, 2, 3, 6, 9, null (untuk > 9)
+  
+  // Plafond maksimal pinjaman
+  maxLoanAmount         Decimal   @map("max_loan_amount") @db.Decimal(15, 2)
+  
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@unique([golonganId, minYearsOfService, maxYearsOfService])
+  @@map("loan_limit_matrix")
 }
 
 model Level {
@@ -237,22 +254,20 @@ model UserRole {
 
 model CooperativeSetting {
   id          String          @id @default(uuid())
-  key         String          @unique // e.g., "initial_membership_fee"
-  value       String          // Stored as string, parsed based on type
+  key         String          @unique
+  value       String
   type        SettingType     @default(STRING)
   category    SettingCategory
   
-  label       String          // Label untuk UI: "Iuran Awal Anggota"
-  description String?         // Deskripsi untuk helper text
-  unit        String?         // e.g., "Rupiah", "Persen", "Hari"
+  label       String
+  description String?
+  unit        String?
   
   isEditable  Boolean         @default(true) @map("is_editable")
   isActive    Boolean         @default(true) @map("is_active")
   
-  // Validation rules (stored as JSON)
-  validation  Json?           // { "min": 0, "max": 100, "required": true }
+  validation  Json?
   
-  // Audit trail
   updatedBy   String?         @map("updated_by")
   updatedByUser User?         @relation(fields: [updatedBy], references: [id])
   

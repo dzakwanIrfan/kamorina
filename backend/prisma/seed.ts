@@ -746,6 +746,82 @@ async function main() {
 
   console.log('✅ Cooperative settings created');
 
+  console.log('🌱 Seeding Loan Limit Matrix...');
+
+  // Get all golongan
+  const golongans2 = await prisma.golongan.findMany();
+
+  if (golongans.length === 0) {
+    console.log('⚠️  No golongan found. Please create golongan first.');
+    return;
+  }
+
+  // Define loan limits based on the image
+  const loanLimitsData = {
+    'I': [
+      { min: 0, max: 1, amount: 0 },
+      { min: 1, max: 2, amount: 4800000 },
+      { min: 2, max: 3, amount: 8400000 },
+      { min: 3, max: 6, amount: 12000000 },
+      { min: 6, max: 9, amount: 18000000 },
+      { min: 9, max: null, amount: 24000000 },
+    ],
+    'II': [
+      { min: 0, max: 1, amount: 0 },
+      { min: 1, max: 2, amount: 4800000 },
+      { min: 2, max: 3, amount: 8400000 },
+      { min: 3, max: 6, amount: 12000000 },
+      { min: 6, max: 9, amount: 18000000 },
+      { min: 9, max: null, amount: 24000000 },
+    ],
+    'III': [
+      { min: 0, max: 1, amount: 0 },
+      { min: 1, max: 2, amount: 7200000 },
+      { min: 2, max: 3, amount: 10800000 },
+      { min: 3, max: 6, amount: 14400000 },
+      { min: 6, max: 9, amount: 24000000 },
+      { min: 9, max: null, amount: 31200000 },
+    ],
+    'IV': [
+      { min: 0, max: 1, amount: 0 },
+      { min: 1, max: 2, amount: 12000000 },
+      { min: 2, max: 3, amount: 18000000 },
+      { min: 3, max: 6, amount: 24000000 },
+      { min: 6, max: 9, amount: 36000000 },
+      { min: 9, max: null, amount: 42000000 },
+    ],
+  };
+
+  for (const golongan of golongans2) {
+    const limitsForGolongan = loanLimitsData[golongan.golonganName as keyof typeof loanLimitsData];
+    
+    if (!limitsForGolongan) {
+      console.log(`⏭️  Skipping ${golongan.golonganName} (no predefined limits)`);
+      continue;
+    }
+
+    // Delete existing limits
+    await prisma.loanLimitMatrix.deleteMany({
+      where: { golonganId: golongan.id },
+    });
+
+    // Create new limits
+    for (const limit of limitsForGolongan) {
+      await prisma.loanLimitMatrix.create({
+        data: {
+          golonganId: golongan.id,
+          minYearsOfService: limit.min,
+          maxYearsOfService: limit.max,
+          maxLoanAmount: limit.amount,
+        },
+      });
+    }
+
+    console.log(`✅ Created ${limitsForGolongan.length} loan limits for ${golongan.golonganName}`);
+  }
+
+  console.log('✨ Loan Limit Matrix seeding completed!');
+
   console.log('');
   console.log('🎉 Seeding completed successfully!');
 }

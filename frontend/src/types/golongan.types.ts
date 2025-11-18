@@ -6,8 +6,10 @@ export interface Golongan {
   updatedAt: string;
   _count?: {
     employees: number;
+    loanLimits: number;
   };
   employees?: Employee[];
+  loanLimits?: LoanLimitMatrix[];
 }
 
 export interface Employee {
@@ -16,6 +18,20 @@ export interface Employee {
   fullName: string;
   employeeType: 'TETAP' | 'KONTRAK';
   isActive: boolean;
+}
+
+export interface LoanLimitMatrix {
+  id: string;
+  golonganId: string;
+  minYearsOfService: number;
+  maxYearsOfService: number | null;
+  maxLoanAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  golongan?: {
+    id: string;
+    golonganName: string;
+  };
 }
 
 export interface CreateGolonganRequest {
@@ -49,4 +65,26 @@ export interface ExportGolonganParams {
   golonganName?: string;
   startDate?: string;
   endDate?: string;
+}
+
+export interface CreateLoanLimitRequest {
+  golonganId: string;
+  minYearsOfService: number;
+  maxYearsOfService?: number | null;
+  maxLoanAmount: number;
+}
+
+export interface UpdateLoanLimitRequest {
+  minYearsOfService?: number;
+  maxYearsOfService?: number | null;
+  maxLoanAmount?: number;
+}
+
+export interface BulkUpdateLoanLimitsRequest {
+  golonganId: string;
+  limits: {
+    minYearsOfService: string;
+    maxYearsOfService: string;
+    maxLoanAmount: string;
+  }[];
 }

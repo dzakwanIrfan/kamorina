@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { GolonganFormDialog } from '@/components/golongan/golongan-form-dialog';
 import { GolonganDetailDialog } from '@/components/golongan/golongan-detail-dialog';
 import { DeleteGolonganDialog } from '@/components/golongan/delete-golongan-dialog';
+import { LoanLimitMatrixDialog } from '@/components/golongan/loan-limit-matrix-dialog';
 import { golonganService } from '@/services/golongan.service';
 import {
   Golongan,
@@ -45,6 +46,7 @@ export default function GolonganPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isLoanLimitOpen, setIsLoanLimitOpen] = useState(false);
   const [selectedGolongan, setSelectedGolongan] = useState<Golongan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -142,6 +144,18 @@ export default function GolonganPage() {
     setIsDeleteOpen(true);
   };
 
+  const handleLoanLimit = async (golongan: Golongan) => {
+    try {
+      const detailData = await golonganService.getById(golongan.id);
+      setSelectedGolongan(detailData);
+      setIsLoanLimitOpen(true);
+    } catch (error) {
+      toast.error('Gagal memuat detail', {
+        description: handleApiError(error),
+      });
+    }
+  };
+
   const handleFormSubmit = async (
     formData: CreateGolonganRequest | UpdateGolonganRequest
   ) => {
@@ -221,6 +235,31 @@ export default function GolonganPage() {
       },
     },
     {
+      id: 'loanLimits',
+      header: 'Plafond Pinjaman',
+      cell: ({ row }) => {
+        const count = row.original._count?.loanLimits || 0;
+        return (
+          <div className="flex items-center gap-2">
+            <Badge variant={count > 0 ? 'default' : 'outline'} className="gap-1">
+              <DollarSign className="h-3 w-3" />
+              {count > 0 ? `${count} range` : 'Belum diatur'}
+            </Badge>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleLoanLimit(row.original)}
+                className="h-7"
+              >
+                Atur
+              </Button>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       accessorKey: 'createdAt',
       header: 'Dibuat',
       cell: ({ row }) => {
@@ -254,7 +293,7 @@ export default function GolonganPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Golongan</h1>
           <p className="text-muted-foreground">
-            Kelola golongan/klasifikasi karyawan
+            Kelola golongan/klasifikasi karyawan dan plafond pinjaman
           </p>
         </div>
         {canCreate && (
@@ -303,6 +342,13 @@ export default function GolonganPage() {
         golongan={selectedGolongan}
         onConfirm={handleDeleteConfirm}
         isLoading={isSubmitting}
+      />
+
+      <LoanLimitMatrixDialog
+        open={isLoanLimitOpen}
+        onOpenChange={setIsLoanLimitOpen}
+        golongan={selectedGolongan}
+        onSuccess={fetchData}
       />
     </div>
   );
