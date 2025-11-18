@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/axios';
 import {
   LoanApplication,
+  LoanEligibility,
   CreateLoanDto,
   UpdateLoanDto,
   ReviseLoanDto,
@@ -15,6 +16,12 @@ import {
 import { PaginatedResponse } from '@/types/pagination.types';
 
 export const loanService = {
+  // Check eligibility
+  async checkEligibility(): Promise<LoanEligibility> {
+    const response = await apiClient.get('/loans/eligibility');
+    return response.data;
+  },
+
   // Member endpoints
   async createDraft(data: CreateLoanDto): Promise<{ message: string; loan: LoanApplication }> {
     const response = await apiClient.post('/loans/draft', data);

@@ -19,7 +19,8 @@ import { QueryLoanDto } from './dto/query-loan.dto';
 import { 
   LoanStatus, 
   LoanApprovalStep, 
-  LoanApprovalDecision 
+  LoanApprovalDecision,
+  EmployeeType,
 } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
@@ -56,15 +57,181 @@ export class LoanService {
   }
 
   /**
-   * Check if user is verified member
+   * Calculate years of service from employee number
+   * Format: K159000111 = Karyawan Tetap 2015 bulan 9
    */
-  private async checkMemberStatus(userId: string) {
+  private calculateYearsOfService(employeeNumber: string): number {
+    if (!employeeNumber || employeeNumber.length < 4) {
+      return 0;
+    }
+
+    // Extract year and month from first 3 digits (159 = 2015 bulan 9)
+    const yearMonth = employeeNumber.substring(1, 4); // "159"
+    const year = parseInt('20' + yearMonth.substring(0, 2)); // "15" -> 2015
+    const month = parseInt(yearMonth.substring(2, 3)); // "9"
+
+    // Create hire date
+    const hireDate = new Date(year, month - 1, 1); // Month is 0-indexed
+    const now = new Date();
+
+    // Calculate difference in years
+    let years = now.getFullYear() - hireDate.getFullYear();
+    const monthDiff = now.getMonth() - hireDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < hireDate.getDate())) {
+      years--;
+    }
+
+    return Math.max(0, years);
+  }
+
+  /**
+   * Get loan eligibility for user (including min/max loan amount)
+   */
+  async getLoanEligibility(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: {
+        employee: {
+          include: {
+            golongan: {
+              include: {
+                loanLimits: {
+                  orderBy: {
+                    minYearsOfService: 'asc',
+                  },
+                },
+              },
+            },
+            department: true,
+          },
+        },
+      },
     });
 
     if (!user) {
       throw new NotFoundException('User tidak ditemukan');
+    }
+
+    if (!user.employee) {
+      throw new ForbiddenException('Data karyawan tidak ditemukan');
+    }
+
+    // Check if employee is TETAP
+    if (user.employee.employeeType !== EmployeeType.TETAP) {
+      throw new ForbiddenException('Hanya karyawan tetap yang dapat mengajukan pinjaman');
+    }
+
+    // Check if member is verified
+    if (!user.memberVerified) {
+      throw new ForbiddenException('Anda harus menjadi anggota terverifikasi untuk mengajukan pinjaman');
+    }
+
+    // Calculate years of service from employee number
+    const yearsOfService = this.calculateYearsOfService(user.employee.employeeNumber);
+
+    // Find matching loan limit based on golongan and years of service
+    const loanLimit = await this.prisma.loanLimitMatrix.findFirst({
+      where: {
+        golonganId: user.employee.golonganId,
+        minYearsOfService: {
+          lte: yearsOfService,
+        },
+        OR: [
+          {
+            maxYearsOfService: {
+              gte: yearsOfService,
+            },
+          },
+          {
+            maxYearsOfService: null, // For > 9 years
+          },
+        ],
+      },
+      include: {
+        golongan: true,
+      },
+    });
+
+    if (!loanLimit) {
+      throw new BadRequestException(
+        `Tidak ada plafond pinjaman yang tersedia untuk golongan ${user.employee.golongan.golonganName} dengan masa kerja ${yearsOfService} tahun. Silakan hubungi admin.`,
+      );
+    }
+
+    const maxLoanAmount = Number(loanLimit.maxLoanAmount);
+
+    if (maxLoanAmount === 0) {
+      throw new BadRequestException(
+        `Plafond pinjaman untuk masa kerja ${yearsOfService} tahun adalah 0. Anda belum memenuhi syarat untuk mengajukan pinjaman.`,
+      );
+    }
+
+    // Get min loan from settings
+    const minLoanSetting = await this.prisma.cooperativeSetting.findUnique({
+      where: { key: 'min_loan_amount' },
+    });
+    const minLoanAmount = minLoanSetting ? parseFloat(minLoanSetting.value) : 1000000;
+
+    // Get max tenor from settings
+    const maxTenorSetting = await this.prisma.cooperativeSetting.findUnique({
+      where: { key: 'max_loan_tenor' },
+    });
+    const maxTenor = maxTenorSetting ? parseInt(maxTenorSetting.value) : 36;
+
+    // Get interest rate
+    const interestSetting = await this.prisma.cooperativeSetting.findUnique({
+      where: { key: 'loan_interest_rate' },
+    });
+    const interestRate = interestSetting ? parseFloat(interestSetting.value) : 12;
+
+    return {
+      isEligible: true,
+      employee: {
+        employeeNumber: user.employee.employeeNumber,
+        fullName: user.employee.fullName,
+        employeeType: user.employee.employeeType,
+        department: user.employee.department.departmentName,
+        golongan: user.employee.golongan.golonganName,
+      },
+      yearsOfService,
+      loanLimit: {
+        minLoanAmount,
+        maxLoanAmount,
+        maxTenor,
+        interestRate,
+      },
+      loanLimitMatrix: {
+        id: loanLimit.id,
+        minYearsOfService: loanLimit.minYearsOfService,
+        maxYearsOfService: loanLimit.maxYearsOfService,
+        maxLoanAmount: loanLimit.maxLoanAmount,
+      },
+    };
+  }
+
+  /**
+   * Check if user is verified member and eligible for loan
+   */
+  private async checkMemberStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        employee: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User tidak ditemukan');
+    }
+
+    if (!user.employee) {
+      throw new ForbiddenException('Data karyawan tidak ditemukan');
+    }
+
+    // Check employee type
+    if (user.employee.employeeType !== EmployeeType.TETAP) {
+      throw new ForbiddenException('Hanya karyawan tetap yang dapat mengajukan pinjaman');
     }
 
     if (!user.memberVerified) {
@@ -75,25 +242,36 @@ export class LoanService {
   }
 
   /**
-   * Validate loan amount and tenor against settings
+   * Validate loan amount against user's loan limit matrix
    */
-  private async validateLoanParameters(amount: number, tenor: number) {
-    const [minLoan, maxLoan, maxTenor] = await Promise.all([
-      this.prisma.cooperativeSetting.findUnique({ where: { key: 'min_loan_amount' } }),
-      this.prisma.cooperativeSetting.findUnique({ where: { key: 'max_loan_amount' } }),
-      this.prisma.cooperativeSetting.findUnique({ where: { key: 'max_loan_tenor' } }),
-    ]);
+  private async validateLoanAmount(userId: string, amount: number) {
+    const eligibility = await this.getLoanEligibility(userId);
 
-    const minAmount = minLoan ? parseFloat(minLoan.value) : 1000000;
-    const maxAmount = maxLoan ? parseFloat(maxLoan.value) : 50000000;
-    const maxTenorValue = maxTenor ? parseInt(maxTenor.value) : 36;
-
-    if (amount < minAmount) {
-      throw new BadRequestException(`Jumlah pinjaman minimal Rp ${minAmount.toLocaleString('id-ID')}`);
+    if (amount < eligibility.loanLimit.minLoanAmount) {
+      throw new BadRequestException(
+        `Jumlah pinjaman minimal Rp ${eligibility.loanLimit.minLoanAmount.toLocaleString('id-ID')}`,
+      );
     }
 
-    if (amount > maxAmount) {
-      throw new BadRequestException(`Jumlah pinjaman maksimal Rp ${maxAmount.toLocaleString('id-ID')}`);
+    if (amount > eligibility.loanLimit.maxLoanAmount) {
+      throw new BadRequestException(
+        `Jumlah pinjaman maksimal untuk golongan ${eligibility.employee.golongan} dengan masa kerja ${eligibility.yearsOfService} tahun adalah Rp ${eligibility.loanLimit.maxLoanAmount.toLocaleString('id-ID')}`,
+      );
+    }
+  }
+
+  /**
+   * Validate loan tenor against settings
+   */
+  private async validateLoanTenor(tenor: number) {
+    const maxTenor = await this.prisma.cooperativeSetting.findUnique({
+      where: { key: 'max_loan_tenor' },
+    });
+
+    const maxTenorValue = maxTenor ? parseInt(maxTenor.value) : 36;
+
+    if (tenor < 1) {
+      throw new BadRequestException('Tenor minimal 1 bulan');
     }
 
     if (tenor > maxTenorValue) {
@@ -129,7 +307,12 @@ export class LoanService {
    */
   async createDraft(userId: string, dto: CreateLoanDto) {
     const user = await this.checkMemberStatus(userId);
-    await this.validateLoanParameters(dto.loanAmount, dto.loanTenor);
+    
+    // Validate loan amount against user's limit
+    await this.validateLoanAmount(userId, dto.loanAmount);
+    
+    // Validate tenor
+    await this.validateLoanTenor(dto.loanTenor);
 
     const bankAccount = dto.bankAccountNumber || user.bankAccountNumber;
     if (!bankAccount) {
@@ -199,10 +382,12 @@ export class LoanService {
       throw new BadRequestException('Hanya draft yang bisa diupdate');
     }
 
-    if (dto.loanAmount || dto.loanTenor) {
-      const amount = dto.loanAmount || loan.loanAmount.toNumber();
-      const tenor = dto.loanTenor || loan.loanTenor;
-      await this.validateLoanParameters(amount, tenor);
+    if (dto.loanAmount) {
+      await this.validateLoanAmount(userId, dto.loanAmount);
+    }
+
+    if (dto.loanTenor) {
+      await this.validateLoanTenor(dto.loanTenor);
     }
 
     const updateData: any = {};
@@ -266,6 +451,10 @@ export class LoanService {
     if (loan.status !== LoanStatus.DRAFT) {
       throw new BadRequestException('Hanya draft yang bisa disubmit');
     }
+
+    // Re-validate before submit
+    await this.validateLoanAmount(userId, loan.loanAmount.toNumber());
+    await this.validateLoanTenor(loan.loanTenor);
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Update loan status
@@ -618,7 +807,8 @@ export class LoanService {
       throw new BadRequestException('Hanya bisa direvisi pada step DSP');
     }
 
-    await this.validateLoanParameters(dto.loanAmount, dto.loanTenor);
+    await this.validateLoanAmount(loan.userId, dto.loanAmount);
+    await this.validateLoanTenor(dto.loanTenor);
     const calculations = await this.calculateLoanDetails(dto.loanAmount, dto.loanTenor);
 
     const result = await this.prisma.$transaction(async (tx) => {

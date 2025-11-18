@@ -24,6 +24,30 @@ export enum LoanApprovalDecision {
   REVISED = 'REVISED',
 }
 
+export interface LoanEligibility {
+  isEligible: boolean;
+  employee: {
+    employeeNumber: string;
+    fullName: string;
+    employeeType: 'TETAP' | 'KONTRAK';
+    department: string;
+    golongan: string;
+  };
+  yearsOfService: number;
+  loanLimit: {
+    minLoanAmount: number;
+    maxLoanAmount: number;
+    maxTenor: number;
+    interestRate: number;
+  };
+  loanLimitMatrix: {
+    id: string;
+    minYearsOfService: number;
+    maxYearsOfService: number | null;
+    maxLoanAmount: number;
+  };
+}
+
 export interface LoanApproval {
   id: string;
   step: LoanApprovalStep;

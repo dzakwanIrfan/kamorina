@@ -5,7 +5,20 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Upload, X, FileText, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
+import { 
+  Loader2, 
+  Upload, 
+  X, 
+  FileText, 
+  DollarSign, 
+  Calendar as CalendarIcon,
+  AlertCircle,
+  CheckCircle2,
+  Info,
+  Briefcase,
+  Building2,
+  Award
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +33,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { loanService } from '@/services/loan.service';
-import { settingsService } from '@/services/setting.service';
 import { handleApiError } from '@/lib/axios';
 import { useAuthStore } from '@/store/auth.store';
+import { LoanEligibility } from '@/types/loan.types';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_FILE_TYPES = [
@@ -47,15 +61,11 @@ interface LoanFormProps {
 export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isLoadingEligibility, setIsLoadingEligibility] = useState(true);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  
-  // Settings
-  const [minLoanAmount, setMinLoanAmount] = useState(1000000);
-  const [maxLoanAmount, setMaxLoanAmount] = useState(50000000);
-  const [maxLoanTenor, setMaxLoanTenor] = useState(36);
-  const [loanInterestRate, setLoanInterestRate] = useState(12);
+  const [eligibility, setEligibility] = useState<LoanEligibility | null>(null);
+  const [eligibilityError, setEligibilityError] = useState<string | null>(null);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('id-ID', {
@@ -66,28 +76,67 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     }).format(amount);
   };
 
-  const formSchema = z.object({
-    bankAccountNumber: z
-        .string()
-        .min(10, 'Nomor rekening minimal 10 digit')
-        .max(20, 'Nomor rekening maksimal 20 digit')
-        .regex(/^[0-9]+$/, 'Nomor rekening harus berupa angka')
-        .optional()
-        .or(z.literal('')),
-    loanAmount: z
-        .number()
-        .positive('Jumlah pinjaman harus lebih dari 0')
-        .min(minLoanAmount, `Jumlah pinjaman minimal ${formatCurrency(minLoanAmount)}`)
-        .max(maxLoanAmount, `Jumlah pinjaman maksimal ${formatCurrency(maxLoanAmount)}`),
-    loanTenor: z
-        .number()
-        .positive('Tenor harus lebih dari 0')
-        .min(1, 'Minimal tenor 1 bulan')
-        .max(maxLoanTenor, `Maksimal tenor ${maxLoanTenor} bulan`),
-    loanPurpose: z.string().min(10, 'Alasan peminjaman minimal 10 karakter'),
-    });
+  // Fetch eligibility first
+  useEffect(() => {
+    checkEligibility();
+  }, []);
 
-    type FormData = z.infer<typeof formSchema>;
+  const checkEligibility = async () => {
+    try {
+      setIsLoadingEligibility(true);
+      setEligibilityError(null);
+      const result = await loanService.checkEligibility();
+      setEligibility(result);
+    } catch (error) {
+      const errorMsg = handleApiError(error);
+      setEligibilityError(errorMsg);
+      toast.error('Gagal memeriksa kelayakan', {
+        description: errorMsg,
+      });
+    } finally {
+      setIsLoadingEligibility(false);
+    }
+  };
+
+  // Dynamic schema based on eligibility
+  const formSchema = eligibility
+    ? z.object({
+        bankAccountNumber: z
+          .string()
+          .min(10, 'Nomor rekening minimal 10 digit')
+          .max(20, 'Nomor rekening maksimal 20 digit')
+          .regex(/^[0-9]+$/, 'Nomor rekening harus berupa angka')
+          .optional()
+          .or(z.literal('')),
+        loanAmount: z
+          .number()
+          .positive('Jumlah pinjaman harus lebih dari 0')
+          .min(
+            eligibility.loanLimit.minLoanAmount,
+            `Jumlah pinjaman minimal ${formatCurrency(eligibility.loanLimit.minLoanAmount)}`
+          )
+          .max(
+            eligibility.loanLimit.maxLoanAmount,
+            `Jumlah pinjaman maksimal ${formatCurrency(eligibility.loanLimit.maxLoanAmount)}`
+          ),
+        loanTenor: z
+          .number()
+          .positive('Tenor harus lebih dari 0')
+          .min(1, 'Minimal tenor 1 bulan')
+          .max(
+            eligibility.loanLimit.maxTenor,
+            `Maksimal tenor ${eligibility.loanLimit.maxTenor} bulan`
+          ),
+        loanPurpose: z.string().min(10, 'Alasan peminjaman minimal 10 karakter'),
+      })
+    : z.object({
+        bankAccountNumber: z.string().optional(),
+        loanAmount: z.number(),
+        loanTenor: z.number(),
+        loanPurpose: z.string(),
+      });
+
+  type FormData = z.infer<typeof formSchema>;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -99,33 +148,10 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     },
   });
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setIsLoadingSettings(true);
-      const [minLoan, maxLoan, maxTenor, interestRate] = await Promise.all([
-        settingsService.getByKey('min_loan_amount').catch(() => ({ value: '1000000' })),
-        settingsService.getByKey('max_loan_amount').catch(() => ({ value: '50000000' })),
-        settingsService.getByKey('max_loan_tenor').catch(() => ({ value: '36' })),
-        settingsService.getByKey('loan_interest_rate').catch(() => ({ value: '12' })),
-      ]);
-
-      setMinLoanAmount(parseFloat(minLoan.value));
-      setMaxLoanAmount(parseFloat(maxLoan.value));
-      setMaxLoanTenor(parseInt(maxTenor.value));
-      setLoanInterestRate(parseFloat(interestRate.value));
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
-    } finally {
-      setIsLoadingSettings(false);
-    }
-  };
-
   const calculateLoan = (amount: number, tenor: number) => {
-    const annualRate = loanInterestRate / 100;
+    if (!eligibility) return null;
+
+    const annualRate = eligibility.loanLimit.interestRate / 100;
     const totalInterest = amount * annualRate * (tenor / 12);
     const totalRepayment = amount + totalInterest;
     const monthlyInstallment = totalRepayment / tenor;
@@ -143,7 +169,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    
+
     if (files.length === 0) return;
     if (uploadedFiles.length + files.length > 5) {
       toast.error('Maksimal 5 file');
@@ -191,7 +217,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
 
       // Create draft first
       const draftResult = await loanService.createDraft(payload);
-      
+
       // Then submit
       await loanService.submitLoan(draftResult.loan.id);
 
@@ -204,11 +230,51 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     }
   };
 
-  if (isLoadingSettings) {
+  // Loading state
+  if (isLoadingEligibility) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center py-12">
+        <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Memeriksa kelayakan pinjaman...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Error state - Not eligible
+  if (eligibilityError || !eligibility) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            Tidak Memenuhi Syarat
+          </CardTitle>
+          <CardDescription>Anda belum memenuhi syarat untuk mengajukan pinjaman</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Alasan:</AlertTitle>
+            <AlertDescription>{eligibilityError}</AlertDescription>
+          </Alert>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold">Syarat Pengajuan Pinjaman:</p>
+            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+              <li>Status karyawan harus <strong>TETAP</strong></li>
+              <li>Sudah menjadi anggota koperasi yang terverifikasi</li>
+              <li>Memiliki masa kerja sesuai dengan plafond yang ditentukan</li>
+              <li>Golongan sudah diatur plafond pinjamannya</li>
+            </ul>
+          </div>
+
+          {onCancel && (
+            <Button variant="outline" onClick={onCancel} className="w-full">
+              Kembali
+            </Button>
+          )}
         </CardContent>
       </Card>
     );
@@ -219,10 +285,85 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       <CardHeader>
         <CardTitle>Formulir Pengajuan Pinjaman</CardTitle>
         <CardDescription>
-          Lengkapi data berikut untuk mengajukan pinjaman. Pengajuan Anda akan diverifikasi melalui 3 tahap approval.
+          Lengkapi data berikut untuk mengajukan pinjaman. Pengajuan Anda akan diverifikasi melalui
+          3 tahap approval.
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Eligibility Info Card */}
+        <Alert className="mb-6 border-green-200 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-900">Anda Memenuhi Syarat!</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">NIK</p>
+                    <p className="text-green-700">{eligibility.employee.employeeNumber}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">Departemen</p>
+                    <p className="text-green-700">{eligibility.employee.department}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">Golongan</p>
+                    <p className="text-green-700">{eligibility.employee.golongan}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-900">Masa Kerja</p>
+                    <p className="text-green-700">{eligibility.yearsOfService} tahun</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="bg-white rounded-lg p-3 border border-green-200">
+                <p className="text-xs font-semibold text-green-900 mb-2">
+                  Plafond Pinjaman Anda:
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="text-muted-foreground">Minimum</p>
+                    <p className="font-bold text-green-700">
+                      {formatCurrency(eligibility.loanLimit.minLoanAmount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Maksimum</p>
+                    <p className="font-bold text-green-700">
+                      {formatCurrency(eligibility.loanLimit.maxLoanAmount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Tenor Maks</p>
+                    <p className="font-bold text-green-700">
+                      {eligibility.loanLimit.maxTenor} bulan
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Bunga</p>
+                    <p className="font-bold text-green-700">
+                      {eligibility.loanLimit.interestRate}% / tahun
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Bank Account Number */}
@@ -271,7 +412,8 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Minimal {formatCurrency(minLoanAmount)} - Maksimal {formatCurrency(maxLoanAmount)}
+                    Minimal {formatCurrency(eligibility.loanLimit.minLoanAmount)} - Maksimal{' '}
+                    {formatCurrency(eligibility.loanLimit.maxLoanAmount)}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -299,7 +441,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Dalam bulan. Maksimal {maxLoanTenor} bulan
+                    Dalam bulan. Maksimal {eligibility.loanLimit.maxTenor} bulan
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -315,8 +457,12 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                     <p className="font-semibold">Perhitungan Pinjaman:</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Bunga ({loanInterestRate}% per tahun)</p>
-                        <p className="font-bold text-primary">{formatCurrency(calculations.totalInterest)}</p>
+                        <p className="text-muted-foreground">
+                          Bunga ({eligibility.loanLimit.interestRate}% per tahun)
+                        </p>
+                        <p className="font-bold text-primary">
+                          {formatCurrency(calculations.totalInterest)}
+                        </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Total Pembayaran</p>
@@ -324,7 +470,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                       </div>
                       <div>
                         <p className="text-muted-foreground">Cicilan per Bulan</p>
-                        <p className="font-bold text-orange-600">{formatCurrency(calculations.monthlyInstallment)}</p>
+                        <p className="font-bold text-orange-600">
+                          {formatCurrency(calculations.monthlyInstallment)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -347,9 +495,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                       disabled={isSubmitting}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Minimal 10 karakter. Jelaskan secara detail.
-                  </FormDescription>
+                  <FormDescription>Minimal 10 karakter. Jelaskan secara detail.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -383,9 +529,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                     </>
                   )}
                 </Button>
-                <Badge variant="secondary">
-                  {uploadedFiles.length} / 5 file
-                </Badge>
+                <Badge variant="secondary">{uploadedFiles.length} / 5 file</Badge>
               </div>
 
               <input
@@ -425,6 +569,19 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
               )}
             </div>
 
+            {/* Additional Info */}
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Informasi Penting</AlertTitle>
+              <AlertDescription className="text-xs space-y-1">
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Plafond pinjaman disesuaikan dengan golongan dan masa kerja Anda</li>
+                  <li>Pengajuan akan melalui 3 tahap approval: DSP → Ketua → Pengawas</li>
+                  <li>Pencairan dilakukan setelah semua approval selesai</li>
+                </ul>
+              </AlertDescription>
+            </Alert>
+
             {/* Actions */}
             <div className="flex gap-3">
               {onCancel && (
@@ -438,11 +595,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                   Batal
                 </Button>
               )}
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1"
-              >
+              <Button type="submit" disabled={isSubmitting} className="flex-1">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Pengajuan
               </Button>

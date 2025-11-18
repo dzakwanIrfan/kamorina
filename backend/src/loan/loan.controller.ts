@@ -40,8 +40,17 @@ export class LoanController {
   ) {}
 
   /**
-   * ============ MEMBER ENDPOINTS ============
+   * MEMBER ENDPOINTS
    */
+
+  /**
+   * Check loan eligibility
+   */
+  @Get('eligibility')
+  @HttpCode(HttpStatus.OK)
+  async checkEligibility(@CurrentUser() user: any) {
+    return this.loanService.getLoanEligibility(user.userId);
+  }
 
   /**
    * Create draft loan application
@@ -162,7 +171,7 @@ export class LoanController {
   }
 
   /**
-   * ============ APPROVER ENDPOINTS (DSP, Ketua, Pengawas) ============
+   * APPROVER ENDPOINTS (DSP, Ketua, Pengawas)
    */
 
   /**
@@ -241,7 +250,7 @@ export class LoanController {
   }
 
   /**
-   * ============ SHOPKEEPER ENDPOINTS ============
+   * SHOPKEEPER ENDPOINTS
    */
 
   /**
@@ -288,7 +297,7 @@ export class LoanController {
   }
 
   /**
-   * ============ KETUA ENDPOINTS (Authorization) ============
+   * KETUA ENDPOINTS (Authorization)
    */
 
   /**
@@ -320,7 +329,7 @@ export class LoanController {
     return this.loanService.processAuthorization(id, user.userId, dto);
   }
 
-  /**
+      /**
    * Bulk process authorization
    */
   @Post('authorization/bulk')
