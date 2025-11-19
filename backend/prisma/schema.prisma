@@ -109,6 +109,10 @@ model User {
   loanDisbursements      LoanDisbursement[] @relation("disbursement_processor")
   loanAuthorizations     LoanAuthorization[] @relation("authorization_processor")
 
+  depositApplications     DepositApplication[]
+  depositApprovals        DepositApproval[] @relation("deposit_approver")
+  depositHistory          DepositHistory[] @relation("deposit_processor")
+
   @@map("users")
 }
 
@@ -424,4 +428,121 @@ model LoanAuthorization {
   updatedAt         DateTime         @updatedAt @map("updated_at")
   
   @@map("loan_authorizations")
+}
+
+enum DepositAmount {
+  AMOUNT_200K
+  AMOUNT_500K
+  AMOUNT_1000K
+  AMOUNT_1500K
+  AMOUNT_2000K
+  AMOUNT_3000K
+}
+
+enum DepositTenor {
+  TENOR_3
+  TENOR_6
+  TENOR_9
+  TENOR_12
+}
+
+enum DepositStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW_DSP
+  UNDER_REVIEW_KETUA
+  APPROVED
+  ACTIVE
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum DepositApprovalStep {
+  DIVISI_SIMPAN_PINJAM
+  KETUA
+}
+
+enum DepositApprovalDecision {
+  APPROVED
+  REJECTED
+}
+
+model DepositApplication {
+  id                    String               @id @default(uuid())
+  depositNumber         String               @unique @map("deposit_number")
+  
+  userId                String               @map("user_id")
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  depositAmount         DepositAmount        @map("deposit_amount")
+  depositTenor          DepositTenor         @map("deposit_tenor")
+  amountValue           Decimal              @map("amount_value") @db.Decimal(15, 2)
+  tenorMonths           Int                  @map("tenor_months")
+  
+  interestRate          Decimal?             @map("interest_rate") @db.Decimal(5, 2)
+  projectedInterest     Decimal?             @map("projected_interest") @db.Decimal(15, 2)
+  totalReturn           Decimal?             @map("total_return") @db.Decimal(15, 2)
+  
+  agreedToTerms         Boolean              @default(false) @map("agreed_to_terms")
+  
+  status                DepositStatus        @default(DRAFT)
+  currentStep           DepositApprovalStep? @map("current_step")
+  
+  submittedAt           DateTime?            @map("submitted_at")
+  approvedAt            DateTime?            @map("approved_at")
+  activatedAt           DateTime?            @map("activated_at")
+  maturityDate          DateTime?            @map("maturity_date")
+  completedAt           DateTime?            @map("completed_at")
+  rejectedAt            DateTime?            @map("rejected_at")
+  rejectionReason       String?              @map("rejection_reason") @db.Text
+  
+  approvals             DepositApproval[]
+  history               DepositHistory[]
+  
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+
+  @@map("deposit_applications")
+}
+
+model DepositApproval {
+  id                    String                   @id @default(uuid())
+  depositApplicationId  String                   @map("deposit_application_id")
+  depositApplication    DepositApplication       @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
+  
+  step                  DepositApprovalStep
+  decision              DepositApprovalDecision?
+  decidedAt             DateTime?                @map("decided_at")
+  approverId            String?                  @map("approver_id")
+  approver              User?                    @relation("deposit_approver", fields: [approverId], references: [id])
+  notes                 String?                  @db.Text
+  
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  
+  @@map("deposit_approvals")
+}
+
+model DepositHistory {
+  id                    String             @id @default(uuid())
+  depositApplicationId  String             @map("deposit_application_id")
+  depositApplication    DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
+  
+  status                DepositStatus
+  depositAmount         DepositAmount
+  depositTenor          DepositTenor
+  amountValue           Decimal            @db.Decimal(15, 2)
+  tenorMonths           Int
+  interestRate          Decimal?           @db.Decimal(5, 2)
+  projectedInterest     Decimal?           @db.Decimal(15, 2)
+  
+  action                String
+  actionAt              DateTime           @map("action_at")
+  actionBy              String?            @map("action_by")
+  actionByUser          User?              @relation("deposit_processor", fields: [actionBy], references: [id])
+  notes                 String?            @db.Text
+  
+  createdAt             DateTime           @default(now()) @map("created_at")
+  
+  @@map("deposit_history")
 }

@@ -18,6 +18,7 @@ import {
   DollarSign,
   CheckCircle2,
   Banknote,
+  PiggyBank,
 } from 'lucide-react';
 
 import {
@@ -59,6 +60,12 @@ const menuItems = [
     href: '/dashboard/loans',
     requiresMemberVerified: true,
   },
+  {
+    title: 'Deposito Saya',
+    icon: PiggyBank,
+    href: '/dashboard/deposits',
+    requiresMemberVerified: true,
+  },
 ];
 
 const managementItems = [
@@ -67,6 +74,13 @@ const managementItems = [
     icon: FileText,
     href: '/dashboard/member-application',
     roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Deposit Approvals',
+    icon: PiggyBank,
+    href: '/dashboard/deposits/approvals',
+    roles: ['ketua', 'divisi_simpan_pinjam'],
     requiresMemberVerified: true,
   },
   {

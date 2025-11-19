@@ -466,4 +466,156 @@ export class MailService {
       `,
     });
   }
+
+    /**
+   * Send deposit approval request notification to approver
+   */
+  async sendDepositApprovalRequest(
+    email: string,
+    approverName: string,
+    applicantName: string,
+    depositNumber: string,
+    depositAmount: number,
+    roleName: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposits/approvals`;
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(depositAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Deposito Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
+      html: `
+        <h2>Halo ${approverName},</h2>
+        <p>Ada pengajuan deposito baru yang menunggu persetujuan Anda.</p>
+        <br>
+        <h3>Detail Deposito:</h3>
+        <ul>
+          <li><strong>Nomor Deposito:</strong> ${depositNumber}</li>
+          <li><strong>Pemohon:</strong> ${applicantName}</li>
+          <li><strong>Jumlah Deposito:</strong> ${formattedAmount}</li>
+        </ul>
+        <br>
+        <p>Sebagai <strong>${roleName.toUpperCase().replace('_', ' ')}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
+        <br>
+        <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
+          Lihat Pengajuan
+        </a>
+        <p>Atau akses dashboard di: ${dashboardUrl}</p>
+        <br>
+        <p>Terima kasih atas perhatian Anda.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit rejected notification to applicant
+   */
+  async sendDepositRejected(
+    email: string,
+    applicantName: string,
+    depositNumber: string,
+    reason: string,
+  ) {
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Deposito Ditolak - Koperasi Kamorina Surya Niaga',
+      html: `
+        <h2>Halo ${applicantName},</h2>
+        <p>Kami informasikan bahwa pengajuan deposito Anda dengan nomor <strong>${depositNumber}</strong> telah <strong>DITOLAK</strong>.</p>
+        <br>
+        <h3>Alasan Penolakan:</h3>
+        <p style="background-color: #ffebee; padding: 15px; border-left: 4px solid #f44336;">
+          ${reason}
+        </p>
+        <br>
+        <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam.</p>
+        <br>
+        <p>Terima kasih atas pengertian Anda.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit approved notification to applicant
+   */
+  async sendDepositApproved(
+    email: string,
+    applicantName: string,
+    depositNumber: string,
+    depositAmount: number,
+    tenorMonths: number,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(depositAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Pengajuan Deposito Disetujui - Koperasi Kamorina Surya Niaga',
+      html: `
+        <h2>Selamat ${applicantName}! 🎉</h2>
+        <p>Pengajuan deposito Anda dengan nomor <strong>${depositNumber}</strong> telah <strong>DISETUJUI</strong>!</p>
+        <br>
+        <h3>Detail Deposito:</h3>
+        <ul>
+          <li><strong>Jumlah:</strong> ${formattedAmount}</li>
+          <li><strong>Jangka Waktu:</strong> ${tenorMonths} bulan</li>
+        </ul>
+        <br>
+        <p style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3;">
+          <strong>Catatan Penting:</strong><br>
+          Deposito akan dipotong dari gaji bulanan Anda. Pastikan saldo gaji mencukupi.
+        </p>
+        <br>
+        <p>Terima kasih telah menggunakan layanan koperasi.</p>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit notification to payroll
+   */
+  async sendDepositPayrollNotification(
+    email: string,
+    payrollName: string,
+    applicantName: string,
+    depositNumber: string,
+    depositAmount: number,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(depositAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: 'Deposito Baru Telah Disetujui - Koperasi Kamorina Surya Niaga',
+      html: `
+        <h2>Halo ${payrollName},</h2>
+        <p>Ada deposito baru yang telah disetujui dan perlu diproses untuk pemotongan gaji.</p>
+        <br>
+        <h3>Detail:</h3>
+        <ul>
+          <li><strong>Nomor Deposito:</strong> ${depositNumber}</li>
+          <li><strong>Karyawan:</strong> ${applicantName}</li>
+          <li><strong>Jumlah per Bulan:</strong> ${formattedAmount}</li>
+        </ul>
+        <br>
+        <p>Mohon untuk menambahkan pemotongan deposito ini ke dalam sistem payroll.</p>
+        <br>
+        <p>Terima kasih atas perhatian Anda.</p>
+      `,
+    });
+  }
 }
