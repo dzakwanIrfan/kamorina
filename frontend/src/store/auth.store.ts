@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
-import { syncTokenToCookie } from '@/lib/auth-client';
 
 interface AuthState {
   user: User | null;
@@ -9,7 +8,7 @@ interface AuthState {
   isLoading: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   initializeAuth: () => void;
   refreshUserSession: () => Promise<void>;
 }
@@ -31,8 +30,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoading: loading,
     }),
 
-  logout: () => {
-    authService.logout();
+  logout: async () => {
+    await authService.logout();
     set({
       user: null,
       isAuthenticated: false,
@@ -41,12 +40,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   initializeAuth: () => {
     const user = authService.getStoredUser();
-    const token = authService.getStoredToken();
 
-    if (user && token) {
-      // Sync token to cookie on init
-      syncTokenToCookie(token);
-      
+    if (user) {
       set({
         user,
         isAuthenticated: true,

@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { ApiErrorResponse } from '@/types/auth.types';
 
 export const apiClient = axios.create({
@@ -7,23 +7,8 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000,
+  withCredentials: true, // IMPORTANT: Send cookies with requests
 });
-
-// Request interceptor
-apiClient.interceptors.request.use(
-  (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor
 apiClient.interceptors.response.use(
@@ -45,8 +30,7 @@ apiClient.interceptors.response.use(
       const isAuthEndpoint = error.config?.url?.includes('/auth/');
       
       if (!isAuthEndpoint && typeof window !== 'undefined') {
-        // Protected endpoint with invalid token
-        localStorage.removeItem('accessToken');
+        // Protected endpoint with invalid token - redirect to login
         localStorage.removeItem('user');
         window.location.href = '/auth/login';
       }

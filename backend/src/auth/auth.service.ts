@@ -49,7 +49,6 @@ export class AuthService {
       throw new NotFoundException('User tidak ditemukan');
     }
 
-    // Remove sensitive data
     const {
       password: _,
       emailVerificationToken,
@@ -69,12 +68,10 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const { name, email, password, confPassword, employeeNumber } = registerDto;
 
-    // Validate password confirmation
     if (password !== confPassword) {
       throw new BadRequestException('Password dan konfirmasi password tidak cocok');
     }
 
-    // Check if employee number exists and is active
     const employee = await this.prisma.employee.findUnique({
       where: { employeeNumber },
       include: {
@@ -95,7 +92,6 @@ export class AuthService {
       );
     }
 
-    // Check if employee number already used by another user
     const existingUserWithEmployee = await this.prisma.user.findFirst({
       where: { employeeId: employee.id },
     });
@@ -106,7 +102,6 @@ export class AuthService {
       );
     }
 
-    // Check if email already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -115,18 +110,13 @@ export class AuthService {
       throw new ConflictException('Email sudah terdaftar');
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Generate email verification token
     const emailVerificationToken = randomBytes(32).toString('hex');
 
     let user;
 
     try {
-      // Create user with default role "anggota"
       user = await this.prisma.$transaction(async (tx) => {
-        // Create user (NO departmentId field)
         const newUser = await tx.user.create({
           data: {
             name,
@@ -137,7 +127,6 @@ export class AuthService {
           },
         });
 
-        // Get or create "anggota" level
         let anggotaLevel = await tx.level.findFirst({
           where: { levelName: 'anggota' },
         });
@@ -151,7 +140,6 @@ export class AuthService {
           });
         }
 
-        // Assign default role
         await tx.userRole.create({
           data: {
             userId: newUser.id,
@@ -162,23 +150,19 @@ export class AuthService {
         return newUser;
       });
 
-      // Try to send verification email
       try {
         await this.mailService.sendEmailVerification(
           user.email,
           user.name,
           emailVerificationToken,
         );
-      } catch (emailError) {
-        // Log the email error
+      } catch (emailError: any) {
         console.error('Email sending failed:', emailError);
 
-        // Rollback: Delete the user that was just created
         await this.prisma.user.delete({
           where: { id: user.id },
         });
 
-        // Throw user-friendly error
         if (emailError.message?.includes('RFC 2606')) {
           throw new BadRequestException(
             'Email tidak valid. Gunakan email domain yang valid (bukan example.com, test.com, dll)',
@@ -197,7 +181,6 @@ export class AuthService {
           );
         }
 
-        // Generic email error
         throw new BadRequestException(
           'Gagal mengirim email verifikasi. Pastikan email Anda valid dan dapat menerima email.',
         );
@@ -208,7 +191,6 @@ export class AuthService {
         email: user.email,
       };
     } catch (error) {
-      // If error is already a NestJS exception, throw it as is
       if (
         error instanceof BadRequestException ||
         error instanceof ConflictException ||
@@ -217,7 +199,6 @@ export class AuthService {
         throw error;
       }
 
-      // Log unexpected errors
       console.error('Registration error:', error);
       throw new BadRequestException('Terjadi kesalahan saat registrasi');
     }
@@ -262,7 +243,6 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { emailOrNik, password } = loginDto;
 
-    // Find user by email or NIK
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: emailOrNik }, { nik: emailOrNik }],
@@ -286,14 +266,12 @@ export class AuthService {
       throw new UnauthorizedException('Email/NIK atau password salah');
     }
 
-    // Check if email is verified
     if (!user.emailVerified) {
       throw new UnauthorizedException(
         'Email belum diverifikasi. Silakan cek email Anda untuk verifikasi.',
       );
     }
 
-    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email/NIK atau password salah');
@@ -308,7 +286,6 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload);
 
-    // Remove sensitive data
     const {
       password: _,
       emailVerificationToken,
@@ -334,21 +311,18 @@ export class AuthService {
     });
 
     if (!user) {
-      // Don't reveal if email exists or not for security
       return {
         message:
           'Jika email terdaftar, link reset password akan dikirim ke email Anda.',
       };
     }
 
-    // Check if email is verified
     if (!user.emailVerified) {
       throw new BadRequestException(
         'Email belum diverifikasi. Silakan verifikasi email Anda terlebih dahulu.',
       );
     }
 
-    // Generate password reset token
     const resetToken = randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000); // 1 hour
 
@@ -361,7 +335,6 @@ export class AuthService {
         },
       });
 
-      // Try to send password reset email
       try {
         await this.mailService.sendPasswordResetEmail(
           user.email,
@@ -371,7 +344,6 @@ export class AuthService {
       } catch (emailError) {
         console.error('Password reset email failed:', emailError);
 
-        // Rollback token
         await this.prisma.user.update({
           where: { id: user.id },
           data: {
@@ -402,7 +374,6 @@ export class AuthService {
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
     const { token, password, confPassword } = resetPasswordDto;
 
-    // Validate password confirmation
     if (password !== confPassword) {
       throw new BadRequestException('Password dan konfirmasi password tidak cocok');
     }
@@ -422,7 +393,6 @@ export class AuthService {
       );
     }
 
-    // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12);
 
     try {

@@ -1,4 +1,3 @@
-// src/config/env.config.ts
 export interface EnvironmentVariables {
   // Database
   DATABASE_URL: string;
@@ -18,4 +17,5 @@ export interface EnvironmentVariables {
   FRONTEND_URL: string;
   API_URL: string;
   APP_PORT: number;
+  NODE_ENV: string;
 }

@@ -19,20 +19,21 @@ export interface User {
   name: string;
   email: string;
   nik?: string;
-  avatar?: string; 
+  avatar?: string;
   bankAccountNumber?: string;
   emailVerified: boolean;
   emailVerifiedAt?: Date;
   memberVerified: boolean;
-  dateOfBirth?: Date; 
-  birthPlace?: string; 
+  dateOfBirth?: Date;
+  birthPlace?: string;
   departmentId?: string;
-  employee?: Employee; 
+  employee?: Employee;
   department?: {
     id: string;
     name: string;
   };
   roles: string[];
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +42,10 @@ export interface AuthResponse {
   message: string;
   accessToken: string;
   user: User;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
 }
 
 export interface RegisterRequest {

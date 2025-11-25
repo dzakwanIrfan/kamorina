@@ -82,6 +82,7 @@ model User {
   emailVerified           Boolean   @default(false) @map("email_verified")
   emailVerifiedAt         DateTime? @map("email_verified_at")
   emailVerificationToken  String?   @unique @map("email_verification_token")
+  emailVerificationExpires DateTime? @map("email_verification_expires")
 
   memberVerified          Boolean   @default(false) @map("member_verified")
   memberVerifiedAt        DateTime? @map("member_verified_at")
@@ -93,6 +94,14 @@ model User {
 
   passwordResetToken      String?   @unique @map("password_reset_token")
   passwordResetExpires    DateTime? @map("password_reset_expires")
+  
+  // Refresh token & security
+  refreshToken            String?   @unique @map("refresh_token")
+  refreshTokenExpires     DateTime? @map("refresh_token_expires")
+  lastLoginAt             DateTime? @map("last_login_at")
+  lastLoginIp             String?   @map("last_login_ip")
+  failedLoginAttempts     Int       @default(0) @map("failed_login_attempts")
+  accountLockedUntil      DateTime? @map("account_locked_until")
 
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
@@ -112,8 +121,31 @@ model User {
   depositApplications     DepositApplication[]
   depositApprovals        DepositApproval[] @relation("deposit_approver")
   depositHistory          DepositHistory[] @relation("deposit_processor")
+  
+  // Session management
+  sessions                UserSession[]
 
   @@map("users")
+}
+
+// Session management model
+model UserSession {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  refreshToken  String    @unique @map("refresh_token")
+  userAgent     String?   @map("user_agent") @db.Text
+  ipAddress     String?   @map("ip_address")
+  
+  expiresAt     DateTime  @map("expires_at")
+  lastUsedAt    DateTime  @default(now()) @map("last_used_at")
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  @@index([userId])
+  @@index([refreshToken])
+  @@map("user_sessions")
 }
 
 model MemberApplication {

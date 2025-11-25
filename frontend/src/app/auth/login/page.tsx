@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Eye, EyeOff, Loader2, Mail, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -60,22 +60,19 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
-      setError(''); // Clear previous errors
+      setError('');
       
       const response = await authService.login(data);
       
       setUser(response.user);
       toast.success(response.message);
       
-      // Delay redirect sedikit agar toast terlihat
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 500);
+      // Force reload untuk trigger middleware baca cookie
+      window.location.href = '/dashboard';
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
       toast.error(errorMessage);
-      // Form TIDAK di-reset, user bisa lihat error dan perbaiki
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +98,6 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent>
-          {/* Error Alert - Persistent */}
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />

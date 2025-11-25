@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/axios';
-import { syncTokenToCookie } from '@/lib/auth-client';
 import {
   AuthResponse,
   RegisterRequest,
@@ -24,13 +23,9 @@ export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const response = await apiClient.post('/auth/login', data);
     
-    // Save to localStorage and cookie
+    // ONLY save user data to localStorage (token is in httpOnly cookie)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      
-      // Sync token to cookie for middleware
-      syncTokenToCookie(response.data.accessToken);
     }
     
     return response.data;
@@ -57,27 +52,22 @@ export const authService = {
     return response.data;
   },
 
-  logout() {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-      
-      // Remove cookie
-      syncTokenToCookie(null);
+  async logout() {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+      }
     }
   },
 
-  getStoredUser() {
+  getStoredUser(): User | null {
     if (typeof window !== 'undefined') {
       const user = localStorage.getItem('user');
       return user ? JSON.parse(user) : null;
-    }
-    return null;
-  },
-
-  getStoredToken() {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('accessToken');
     }
     return null;
   },
