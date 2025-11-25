@@ -18,6 +18,7 @@ import { LoanDetailDialog } from '@/components/loan/loan-detail-dialog';
 import { loanService } from '@/services/loan.service';
 import { LoanApplication } from '@/types/loan.types';
 import { DataTableConfig } from '@/types/data-table.types';
+import { getLoanTypeLabel } from '@/lib/loan-utils';
 
 export function AuthorizationList() {
   const [data, setData] = useState<LoanApplication[]>([]);
@@ -81,6 +82,7 @@ export function AuthorizationList() {
     setAuthorizationDialogOpen(true);
   };
 
+  // Update columns untuk menambahkan loan type
   const columns: ColumnDef<LoanApplication>[] = useMemo(
     () => [
       {
@@ -90,6 +92,15 @@ export function AuthorizationList() {
           <span className="font-mono font-medium text-sm">
             {row.original.loanNumber}
           </span>
+        ),
+      },
+      {
+        accessorKey: 'loanType',
+        header: 'Jenis',
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-xs">
+            {getLoanTypeLabel(row.original.loanType)}
+          </Badge>
         ),
       },
       {
@@ -108,10 +119,9 @@ export function AuthorizationList() {
       },
       {
         accessorKey: 'loanAmount',
-        header: 'Jumlah Pinjaman',
+        header: 'Jumlah',
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
-            <DollarSign className="h-3 w-3 text-muted-foreground" />
             <span className="font-semibold text-primary">
               {formatCurrency(row.original.loanAmount)}
             </span>

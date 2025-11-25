@@ -26,9 +26,11 @@ import {
   LoanStatus,
   LoanApprovalStep,
   LoanApprovalDecision,
+  LoanType,
 } from '@/types/loan.types';
 import { DataTableConfig } from '@/types/data-table.types';
 import * as XLSX from 'xlsx';
+import { getLoanTypeLabel } from '@/lib/loan-utils';
 
 const statusMap = {
   [LoanStatus.DRAFT]: { label: 'Draft', variant: 'secondary' as const, icon: Clock },
@@ -231,39 +233,7 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
     setMeta((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleExport = () => {
-    try {
-      const exportData = data.map((loan) => ({
-        'Nomor Pinjaman': loan.loanNumber,
-        'Nama': loan.user?.name || '-',
-        'No. Karyawan': loan.user?.employee.employeeNumber || '-',
-        'Department': loan.user?.employee.department?.departmentName || '-',
-        'Jumlah Pinjaman': loan.loanAmount,
-        'Tenor (Bulan)': loan.loanTenor,
-        'Bunga (%)': loan.interestRate || 0,
-        'Cicilan/Bulan': loan.monthlyInstallment || 0,
-        'Total Pembayaran': loan.totalRepayment || 0,
-        'Status': statusMap[loan.status]?.label || loan.status,
-        'Step Saat Ini': loan.currentStep ? stepMap[loan.currentStep] : '-',
-        'Tanggal Submit': loan.submittedAt 
-          ? format(new Date(loan.submittedAt), 'dd/MM/yyyy HH:mm', { locale: id })
-          : '-',
-        'Alasan Pinjaman': loan.loanPurpose,
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Pinjaman');
-
-      const fileName = `pinjaman_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-
-      toast.success('Data berhasil diekspor');
-    } catch (error) {
-      toast.error('Gagal mengekspor data');
-    }
-  };
-
+  // Update columns untuk menambahkan loan type
   const columns: ColumnDef<LoanApplication>[] = useMemo(
     () => [
       {
@@ -273,6 +243,15 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
           <span className="font-mono font-medium text-sm">
             {row.original.loanNumber}
           </span>
+        ),
+      },
+      {
+        accessorKey: 'loanType',
+        header: 'Jenis',
+        cell: ({ row }) => (
+          <Badge variant="outline" className="text-xs whitespace-nowrap">
+            {getLoanTypeLabel(row.original.loanType)}
+          </Badge>
         ),
       },
       {
@@ -296,7 +275,7 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
       },
       {
         accessorKey: 'loanAmount',
-        header: 'Jumlah Pinjaman',
+        header: 'Jumlah',
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
             <span className="font-semibold text-primary">
@@ -382,12 +361,61 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
     []
   );
 
+  // Update handleExport untuk include loan type
+  const handleExport = () => {
+    try {
+      const exportData = data.map((loan) => ({
+        'Nomor Pinjaman': loan.loanNumber,
+        'Jenis Pinjaman': getLoanTypeLabel(loan.loanType),
+        'Nama': loan.user?.name || '-',
+        'No. Karyawan': loan.user?.employee.employeeNumber || '-',
+        'Department': loan.user?.employee.department?.departmentName || '-',
+        'Jumlah Pinjaman': loan.loanAmount,
+        'Tenor (Bulan)': loan.loanTenor,
+        'Bunga (%)': loan.interestRate || 0,
+        'Cicilan/Bulan': loan.monthlyInstallment || 0,
+        'Total Pembayaran': loan.totalRepayment || 0,
+        'Status': statusMap[loan.status]?.label || loan.status,
+        'Step Saat Ini': loan.currentStep ? stepMap[loan.currentStep] : '-',
+        'Tanggal Submit': loan.submittedAt 
+          ? format(new Date(loan.submittedAt), 'dd/MM/yyyy HH:mm', { locale: id })
+          : '-',
+        'Alasan Pinjaman': loan.loanPurpose,
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Pinjaman');
+
+      const fileName = `pinjaman_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      toast.success('Data berhasil diekspor');
+    } catch (error) {
+      toast.error('Gagal mengekspor data');
+    }
+  };
+
+  // Update tableConfig untuk menambahkan filter loan type
   const tableConfig: DataTableConfig<LoanApplication> = {
     searchable: true,
     searchPlaceholder: 'Cari berdasarkan nama, email, no. pinjaman...',
     filterable: true,
     selectable: canApprove,
     filterFields: [
+      {
+        id: 'loanType',
+        label: 'Jenis Pinjaman',
+        type: 'select',
+        placeholder: 'Semua Jenis',
+        options: [
+          { label: 'Semua Jenis', value: 'all' },
+          { label: 'Peminjaman Uang', value: LoanType.CASH_LOAN },
+          { label: 'Kredit Barang (Reimburse)', value: LoanType.GOODS_REIMBURSE },
+          { label: 'Kredit Barang (Online)', value: LoanType.GOODS_ONLINE },
+          { label: 'Kredit Barang (Handphone)', value: LoanType.GOODS_PHONE },
+        ],
+      },
       {
         id: 'status',
         label: 'Status',

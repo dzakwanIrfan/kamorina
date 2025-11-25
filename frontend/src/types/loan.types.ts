@@ -1,3 +1,10 @@
+export enum LoanType {
+  CASH_LOAN = 'CASH_LOAN',
+  GOODS_REIMBURSE = 'GOODS_REIMBURSE',
+  GOODS_ONLINE = 'GOODS_ONLINE',
+  GOODS_PHONE = 'GOODS_PHONE',
+}
+
 export enum LoanStatus {
   DRAFT = 'DRAFT',
   SUBMITTED = 'SUBMITTED',
@@ -24,6 +31,48 @@ export enum LoanApprovalDecision {
   REVISED = 'REVISED',
 }
 
+// Type-specific details interfaces
+export interface CashLoanDetail {
+  id: string;
+  loanApplicationId: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GoodsReimburseDetail {
+  id: string;
+  loanApplicationId: string;
+  itemName: string;
+  itemPrice: number;
+  purchaseDate: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GoodsOnlineDetail {
+  id: string;
+  loanApplicationId: string;
+  itemName: string;
+  itemPrice: number;
+  itemUrl: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GoodsPhoneDetail {
+  id: string;
+  loanApplicationId: string;
+  itemName: string;
+  retailPrice: number;
+  cooperativePrice: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface LoanEligibility {
   isEligible: boolean;
   employee: {
@@ -39,12 +88,6 @@ export interface LoanEligibility {
     maxLoanAmount: number;
     maxTenor: number;
     interestRate: number;
-  };
-  loanLimitMatrix: {
-    id: string;
-    minYearsOfService: number;
-    maxYearsOfService: number | null;
-    maxLoanAmount: number;
   };
 }
 
@@ -66,6 +109,7 @@ export interface LoanApproval {
 export interface LoanHistory {
   id: string;
   status: LoanStatus;
+  loanType: LoanType;
   loanAmount: number;
   loanTenor: number;
   loanPurpose: string;
@@ -113,6 +157,7 @@ export interface LoanApplication {
   id: string;
   loanNumber: string;
   userId: string;
+  loanType: LoanType;
   bankAccountNumber: string;
   loanAmount: number;
   loanTenor: number;
@@ -157,29 +202,106 @@ export interface LoanApplication {
   history?: LoanHistory[];
   disbursement?: LoanDisbursement | null;
   authorization?: LoanAuthorization | null;
+  cashLoanDetails?: CashLoanDetail | null;
+  goodsReimburseDetails?: GoodsReimburseDetail | null;
+  goodsOnlineDetails?: GoodsOnlineDetail | null;
+  goodsPhoneDetails?: GoodsPhoneDetail | null;
 }
 
-export interface CreateLoanDto {
+// Create DTOs
+export interface CreateCashLoanDto {
+  loanType: LoanType.CASH_LOAN;
   bankAccountNumber?: string;
   loanAmount: number;
   loanTenor: number;
   loanPurpose: string;
   attachments?: string[];
+  notes?: string;
 }
 
-export interface UpdateLoanDto {
+export interface CreateGoodsReimburseDto {
+  loanType: LoanType.GOODS_REIMBURSE;
   bankAccountNumber?: string;
-  loanAmount?: number;
-  loanTenor?: number;
-  loanPurpose?: string;
+  itemName: string;
+  itemPrice: number;
+  purchaseDate: string;
+  loanTenor: number;
+  loanPurpose: string;
   attachments?: string[];
+  notes?: string;
 }
 
-export interface ReviseLoanDto {
+export interface CreateGoodsOnlineDto {
+  loanType: LoanType.GOODS_ONLINE;
+  bankAccountNumber?: string;
+  itemName: string;
+  itemPrice: number;
+  itemUrl: string;
+  loanTenor: number;
+  loanPurpose: string;
+  attachments?: string[];
+  notes?: string;
+}
+
+export interface CreateGoodsPhoneDto {
+  loanType: LoanType.GOODS_PHONE;
+  bankAccountNumber?: string;
+  itemName: string;
+  loanTenor: number;
+  loanPurpose: string;
+  attachments?: string[];
+  notes?: string;
+}
+
+export type CreateLoanDto =
+  | CreateCashLoanDto
+  | CreateGoodsReimburseDto
+  | CreateGoodsOnlineDto
+  | CreateGoodsPhoneDto;
+
+// Update DTOs
+export type UpdateCashLoanDto = Partial<Omit<CreateCashLoanDto, 'loanType'>>;
+export type UpdateGoodsReimburseDto = Partial<Omit<CreateGoodsReimburseDto, 'loanType'>>;
+export type UpdateGoodsOnlineDto = Partial<Omit<CreateGoodsOnlineDto, 'loanType'>>;
+export type UpdateGoodsPhoneDto = Partial<Omit<CreateGoodsPhoneDto, 'loanType'>>;
+
+export type UpdateLoanDto =
+  | UpdateCashLoanDto
+  | UpdateGoodsReimburseDto
+  | UpdateGoodsOnlineDto
+  | UpdateGoodsPhoneDto;
+
+// Revise DTOs
+export interface ReviseCashLoanDto {
   loanAmount: number;
   loanTenor: number;
   revisionNotes: string;
 }
+
+export interface ReviseGoodsReimburseDto {
+  itemPrice: number;
+  loanTenor: number;
+  revisionNotes: string;
+}
+
+export interface ReviseGoodsOnlineDto {
+  itemPrice: number;
+  loanTenor: number;
+  revisionNotes: string;
+}
+
+export interface ReviseGoodsPhoneDto {
+  retailPrice: number;
+  cooperativePrice: number;
+  loanTenor: number;
+  revisionNotes: string;
+}
+
+export type ReviseLoanDto =
+  | ReviseCashLoanDto
+  | ReviseGoodsReimburseDto
+  | ReviseGoodsOnlineDto
+  | ReviseGoodsPhoneDto;
 
 export interface ApproveLoanDto {
   decision: LoanApprovalDecision;
@@ -226,6 +348,7 @@ export interface QueryLoanParams {
   sortOrder?: 'asc' | 'desc';
   status?: LoanStatus;
   step?: LoanApprovalStep;
+  loanType?: LoanType;
   userId?: string;
   startDate?: string;
   endDate?: string;

@@ -607,16 +607,6 @@ async function main() {
     
     // SAVINGS
     {
-      key: 'minimum_savings_balance',
-      value: '100000',
-      type: SettingType.NUMBER,
-      category: SettingCategory.SAVINGS,
-      label: 'Saldo Simpanan Minimum',
-      description: 'Saldo minimum yang harus dijaga anggota',
-      unit: 'Rupiah',
-      validation: { min: 0, required: true },
-    },
-    {
       key: 'savings_interest_rate',
       value: '2.5',
       type: SettingType.NUMBER,
@@ -629,18 +619,18 @@ async function main() {
     
     // LOAN
     {
-      key: 'max_loan_amount',
-      value: '50000000',
+      key: 'max_goods_loan_amount',
+      value: '15000000',
       type: SettingType.NUMBER,
       category: SettingCategory.LOAN,
-      label: 'Maksimal Pinjaman',
-      description: 'Jumlah maksimal pinjaman yang dapat diajukan',
+      label: 'Maksimal Kredit Barang Reimburs',
+      description: 'Jumlah maksimal kredit barang reimburs yang dapat diajukan',
       unit: 'Rupiah',
       validation: { min: 0, required: true },
     },
     {
       key: 'min_loan_amount',
-      value: '1000000',
+      value: '500000',
       type: SettingType.NUMBER,
       category: SettingCategory.LOAN,
       label: 'Minimal Pinjaman',
@@ -662,11 +652,21 @@ async function main() {
     // INTEREST
     {
       key: 'loan_interest_rate',
-      value: '12',
+      value: '8',
       type: SettingType.NUMBER,
       category: SettingCategory.INTEREST,
       label: 'Bunga Pinjaman',
       description: 'Persentase bunga pinjaman per tahun',
+      unit: 'Persen',
+      validation: { min: 0, max: 100, required: true },
+    },
+    {
+      key: 'shop_margin_rate',
+      value: '5',
+      type: SettingType.NUMBER,
+      category: SettingCategory.INTEREST,
+      label: 'Margin Toko',
+      description: 'Persentase margin toko pada kredit barang (online)',
       unit: 'Persen',
       validation: { min: 0, max: 100, required: true },
     },
@@ -721,16 +721,6 @@ async function main() {
       category: SettingCategory.GENERAL,
       label: 'Izinkan Multiple Pinjaman',
       description: 'Apakah anggota boleh memiliki lebih dari 1 pinjaman aktif',
-      unit: null,
-      validation: { required: true },
-    },
-    {
-      key: 'auto_approve_loans',
-      value: 'false',
-      type: SettingType.BOOLEAN,
-      category: SettingCategory.GENERAL,
-      label: 'Auto Approve Pinjaman',
-      description: 'Otomatis menyetujui pinjaman di bawah limit tertentu',
       unit: null,
       validation: { required: true },
     },

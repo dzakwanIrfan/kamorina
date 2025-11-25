@@ -40,6 +40,8 @@ import { loanService } from '@/services/loan.service';
 import { handleApiError } from '@/lib/axios';
 import { ReviseLoanDialog } from '@/components/loan/revise-loan-dialog'; 
 import { usePermissions } from '@/hooks/use-permission'; 
+import { LoanTypeDetails } from './loan-type-details';
+import { CalculationBreakdown, LoanRevisionsDisplay } from './loan-detail-sections';
 
 interface LoanDetailDialogProps {
   loan: LoanApplication | null;
@@ -242,6 +244,42 @@ export function LoanDetailDialog({
                 </div>
               </div>
 
+              {/* Loan Type Details */}
+              <LoanTypeDetails loan={loan} />
+
+              {/* Update bagian Loan Details untuk menampilkan info yang lebih general */}
+              <div className="rounded-lg border p-4 space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Informasi Pembayaran
+                </h3>
+                <Separator />
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Tenor</p>
+                    <p className="font-medium">{loan.loanTenor} Bulan</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Suku Bunga</p>
+                    <p className="font-medium">{loan.interestRate}% per tahun</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Cicilan per Bulan</p>
+                    <p className="text-lg font-bold text-orange-600">
+                      {loan.monthlyInstallment
+                        ? formatCurrency(loan.monthlyInstallment)
+                        : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total Pembayaran</p>
+                    <p className="font-bold">
+                      {loan.totalRepayment ? formatCurrency(loan.totalRepayment) : '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Loan Details */}
               <div className="rounded-lg border p-4 space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
@@ -325,20 +363,7 @@ export function LoanDetailDialog({
 
               {/* Revision Info */}
               {loan.revisionCount > 0 && (
-                <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/30 p-4 space-y-2">
-                  <p className="font-semibold text-orange-900 dark:text-orange-300">
-                    Pinjaman ini telah direvisi {loan.revisionCount}x
-                  </p>
-                  {loan.revisionNotes && (
-                    <>
-                      <Separator />
-                      <p className="text-sm text-orange-800 dark:text-orange-400">
-                        Catatan Revisi Terakhir:
-                      </p>
-                      <p className="text-sm">{loan.revisionNotes}</p>
-                    </>
-                  )}
-                </div>
+                <LoanRevisionsDisplay loan={loan} />
               )}
 
               {/* Rejection Reason */}
@@ -522,65 +547,7 @@ export function LoanDetailDialog({
             </TabsContent>
 
             <TabsContent value="calculation" className="space-y-4 mt-6">
-              <div className="rounded-lg border p-6 space-y-6">
-                <div>
-                  <h3 className="font-semibold text-lg mb-4">Rincian Perhitungan Pinjaman</h3>
-                  <Separator />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">Jumlah Pinjaman</span>
-                    <span className="text-lg font-bold">{formatCurrency(loan.loanAmount)}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">Tenor</span>
-                    <span className="font-medium">{loan.loanTenor} Bulan</span>
-                  </div>
-
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">Suku Bunga</span>
-                    <span className="font-medium">{loan.interestRate}% per tahun</span>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-muted-foreground">Total Bunga</span>
-                    <span className="font-medium text-orange-600">
-                      {loan.totalRepayment
-                        ? formatCurrency(loan.totalRepayment - loan.loanAmount)
-                        : '-'}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center py-2 bg-muted rounded-lg px-4">
-                    <span className="font-semibold">Total Pembayaran</span>
-                    <span className="text-lg font-bold">
-                      {loan.totalRepayment ? formatCurrency(loan.totalRepayment) : '-'}
-                    </span>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex justify-between items-center py-2 bg-primary/5 rounded-lg px-4">
-                    <span className="font-semibold text-primary">Cicilan per Bulan</span>
-                    <span className="text-2xl font-bold text-primary">
-                      {loan.monthlyInstallment
-                        ? formatCurrency(loan.monthlyInstallment)
-                        : '-'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Catatan:</strong> Perhitungan menggunakan metode bunga flat rate.
-                    Cicilan akan dipotong langsung dari gaji setiap bulan.
-                  </p>
-                </div>
-              </div>
+              <CalculationBreakdown loan={loan} />
             </TabsContent>
           </Tabs>
 

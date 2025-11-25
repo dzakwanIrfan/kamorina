@@ -15,22 +15,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LoanDetailDialog } from '@/components/loan/loan-detail-dialog';
 
 import { loanService } from '@/services/loan.service';
-import { LoanApplication, LoanStatus } from '@/types/loan.types';
+import { LoanApplication, LoanStatus, LoanType } from '@/types/loan.types';
 import { DataTableConfig } from '@/types/data-table.types';
-
-const statusMap = {
-  [LoanStatus.DRAFT]: { label: 'Draft', variant: 'secondary' as const, icon: Clock },
-  [LoanStatus.SUBMITTED]: { label: 'Submitted', variant: 'default' as const, icon: Clock },
-  [LoanStatus.UNDER_REVIEW_DSP]: { label: 'Review DSP', variant: 'default' as const, icon: Clock },
-  [LoanStatus.UNDER_REVIEW_KETUA]: { label: 'Review Ketua', variant: 'default' as const, icon: Clock },
-  [LoanStatus.UNDER_REVIEW_PENGAWAS]: { label: 'Review Pengawas', variant: 'default' as const, icon: Clock },
-  [LoanStatus.APPROVED_PENDING_DISBURSEMENT]: { label: 'Menunggu Pencairan', variant: 'default' as const, icon: Clock },
-  [LoanStatus.DISBURSEMENT_IN_PROGRESS]: { label: 'Proses Pencairan', variant: 'default' as const, icon: Clock },
-  [LoanStatus.PENDING_AUTHORIZATION]: { label: 'Menunggu Otorisasi', variant: 'default' as const, icon: Clock },
-  [LoanStatus.DISBURSED]: { label: 'Telah Dicairkan', variant: 'default' as const, icon: CheckCircle2 },
-  [LoanStatus.REJECTED]: { label: 'Ditolak', variant: 'destructive' as const, icon: XCircle },
-  [LoanStatus.CANCELLED]: { label: 'Dibatalkan', variant: 'destructive' as const, icon: XCircle },
-};
+import { statusMap } from '@/lib/loan-constants';
+import { formatCurrency, getLoanTypeLabel } from '@/lib/loan-utils';
 
 export function MyLoans() {
   const router = useRouter();
@@ -63,6 +51,7 @@ export function MyLoans() {
         limit: meta.limit,
         search: searchValue || undefined,
         status: filters.status || undefined,
+        loanType: filters.loanType || undefined,
         sortBy: 'createdAt',
         sortOrder: 'desc',
       });
@@ -73,15 +62,6 @@ export function MyLoans() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const handleViewDetail = (loan: LoanApplication) => {
@@ -105,14 +85,21 @@ export function MyLoans() {
         ),
       },
       {
-        accessorKey: 'loanAmount',
-        header: 'Jumlah Pinjaman',
+        accessorKey: 'loanType',
+        header: 'Jenis',
         cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-primary">
-              {formatCurrency(row.original.loanAmount)}
-            </span>
-          </div>
+          <Badge variant="outline" className="text-xs">
+            {getLoanTypeLabel(row.original.loanType)}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'loanAmount',
+        header: 'Jumlah',
+        cell: ({ row }) => (
+          <span className="font-semibold text-primary">
+            {formatCurrency(row.original.loanAmount)}
+          </span>
         ),
       },
       {
@@ -186,6 +173,19 @@ export function MyLoans() {
     filterable: true,
     selectable: false,
     filterFields: [
+      {
+        id: 'loanType',
+        label: 'Jenis Pinjaman',
+        type: 'select',
+        placeholder: 'Semua Jenis',
+        options: [
+          { label: 'Semua Jenis', value: 'all' },
+          { label: 'Peminjaman Uang', value: LoanType.CASH_LOAN },
+          { label: 'Kredit Barang (Reimburse)', value: LoanType.GOODS_REIMBURSE },
+          { label: 'Kredit Barang (Online)', value: LoanType.GOODS_ONLINE },
+          { label: 'Kredit Barang (Handphone)', value: LoanType.GOODS_PHONE },
+        ],
+      },
       {
         id: 'status',
         label: 'Status',

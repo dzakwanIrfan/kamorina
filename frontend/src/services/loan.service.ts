@@ -12,13 +12,14 @@ import {
   ProcessAuthorizationDto,
   BulkProcessAuthorizationDto,
   QueryLoanParams,
+  LoanType,
 } from '@/types/loan.types';
 import { PaginatedResponse } from '@/types/pagination.types';
 
 export const loanService = {
-  // Check eligibility
-  async checkEligibility(): Promise<LoanEligibility> {
-    const response = await apiClient.get('/loans/eligibility');
+  // Check eligibility by loan type
+  async checkEligibility(loanType: LoanType): Promise<LoanEligibility> {
+    const response = await apiClient.get(`/loans/eligibility/${loanType}`);
     return response.data;
   },
 
@@ -85,17 +86,12 @@ export const loanService = {
     return response.data;
   },
 
-  async processApproval(
-    loanId: string,
-    data: ApproveLoanDto
-  ): Promise<{ message: string }> {
+  async processApproval(loanId: string, data: ApproveLoanDto): Promise<{ message: string }> {
     const response = await apiClient.post(`/loans/${loanId}/approve`, data);
     return response.data;
   },
 
-  async bulkProcessApproval(
-    data: BulkApproveLoanDto
-  ): Promise<{ message: string; results: any }> {
+  async bulkProcessApproval(data: BulkApproveLoanDto): Promise<{ message: string; results: any }> {
     const response = await apiClient.post('/loans/bulk-approve', data);
     return response.data;
   },

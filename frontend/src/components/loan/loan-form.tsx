@@ -3,45 +3,38 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { toast } from 'sonner';
-import { 
-  Loader2, 
-  Upload, 
-  X, 
-  FileText, 
-  DollarSign, 
-  Calendar as CalendarIcon,
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  Briefcase,
-  Building2,
-  Award
-} from 'lucide-react';
+import { Loader2, Upload, X, FileText, DollarSign, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+
 import { loanService } from '@/services/loan.service';
 import { handleApiError } from '@/lib/axios';
 import { useAuthStore } from '@/store/auth.store';
-import { LoanEligibility } from '@/types/loan.types';
+import { LoanEligibility, LoanType, CreateLoanDto } from '@/types/loan.types';
+import { createLoanFormSchema, getDefaultFormValues } from '@/lib/loan-form-schemas';
+import { formatCurrency } from '@/lib/loan-utils';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+import { LoanTypeSelector } from './loan-type-selector';
+import { CommonLoanFields } from './form-fields/common-loan-fields';
+import { CashLoanFields } from './form-fields/cash-loan-fields';
+import { GoodsReimburseFields } from './form-fields/goods-reimburse-fields';
+import { GoodsOnlineFields } from './form-fields/goods-online-fields';
+import { GoodsPhoneFields } from './form-fields/goods-phone-fields';
+import { LoanCalculationPreview } from './loan-calculation-preview';
+import { FileUploadSection } from './file-upload-section';
+
+interface LoanFormProps {
+  onSuccess: () => void;
+  onCancel?: () => void;
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = [
   'application/pdf',
   'application/msword',
@@ -53,103 +46,49 @@ const ACCEPTED_FILE_TYPES = [
   'image/png',
 ];
 
-interface LoanFormProps {
-  onSuccess: () => void;
-  onCancel?: () => void;
-}
-
 export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const { user } = useAuthStore();
+  const [selectedType, setSelectedType] = useState<LoanType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingEligibility, setIsLoadingEligibility] = useState(true);
+  const [isLoadingEligibility, setIsLoadingEligibility] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [eligibility, setEligibility] = useState<LoanEligibility | null>(null);
   const [eligibilityError, setEligibilityError] = useState<string | null>(null);
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formSchema = eligibility && selectedType 
+    ? createLoanFormSchema(selectedType, eligibility)
+    : null;
 
-  // Fetch eligibility first
+  const form = useForm<any>({
+    resolver: formSchema ? zodResolver(formSchema) : undefined,
+    defaultValues: selectedType ? getDefaultFormValues(selectedType, user?.bankAccountNumber) : {},
+  });
+
   useEffect(() => {
-    checkEligibility();
-  }, []);
+    if (selectedType) {
+      checkEligibility(selectedType);
+      form.reset(getDefaultFormValues(selectedType, user?.bankAccountNumber));
+    }
+  }, [selectedType]);
 
-  const checkEligibility = async () => {
+  const checkEligibility = async (loanType: LoanType) => {
     try {
       setIsLoadingEligibility(true);
       setEligibilityError(null);
-      const result = await loanService.checkEligibility();
+      const result = await loanService.checkEligibility(loanType);
       setEligibility(result);
     } catch (error) {
       const errorMsg = handleApiError(error);
       setEligibilityError(errorMsg);
-      toast.error('Gagal memeriksa kelayakan', {
-        description: errorMsg,
-      });
+      toast.error('Gagal memeriksa kelayakan', { description: errorMsg });
     } finally {
       setIsLoadingEligibility(false);
     }
   };
 
-  // Dynamic schema based on eligibility
-  const formSchema = eligibility
-    ? z.object({
-        bankAccountNumber: z
-          .string()
-          .min(10, 'Nomor rekening minimal 10 digit')
-          .max(20, 'Nomor rekening maksimal 20 digit')
-          .regex(/^[0-9]+$/, 'Nomor rekening harus berupa angka')
-          .optional()
-          .or(z.literal('')),
-        loanAmount: z
-          .number()
-          .positive('Jumlah pinjaman harus lebih dari 0')
-          .min(
-            eligibility.loanLimit.minLoanAmount,
-            `Jumlah pinjaman minimal ${formatCurrency(eligibility.loanLimit.minLoanAmount)}`
-          )
-          .max(
-            eligibility.loanLimit.maxLoanAmount,
-            `Jumlah pinjaman maksimal ${formatCurrency(eligibility.loanLimit.maxLoanAmount)}`
-          ),
-        loanTenor: z
-          .number()
-          .positive('Tenor harus lebih dari 0')
-          .min(1, 'Minimal tenor 1 bulan')
-          .max(
-            eligibility.loanLimit.maxTenor,
-            `Maksimal tenor ${eligibility.loanLimit.maxTenor} bulan`
-          ),
-        loanPurpose: z.string().min(10, 'Alasan peminjaman minimal 10 karakter'),
-      })
-    : z.object({
-        bankAccountNumber: z.string().optional(),
-        loanAmount: z.number(),
-        loanTenor: z.number(),
-        loanPurpose: z.string(),
-      });
-
-  type FormData = z.infer<typeof formSchema>;
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      bankAccountNumber: user?.bankAccountNumber || '',
-      loanAmount: 0,
-      loanTenor: 12,
-      loanPurpose: '',
-    },
-  });
-
   const calculateLoan = (amount: number, tenor: number) => {
-    if (!eligibility) return null;
+    if (!eligibility || !amount || !tenor) return null;
 
     const annualRate = eligibility.loanLimit.interestRate / 100;
     const totalInterest = amount * annualRate * (tenor / 12);
@@ -163,7 +102,21 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     };
   };
 
-  const loanAmount = form.watch('loanAmount');
+  const getLoanAmount = (formData: any): number => {
+    switch (selectedType) {
+      case LoanType.CASH_LOAN:
+        return formData.loanAmount || 0;
+      case LoanType.GOODS_REIMBURSE:
+      case LoanType.GOODS_ONLINE:
+        return formData.itemPrice || 0;
+      case LoanType.GOODS_PHONE:
+        return 0; // Will be set by DSP
+      default:
+        return 0;
+    }
+  };
+
+  const loanAmount = getLoanAmount(form.watch());
   const loanTenor = form.watch('loanTenor');
   const calculations = loanAmount && loanTenor ? calculateLoan(loanAmount, loanTenor) : null;
 
@@ -176,7 +129,6 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       return;
     }
 
-    // Validate files
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         toast.error(`File ${file.name} terlalu besar. Maksimal 10MB per file.`);
@@ -193,7 +145,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       const result = await loanService.uploadAttachments(files);
       setUploadedFiles([...uploadedFiles, ...result.files]);
       toast.success('File berhasil diupload');
-      event.target.value = ''; // Reset input
+      event.target.value = '';
     } catch (error) {
       toast.error(handleApiError(error));
     } finally {
@@ -205,20 +157,20 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: any) => {
+    if (!selectedType) return;
+
     try {
       setIsSubmitting(true);
 
-      const payload = {
+      const payload: CreateLoanDto = {
+        loanType: selectedType,
         ...data,
         bankAccountNumber: data.bankAccountNumber || undefined,
         attachments: uploadedFiles.length > 0 ? uploadedFiles : undefined,
-      };
+      } as CreateLoanDto;
 
-      // Create draft first
       const draftResult = await loanService.createDraft(payload);
-
-      // Then submit
       await loanService.submitLoan(draftResult.loan.id);
 
       toast.success('Pengajuan pinjaman berhasil disubmit!');
@@ -230,10 +182,29 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     }
   };
 
-  // Loading state
+  if (!selectedType) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Pilih Jenis Pinjaman</CardTitle>
+          <CardDescription>
+            Pilih jenis pinjaman yang sesuai dengan kebutuhan Anda
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LoanTypeSelector
+            selectedType={selectedType}
+            onSelect={setSelectedType}
+            disabled={false}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoadingEligibility) {
     return (
-      <Card>
+      <Card className="w-full max-w-4xl mx-auto">
         <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Memeriksa kelayakan pinjaman...</p>
@@ -242,10 +213,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     );
   }
 
-  // Error state - Not eligible
   if (eligibilityError || !eligibility) {
     return (
-      <Card>
+      <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -260,21 +230,16 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
             <AlertDescription>{eligibilityError}</AlertDescription>
           </Alert>
 
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">Syarat Pengajuan Pinjaman:</p>
-            <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-              <li>Status karyawan harus <strong>TETAP</strong></li>
-              <li>Sudah menjadi anggota koperasi yang terverifikasi</li>
-              <li>Memiliki masa kerja sesuai dengan plafond yang ditentukan</li>
-              <li>Golongan sudah diatur plafond pinjamannya</li>
-            </ul>
-          </div>
-
-          {onCancel && (
-            <Button variant="outline" onClick={onCancel} className="w-full">
-              Kembali
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => setSelectedType(null)} className="flex-1">
+              Pilih Jenis Lain
             </Button>
-          )}
+            {onCancel && (
+              <Button variant="outline" onClick={onCancel} className="flex-1">
+                Kembali
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -283,81 +248,47 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Formulir Pengajuan Pinjaman</CardTitle>
-        <CardDescription>
-          Lengkapi data berikut untuk mengajukan pinjaman. Pengajuan Anda akan diverifikasi melalui
-          3 tahap approval.
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Formulir Pengajuan Pinjaman</CardTitle>
+            <CardDescription>
+              Lengkapi data berikut untuk mengajukan pinjaman
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedType(null)}
+            disabled={isSubmitting}
+          >
+            Ganti Jenis
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
-        {/* Eligibility Info Card */}
-        <Alert className="mb-6 border-green-200 bg-green-50">
+        <Alert className="mb-6 border-green-200 bg-green-50 dark:bg-green-950/30">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertTitle className="text-green-900">Anda Memenuhi Syarat!</AlertTitle>
+          <AlertTitle className="text-green-900 dark:text-green-300">
+            Anda Memenuhi Syarat!
+          </AlertTitle>
           <AlertDescription>
             <div className="mt-2 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="font-medium text-green-900">NIK</p>
-                    <p className="text-green-700">{eligibility.employee.employeeNumber}</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <p className="text-muted-foreground">Plafond Minimum</p>
+                  <p className="font-bold text-green-700">
+                    {selectedType === LoanType.CASH_LOAN
+                      ? formatCurrency(eligibility.loanLimit.minLoanAmount)
+                      : 'Rp 1.000.000'}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="font-medium text-green-900">Departemen</p>
-                    <p className="text-green-700">{eligibility.employee.department}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="font-medium text-green-900">Golongan</p>
-                    <p className="text-green-700">{eligibility.employee.golongan}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-green-600" />
-                  <div>
-                    <p className="font-medium text-green-900">Masa Kerja</p>
-                    <p className="text-green-700">{eligibility.yearsOfService} tahun</p>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="bg-white rounded-lg p-3 border border-green-200">
-                <p className="text-xs font-semibold text-green-900 mb-2">
-                  Plafond Pinjaman Anda:
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="text-muted-foreground">Minimum</p>
-                    <p className="font-bold text-green-700">
-                      {formatCurrency(eligibility.loanLimit.minLoanAmount)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Maksimum</p>
-                    <p className="font-bold text-green-700">
-                      {formatCurrency(eligibility.loanLimit.maxLoanAmount)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Tenor Maks</p>
-                    <p className="font-bold text-green-700">
-                      {eligibility.loanLimit.maxTenor} bulan
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Bunga</p>
-                    <p className="font-bold text-green-700">
-                      {eligibility.loanLimit.interestRate}% / tahun
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-muted-foreground">Plafond Maksimum</p>
+                  <p className="font-bold text-green-700">
+                    {selectedType === LoanType.CASH_LOAN
+                      ? formatCurrency(eligibility.loanLimit.maxLoanAmount)
+                      : 'Rp 15.000.000'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -366,223 +297,77 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Bank Account Number */}
-            <FormField
-              control={form.control}
-              name="bankAccountNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nomor Rekening BCA</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="1234567890"
-                      maxLength={20}
-                      {...field}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {user?.bankAccountNumber
-                      ? 'Gunakan nomor rekening yang sudah tersimpan atau masukkan yang baru'
-                      : 'Masukkan nomor rekening BCA untuk pencairan pinjaman'}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <CommonLoanFields
+              form={form}
+              eligibility={eligibility}
+              userBankAccount={user?.bankAccountNumber}
+              isSubmitting={isSubmitting}
             />
 
-            {/* Loan Amount */}
-            <FormField
-              control={form.control}
-              name="loanAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Jumlah Pinjaman</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="5000000"
-                        className="pl-10"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Minimal {formatCurrency(eligibility.loanLimit.minLoanAmount)} - Maksimal{' '}
-                    {formatCurrency(eligibility.loanLimit.maxLoanAmount)}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Separator />
 
-            {/* Loan Tenor */}
-            <FormField
-              control={form.control}
-              name="loanTenor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Lama Pinjaman (Tenor)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        type="number"
-                        placeholder="12"
-                        className="pl-10"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    Dalam bulan. Maksimal {eligibility.loanLimit.maxTenor} bulan
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Calculation Preview */}
-            {calculations && (
-              <Alert>
-                <DollarSign className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p className="font-semibold">Perhitungan Pinjaman:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">
-                          Bunga ({eligibility.loanLimit.interestRate}% per tahun)
-                        </p>
-                        <p className="font-bold text-primary">
-                          {formatCurrency(calculations.totalInterest)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Total Pembayaran</p>
-                        <p className="font-bold">{formatCurrency(calculations.totalRepayment)}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Cicilan per Bulan</p>
-                        <p className="font-bold text-orange-600">
-                          {formatCurrency(calculations.monthlyInstallment)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
+            {selectedType === LoanType.CASH_LOAN && (
+              <CashLoanFields
+                form={form}
+                eligibility={eligibility}
+                isSubmitting={isSubmitting}
+              />
             )}
 
-            {/* Loan Purpose */}
-            <FormField
-              control={form.control}
-              name="loanPurpose"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Alasan Peminjaman</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Jelaskan alasan dan tujuan peminjaman Anda..."
-                      rows={4}
-                      {...field}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormDescription>Minimal 10 karakter. Jelaskan secara detail.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+            {selectedType === LoanType.GOODS_REIMBURSE && (
+              <GoodsReimburseFields
+                form={form}
+                maxAmount={15000000}
+                isSubmitting={isSubmitting}
+              />
+            )}
+
+            {selectedType === LoanType.GOODS_ONLINE && (
+              <GoodsOnlineFields
+                form={form}
+                maxAmount={15000000}
+                isSubmitting={isSubmitting}
+              />
+            )}
+
+            {selectedType === LoanType.GOODS_PHONE && (
+              <GoodsPhoneFields form={form} isSubmitting={isSubmitting} />
+            )}
+
+            {calculations && selectedType !== LoanType.GOODS_PHONE && (
+              <>
+                <Separator />
+                <LoanCalculationPreview
+                  calculations={calculations}
+                  interestRate={eligibility.loanLimit.interestRate}
+                />
+              </>
+            )}
+
+            <Separator />
+
+            <FileUploadSection
+              uploadedFiles={uploadedFiles}
+              isUploading={isUploading}
+              onFileUpload={handleFileUpload}
+              onRemoveFile={removeFile}
+              disabled={isSubmitting}
             />
 
-            {/* File Attachments */}
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">Lampiran Dokumen (Opsional)</label>
-                <p className="text-sm text-muted-foreground">
-                  Upload maksimal 5 file (PDF, DOC, XLS, JPG, PNG). Maksimal 10MB per file.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isUploading || uploadedFiles.length >= 5}
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload File
-                    </>
-                  )}
-                </Button>
-                <Badge variant="secondary">{uploadedFiles.length} / 5 file</Badge>
-              </div>
-
-              <input
-                id="file-upload"
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-
-              {/* Uploaded Files List */}
-              {uploadedFiles.length > 0 && (
-                <div className="space-y-2">
-                  {uploadedFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-primary" />
-                        <span className="text-sm truncate max-w-[300px]">
-                          {file.split('/').pop()}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Additional Info */}
             <Alert>
               <Info className="h-4 w-4" />
               <AlertTitle>Informasi Penting</AlertTitle>
               <AlertDescription className="text-xs space-y-1">
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Plafond pinjaman disesuaikan dengan golongan dan masa kerja Anda</li>
                   <li>Pengajuan akan melalui 3 tahap approval: DSP → Ketua → Pengawas</li>
                   <li>Pencairan dilakukan setelah semua approval selesai</li>
+                  {selectedType === LoanType.GOODS_PHONE && (
+                    <li>Harga handphone akan ditentukan oleh DSP berdasarkan harga rekanan</li>
+                  )}
                 </ul>
               </AlertDescription>
             </Alert>
 
-            {/* Actions */}
             <div className="flex gap-3">
               {onCancel && (
                 <Button
