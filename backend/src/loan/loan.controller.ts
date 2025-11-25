@@ -15,9 +15,8 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { LoanService } from './loan.service';
-import { CreateLoanDto } from './dto/create-loan.dto';
-import { UpdateLoanDto } from './dto/update-loan.dto';
-import { ReviseLoanDto } from './dto/revise-loan.dto';
+import type { CreateLoanDto } from './dto/create-loan.dto';
+import type { ReviseLoanDto } from './dto/revise-loan.dto';
 import { ApproveLoanDto } from './dto/approve-loan.dto';
 import { BulkApproveLoanDto } from './dto/bulk-approve-loan.dto';
 import { ProcessDisbursementDto } from './dto/process-disbursement.dto';
@@ -30,6 +29,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
+import { LoanType } from '@prisma/client';
+import type { UpdateLoanDto } from './dto/update-loan.dto';
 
 @Controller('loans')
 @UseGuards(JwtAuthGuard)
@@ -40,16 +41,19 @@ export class LoanController {
   ) {}
 
   /**
-   * MEMBER ENDPOINTS
+   * ==================== MEMBER ENDPOINTS ====================
    */
 
   /**
-   * Check loan eligibility
+   * Check loan eligibility by type
    */
-  @Get('eligibility')
+  @Get('eligibility/:loanType')
   @HttpCode(HttpStatus.OK)
-  async checkEligibility(@CurrentUser() user: any) {
-    return this.loanService.getLoanEligibility(user.userId);
+  async checkEligibility(
+    @CurrentUser() user: any,
+    @Param('loanType') loanType: LoanType,
+  ) {
+    return this.loanService.getLoanEligibility(user.userId, loanType);
   }
 
   /**
@@ -171,7 +175,7 @@ export class LoanController {
   }
 
   /**
-   * APPROVER ENDPOINTS (DSP, Ketua, Pengawas)
+   * ==================== APPROVER ENDPOINTS (DSP, Ketua, Pengawas) ====================
    */
 
   /**
@@ -250,7 +254,7 @@ export class LoanController {
   }
 
   /**
-   * SHOPKEEPER ENDPOINTS
+   * ==================== SHOPKEEPER ENDPOINTS ====================
    */
 
   /**
@@ -297,7 +301,7 @@ export class LoanController {
   }
 
   /**
-   * KETUA ENDPOINTS (Authorization)
+   * ==================== KETUA ENDPOINTS (Authorization) ====================
    */
 
   /**
@@ -329,7 +333,7 @@ export class LoanController {
     return this.loanService.processAuthorization(id, user.userId, dto);
   }
 
-      /**
+  /**
    * Bulk process authorization
    */
   @Post('authorization/bulk')

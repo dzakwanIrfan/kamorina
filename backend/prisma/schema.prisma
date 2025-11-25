@@ -313,6 +313,13 @@ model CooperativeSetting {
   @@map("cooperative_settings")
 }
 
+enum LoanType {
+  CASH_LOAN
+  GOODS_REIMBURSE
+  GOODS_ONLINE
+  GOODS_PHONE
+}
+
 enum LoanStatus {
   DRAFT
   SUBMITTED
@@ -339,46 +346,147 @@ enum LoanApprovalDecision {
   REVISED
 }
 
+// Shared fields untuk semua jenis pinjaman
 model LoanApplication {
   id                    String        @id @default(uuid())
   loanNumber            String        @unique @map("loan_number")
   
+  // User reference
   userId                String        @map("user_id")
   user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Loan type identifier
+  loanType              LoanType      @map("loan_type") @default(CASH_LOAN)
+  
+  // Common fields for all loan types
   bankAccountNumber     String        @map("bank_account_number")
   loanAmount            Decimal       @map("loan_amount") @db.Decimal(15, 2)
   loanTenor             Int           @map("loan_tenor")
   loanPurpose           String        @map("loan_purpose") @db.Text
-  attachments           Json?
+  attachments           Json?         // Array of file URLs
   
+  // Calculated fields (set by DSP during approval)
   interestRate          Decimal?      @map("interest_rate") @db.Decimal(5, 2)
   monthlyInstallment    Decimal?      @map("monthly_installment") @db.Decimal(15, 2)
   totalRepayment        Decimal?      @map("total_repayment") @db.Decimal(15, 2)
   
+  // Status tracking
   status                LoanStatus    @default(DRAFT)
   currentStep           LoanApprovalStep? @map("current_step")
   
+  // Timestamps
   submittedAt           DateTime?     @map("submitted_at")
   approvedAt            DateTime?     @map("approved_at")
   rejectedAt            DateTime?     @map("rejected_at")
   disbursedAt           DateTime?     @map("disbursed_at")
   rejectionReason       String?       @map("rejection_reason") @db.Text
   
+  // Revision tracking
   revisionCount         Int           @default(0) @map("revision_count")
   lastRevisedAt         DateTime?     @map("last_revised_at")
   lastRevisedBy         String?       @map("last_revised_by")
   revisionNotes         String?       @map("revision_notes") @db.Text
   
+  // Relations to shared tables
   approvals             LoanApproval[]
   history               LoanHistory[]
   disbursement          LoanDisbursement?
   authorization         LoanAuthorization?
   
+  // Relations to type-specific tables (1-to-1)
+  cashLoanDetails       CashLoanDetail?
+  goodsReimburseDetails GoodsReimburseDetail?
+  goodsOnlineDetails    GoodsOnlineDetail?
+  goodsPhoneDetails     GoodsPhoneDetail?
+  
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
-
+  
+  @@index([userId])
+  @@index([loanType])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([loanType, status])
+  @@index([userId, loanType])
   @@map("loan_applications")
+}
+
+// TYPE-SPECIFIC TABLES
+
+// 1. CASH LOAN (no additional fields needed, but for consistency)
+model CashLoanDetail {
+  id                String           @id @default(uuid())
+  loanApplicationId String           @unique @map("loan_application_id")
+  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  notes             String?          @db.Text
+  
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  
+  @@map("cash_loan_details")
+}
+
+// 2. GOODS REIMBURSE (Kredit Barang - Reimburse)
+model GoodsReimburseDetail {
+  id                String           @id @default(uuid())
+  loanApplicationId String           @unique @map("loan_application_id")
+  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  itemName          String           @map("item_name")
+  itemPrice         Decimal          @map("item_price") @db.Decimal(15, 2)
+  purchaseDate      DateTime         @map("purchase_date") @db.Date
+  
+  notes             String?          @db.Text
+  
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  
+  @@index([itemName])
+  @@index([itemPrice])
+  @@index([purchaseDate])
+  @@map("goods_reimburse_details")
+}
+
+// 3. GOODS ONLINE (Kredit Barang - Online)
+model GoodsOnlineDetail {
+  id                String           @id @default(uuid())
+  loanApplicationId String           @unique @map("loan_application_id")
+  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  itemName          String           @map("item_name")
+  itemPrice         Decimal          @map("item_price") @db.Decimal(15, 2)
+  itemUrl           String           @map("item_url") @db.Text
+  
+  notes             String?          @db.Text
+  
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  
+  @@index([itemName])
+  @@index([itemPrice])
+  @@map("goods_online_details")
+}
+
+// 4. GOODS PHONE (Kredit Barang - Handphone dengan Partnership)
+model GoodsPhoneDetail {
+  id                String           @id @default(uuid())
+  loanApplicationId String           @unique @map("loan_application_id")
+  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+  
+  itemName          String           @map("item_name")
+  retailPrice       Decimal          @map("retail_price") @db.Decimal(15, 2)
+  cooperativePrice  Decimal          @map("cooperative_price") @db.Decimal(15, 2)
+  
+  notes             String?          @db.Text
+  
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  
+  @@index([itemName])
+  @@index([retailPrice])
+  @@index([cooperativePrice])
+  @@map("goods_phone_details")
 }
 
 model LoanApproval {
@@ -397,6 +505,8 @@ model LoanApproval {
   
   createdAt         DateTime            @default(now()) @map("created_at")
   
+  @@index([loanApplicationId])
+  @@index([step])
   @@map("loan_approvals")
 }
 
@@ -406,6 +516,7 @@ model LoanHistory {
   loanApplication   LoanApplication     @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
   
   status            LoanStatus
+  loanType          LoanType
   loanAmount        Decimal             @db.Decimal(15, 2)
   loanTenor         Int
   loanPurpose       String              @db.Text
@@ -421,6 +532,7 @@ model LoanHistory {
   
   createdAt         DateTime            @default(now()) @map("created_at")
   
+  @@index([loanApplicationId])
   @@map("loan_history")
 }
 
