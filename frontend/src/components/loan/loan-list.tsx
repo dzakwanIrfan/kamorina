@@ -95,6 +95,9 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
 
   const getDefaultStatusFilter = () => {
     if (defaultStatus) return defaultStatus;
+    if (hasRole('pengawas')) return LoanStatus.UNDER_REVIEW_PENGAWAS;
+    if (hasRole('ketua')) return LoanStatus.UNDER_REVIEW_KETUA;
+    if (hasRole('divisi_simpan_pinjam')) return LoanStatus.UNDER_REVIEW_DSP;
     return LoanStatus.SUBMITTED;
   };
 

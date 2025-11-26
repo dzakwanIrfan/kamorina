@@ -22,6 +22,50 @@ export class LoanApprovalService {
   ) {}
 
   /**
+   * Helper: Get status for current approval step
+   */
+  private getStatusForStep(step: LoanApprovalStep): LoanStatus {
+    const stepStatusMap: Record<LoanApprovalStep, LoanStatus> = {
+      [LoanApprovalStep.DIVISI_SIMPAN_PINJAM]: LoanStatus.UNDER_REVIEW_DSP,
+      [LoanApprovalStep.KETUA]: LoanStatus.UNDER_REVIEW_KETUA,
+      [LoanApprovalStep.PENGAWAS]: LoanStatus.UNDER_REVIEW_PENGAWAS,
+    };
+    return stepStatusMap[step];
+  }
+
+  /**
+   * Helper: Get next step after current step
+   */
+  private getNextStep(currentStep: LoanApprovalStep): LoanApprovalStep | null {
+    const stepOrder: LoanApprovalStep[] = [
+      LoanApprovalStep.DIVISI_SIMPAN_PINJAM,
+      LoanApprovalStep.KETUA,
+      LoanApprovalStep.PENGAWAS,
+    ];
+    const currentIndex = stepOrder.indexOf(currentStep);
+    return currentIndex < stepOrder.length - 1 ? stepOrder[currentIndex + 1] : null;
+  }
+
+  /**
+   * Helper: Check if current step is the last approval step
+   */
+  private isLastStep(currentStep: LoanApprovalStep): boolean {
+    return currentStep === LoanApprovalStep.PENGAWAS;
+  }
+
+  /**
+   * Helper: Get step name for display
+   */
+  private getStepDisplayName(step: LoanApprovalStep): string {
+    const stepNames: Record<LoanApprovalStep, string> = {
+      [LoanApprovalStep.DIVISI_SIMPAN_PINJAM]: 'Divisi Simpan Pinjam',
+      [LoanApprovalStep.KETUA]: 'Ketua',
+      [LoanApprovalStep.PENGAWAS]: 'Pengawas',
+    };
+    return stepNames[step];
+  }
+
+  /**
    * Revise loan (DSP only)
    */
   async reviseLoan(loanId: string, approverId: string, dto: ReviseLoanDto) {
@@ -39,6 +83,11 @@ export class LoanApprovalService {
 
     if (loan.currentStep !== LoanApprovalStep.DIVISI_SIMPAN_PINJAM) {
       throw new BadRequestException('Hanya bisa direvisi pada step DSP');
+    }
+
+    // Validate status is correct for DSP step
+    if (loan.status !== LoanStatus.UNDER_REVIEW_DSP) {
+      throw new BadRequestException('Pinjaman tidak dalam status review DSP');
     }
 
     const handler = this.loanHandlerFactory.getHandler(loan.loanType);
@@ -69,7 +118,7 @@ export class LoanApprovalService {
     );
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Update loan
+      // Update loan (status remains UNDER_REVIEW_DSP)
       const updated = await tx.loanApplication.update({
         where: { id: loanId },
         data: {
@@ -118,7 +167,7 @@ export class LoanApprovalService {
       await tx.loanHistory.create({
         data: {
           loanApplicationId: loanId,
-          status: loan.status,
+          status: LoanStatus.UNDER_REVIEW_DSP,
           loanType: loan.loanType,
           loanAmount: newLoanAmount,
           loanTenor: dto.loanTenor,
@@ -156,6 +205,11 @@ export class LoanApprovalService {
 
   /**
    * Process approval (DSP, Ketua, Pengawas)
+   * 
+   * Flow Status:
+   * - UNDER_REVIEW_DSP -> (DSP approve) -> UNDER_REVIEW_KETUA
+   * - UNDER_REVIEW_KETUA -> (Ketua approve) -> UNDER_REVIEW_PENGAWAS
+   * - UNDER_REVIEW_PENGAWAS -> (Pengawas approve) -> APPROVED_PENDING_DISBURSEMENT
    */
   async processApproval(
     loanId: string,
@@ -180,7 +234,7 @@ export class LoanApprovalService {
     }
 
     // Map role to step
-    const roleStepMap: { [key: string]: LoanApprovalStep } = {
+    const roleStepMap: Record<string, LoanApprovalStep> = {
       divisi_simpan_pinjam: LoanApprovalStep.DIVISI_SIMPAN_PINJAM,
       ketua: LoanApprovalStep.KETUA,
       pengawas: LoanApprovalStep.PENGAWAS,
@@ -194,149 +248,188 @@ export class LoanApprovalService {
       throw new ForbiddenException('Anda tidak memiliki akses untuk approve di step ini');
     }
 
+    // Validate current status matches expected status for this step
+    const expectedStatus = this.getStatusForStep(loan.currentStep);
+    if (loan.status !== expectedStatus) {
+      throw new BadRequestException(
+        `Status pinjaman tidak sesuai. Expected: ${expectedStatus}, Got: ${loan.status}`
+      );
+    }
+
     const approvalRecord = loan.approvals.find((a) => a.step === loan.currentStep);
     if (!approvalRecord) {
       throw new BadRequestException('Record approval tidak ditemukan');
     }
 
+    // Allow re-approval if previous decision was REVISED (for DSP)
     if (approvalRecord.decision && approvalRecord.decision !== LoanApprovalDecision.REVISED) {
       throw new BadRequestException('Step ini sudah diproses sebelumnya');
     }
 
     if (dto.decision === LoanApprovalDecision.REJECTED) {
-      // REJECT
-      await this.prisma.$transaction(async (tx) => {
-        await tx.loanApproval.update({
-          where: { id: approvalRecord.id },
-          data: {
-            decision: LoanApprovalDecision.REJECTED,
-            decidedAt: new Date(),
-            approverId,
-            notes: dto.notes,
-          },
-        });
-
-        await tx.loanApplication.update({
-          where: { id: loanId },
-          data: {
-            status: LoanStatus.REJECTED,
-            rejectedAt: new Date(),
-            rejectionReason: dto.notes,
-            currentStep: null,
-          },
-        });
-
-        await tx.loanHistory.create({
-          data: {
-            loanApplicationId: loanId,
-            status: LoanStatus.REJECTED,
-            loanType: loan.loanType,
-            loanAmount: loan.loanAmount,
-            loanTenor: loan.loanTenor,
-            loanPurpose: loan.loanPurpose,
-            bankAccountNumber: loan.bankAccountNumber,
-            interestRate: loan.interestRate,
-            monthlyInstallment: loan.monthlyInstallment,
-            action: 'REJECTED',
-            actionAt: new Date(),
-            actionBy: approverId,
-            notes: dto.notes,
-          },
-        });
-      });
-
-      // Notify applicant
-      try {
-        await this.mailService.sendLoanRejected(
-          loan.user.email,
-          loan.user.name,
-          loan.loanNumber,
-          dto.notes || 'Tidak ada catatan',
-        );
-      } catch (error) {
-        console.error('Failed to send rejection email:', error);
-      }
-
-      return { message: 'Pinjaman berhasil ditolak' };
+      return this.processRejection(loan, approvalRecord, approverId, dto);
     } else {
-      // APPROVE
-      const stepOrder = [
-        LoanApprovalStep.DIVISI_SIMPAN_PINJAM,
-        LoanApprovalStep.KETUA,
-        LoanApprovalStep.PENGAWAS,
-      ];
+      return this.processApprovalDecision(loan, approvalRecord, approverId, dto);
+    }
+  }
 
-      const currentIndex = stepOrder.indexOf(loan.currentStep);
-      const isLastStep = currentIndex === stepOrder.length - 1;
-      const nextStep = isLastStep ? null : stepOrder[currentIndex + 1];
-
-      await this.prisma.$transaction(async (tx) => {
-        await tx.loanApproval.update({
-          where: { id: approvalRecord.id },
-          data: {
-            decision: LoanApprovalDecision.APPROVED,
-            decidedAt: new Date(),
-            approverId,
-            notes: dto.notes,
-          },
-        });
-
-        const newStatus = isLastStep
-          ? LoanStatus.APPROVED_PENDING_DISBURSEMENT
-          : loan.status;
-
-        await tx.loanApplication.update({
-          where: { id: loanId },
-          data: {
-            status: newStatus,
-            currentStep: nextStep,
-            ...(isLastStep && { approvedAt: new Date() }),
-          },
-        });
-
-        await tx.loanHistory.create({
-          data: {
-            loanApplicationId: loanId,
-            status: newStatus,
-            loanType: loan.loanType,
-            loanAmount: loan.loanAmount,
-            loanTenor: loan.loanTenor,
-            loanPurpose: loan.loanPurpose,
-            bankAccountNumber: loan.bankAccountNumber,
-            interestRate: loan.interestRate,
-            monthlyInstallment: loan.monthlyInstallment,
-            action: 'APPROVED',
-            actionAt: new Date(),
-            actionBy: approverId,
-            notes: dto.notes,
-          },
-        });
+  /**
+   * Process rejection
+   */
+  private async processRejection(
+    loan: any,
+    approvalRecord: any,
+    approverId: string,
+    dto: ApproveLoanDto,
+  ) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.loanApproval.update({
+        where: { id: approvalRecord.id },
+        data: {
+          decision: LoanApprovalDecision.REJECTED,
+          decidedAt: new Date(),
+          approverId,
+          notes: dto.notes,
+        },
       });
 
-      if (isLastStep) {
-        // Notify shopkeeper for disbursement
-        try {
-          await this.notificationService.notifyShopkeepers(loanId);
-        } catch (error) {
-          console.error('Failed to notify shopkeepers:', error);
-        }
+      await tx.loanApplication.update({
+        where: { id: loan.id },
+        data: {
+          status: LoanStatus.REJECTED,
+          rejectedAt: new Date(),
+          rejectionReason: dto.notes,
+          currentStep: null,
+        },
+      });
 
-        return {
-          message: 'Pinjaman berhasil disetujui. Menunggu proses pencairan oleh Shopkeeper.',
-        };
-      } else {
-        // Notify next approver
-        try {
-          await this.notificationService.notifyApprovers(loanId, nextStep!, 'APPROVAL_REQUEST');
-        } catch (error) {
-          console.error('Failed to notify next approver:', error);
-        }
+      await tx.loanHistory.create({
+        data: {
+          loanApplicationId: loan.id,
+          status: LoanStatus.REJECTED,
+          loanType: loan.loanType,
+          loanAmount: loan.loanAmount,
+          loanTenor: loan.loanTenor,
+          loanPurpose: loan.loanPurpose,
+          bankAccountNumber: loan.bankAccountNumber,
+          interestRate: loan.interestRate,
+          monthlyInstallment: loan.monthlyInstallment,
+          action: 'REJECTED',
+          actionAt: new Date(),
+          actionBy: approverId,
+          notes: `Ditolak oleh ${this.getStepDisplayName(loan.currentStep)}: ${dto.notes || 'Tidak ada catatan'}`,
+        },
+      });
+    });
 
-        const nextStepName = nextStep === LoanApprovalStep.KETUA ? 'Ketua' : 'Pengawas';
-        return {
-          message: `Pinjaman berhasil disetujui. Menunggu approval dari ${nextStepName}.`,
-        };
+    // Notify applicant
+    try {
+      await this.mailService.sendLoanRejected(
+        loan.user.email,
+        loan.user.name,
+        loan.loanNumber,
+        dto.notes || 'Tidak ada catatan',
+      );
+    } catch (error) {
+      console.error('Failed to send rejection email:', error);
+    }
+
+    return { 
+      message: `Pinjaman berhasil ditolak oleh ${this.getStepDisplayName(loan.currentStep)}` 
+    };
+  }
+
+  /**
+   * Process approval decision
+   */
+  private async processApprovalDecision(
+    loan: any,
+    approvalRecord: any,
+    approverId: string,
+    dto: ApproveLoanDto,
+  ) {
+    const currentStep = loan.currentStep as LoanApprovalStep;
+    const isLast = this.isLastStep(currentStep);
+    const nextStep = this.getNextStep(currentStep);
+
+    // Determine new status
+    let newStatus: LoanStatus;
+    if (isLast) {
+      newStatus = LoanStatus.APPROVED_PENDING_DISBURSEMENT;
+    } else if (nextStep) {
+      newStatus = this.getStatusForStep(nextStep);
+    } else {
+      newStatus = loan.status; // Fallback, should not happen
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // Update approval record
+      await tx.loanApproval.update({
+        where: { id: approvalRecord.id },
+        data: {
+          decision: LoanApprovalDecision.APPROVED,
+          decidedAt: new Date(),
+          approverId,
+          notes: dto.notes,
+        },
+      });
+
+      // Update loan application
+      await tx.loanApplication.update({
+        where: { id: loan.id },
+        data: {
+          status: newStatus,
+          currentStep: nextStep,
+          ...(isLast && { approvedAt: new Date() }),
+        },
+      });
+
+      // Save history for approval
+      await tx.loanHistory.create({
+        data: {
+          loanApplicationId: loan.id,
+          status: newStatus,
+          loanType: loan.loanType,
+          loanAmount: loan.loanAmount,
+          loanTenor: loan.loanTenor,
+          loanPurpose: loan.loanPurpose,
+          bankAccountNumber: loan.bankAccountNumber,
+          interestRate: loan.interestRate,
+          monthlyInstallment: loan.monthlyInstallment,
+          action: 'APPROVED',
+          actionAt: new Date(),
+          actionBy: approverId,
+          notes: `Disetujui oleh ${this.getStepDisplayName(currentStep)}${dto.notes ? ': ' + dto.notes : ''}`,
+        },
+      });
+    });
+
+    if (isLast) {
+      // All approvals complete, notify shopkeeper for disbursement
+      try {
+        await this.notificationService.notifyShopkeepers(loan.id);
+      } catch (error) {
+        console.error('Failed to notify shopkeepers:', error);
       }
+
+      return {
+        message: 'Pinjaman berhasil disetujui semua pihak. Menunggu proses pencairan oleh Shopkeeper.',
+        newStatus: newStatus,
+      };
+    } else {
+      // Notify next approver
+      try {
+        await this.notificationService.notifyApprovers(loan.id, nextStep!, 'APPROVAL_REQUEST');
+      } catch (error) {
+        console.error('Failed to notify next approver:', error);
+      }
+
+      const nextStepName = this.getStepDisplayName(nextStep!);
+      return {
+        message: `Pinjaman berhasil disetujui oleh ${this.getStepDisplayName(currentStep)}. Menunggu approval dari ${nextStepName}.`,
+        newStatus: newStatus,
+        nextStep: nextStep,
+      };
     }
   }
 
@@ -349,17 +442,20 @@ export class LoanApprovalService {
     dto: BulkApproveLoanDto,
   ) {
     const results = {
-      success: [] as string[],
+      success: [] as { id: string; newStatus: LoanStatus }[],
       failed: [] as { id: string; reason: string }[],
     };
 
     for (const loanId of dto.loanIds) {
       try {
-        await this.processApproval(loanId, approverId, approverRoles, {
+        const result = await this.processApproval(loanId, approverId, approverRoles, {
           decision: dto.decision,
           notes: dto.notes,
         });
-        results.success.push(loanId);
+        results.success.push({
+          id: loanId,
+          newStatus: (result as any).newStatus || LoanStatus.REJECTED,
+        });
       } catch (error) {
         results.failed.push({
           id: loanId,

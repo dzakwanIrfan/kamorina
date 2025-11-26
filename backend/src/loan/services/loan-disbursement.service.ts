@@ -14,6 +14,7 @@ export class LoanDisbursementService {
 
   /**
    * Process disbursement (Shopkeeper)
+   * Flow: APPROVED_PENDING_DISBURSEMENT -> DISBURSEMENT_IN_PROGRESS -> (wait for authorization)
    */
   async processDisbursement(
     loanId: string,
@@ -32,10 +33,13 @@ export class LoanDisbursementService {
     }
 
     if (loan.status !== LoanStatus.APPROVED_PENDING_DISBURSEMENT) {
-      throw new BadRequestException('Pinjaman tidak dalam status menunggu pencairan');
+      throw new BadRequestException(
+        `Pinjaman tidak dalam status menunggu pencairan. Status saat ini: ${loan.status}`
+      );
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // Create disbursement record
       await tx.loanDisbursement.create({
         data: {
           loanApplicationId: loanId,
@@ -46,17 +50,19 @@ export class LoanDisbursementService {
         },
       });
 
+      // Update status to PENDING_AUTHORIZATION (waiting for Ketua to authorize)
       const updated = await tx.loanApplication.update({
         where: { id: loanId },
         data: {
-          status: LoanStatus.DISBURSEMENT_IN_PROGRESS,
+          status: LoanStatus.PENDING_AUTHORIZATION,
         },
       });
 
+      // Save history
       await tx.loanHistory.create({
         data: {
           loanApplicationId: loanId,
-          status: LoanStatus.DISBURSEMENT_IN_PROGRESS,
+          status: LoanStatus.PENDING_AUTHORIZATION,
           loanType: loan.loanType,
           loanAmount: loan.loanAmount,
           loanTenor: loan.loanTenor,
@@ -67,7 +73,7 @@ export class LoanDisbursementService {
           action: 'DISBURSEMENT_CREATED',
           actionAt: new Date(),
           actionBy: shopkeeperId,
-          notes: `Transaksi BCA dibuat pada ${dto.disbursementDate} jam ${dto.disbursementTime}`,
+          notes: `Transaksi BCA dibuat pada ${dto.disbursementDate} jam ${dto.disbursementTime}. Menunggu otorisasi dari Ketua.`,
         },
       });
 
@@ -92,18 +98,21 @@ export class LoanDisbursementService {
    */
   async bulkProcessDisbursement(shopkeeperId: string, dto: BulkProcessDisbursementDto) {
     const results = {
-      success: [] as string[],
+      success: [] as { id: string; newStatus: LoanStatus }[],
       failed: [] as { id: string; reason: string }[],
     };
 
     for (const loanId of dto.loanIds) {
       try {
-        await this.processDisbursement(loanId, shopkeeperId, {
+        const result = await this.processDisbursement(loanId, shopkeeperId, {
           disbursementDate: dto.disbursementDate,
           disbursementTime: dto.disbursementTime,
           notes: dto.notes,
         });
-        results.success.push(loanId);
+        results.success.push({
+          id: loanId,
+          newStatus: LoanStatus.PENDING_AUTHORIZATION,
+        });
       } catch (error) {
         results.failed.push({
           id: loanId,

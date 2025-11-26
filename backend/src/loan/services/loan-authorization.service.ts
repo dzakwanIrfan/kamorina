@@ -14,6 +14,7 @@ export class LoanAuthorizationService {
 
   /**
    * Process authorization (Ketua)
+   * Flow: PENDING_AUTHORIZATION -> DISBURSED
    */
   async processAuthorization(
     loanId: string,
@@ -32,16 +33,19 @@ export class LoanAuthorizationService {
       throw new NotFoundException('Pinjaman tidak ditemukan');
     }
 
-    if (loan.status !== LoanStatus.DISBURSEMENT_IN_PROGRESS && 
-        loan.status !== LoanStatus.PENDING_AUTHORIZATION) {
-      throw new BadRequestException('Pinjaman tidak dalam status menunggu otorisasi');
+    // Only allow authorization when status is PENDING_AUTHORIZATION
+    if (loan.status !== LoanStatus.PENDING_AUTHORIZATION) {
+      throw new BadRequestException(
+        `Pinjaman tidak dalam status menunggu otorisasi. Status saat ini: ${loan.status}`
+      );
     }
 
     if (!loan.disbursement) {
-      throw new BadRequestException('Belum ada data pencairan');
+      throw new BadRequestException('Belum ada data pencairan. Shopkeeper harus memproses pencairan terlebih dahulu.');
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
+      // Create authorization record
       await tx.loanAuthorization.create({
         data: {
           loanApplicationId: loanId,
@@ -52,6 +56,7 @@ export class LoanAuthorizationService {
         },
       });
 
+      // Update loan status to DISBURSED (final status)
       const updated = await tx.loanApplication.update({
         where: { id: loanId },
         data: {
@@ -60,6 +65,7 @@ export class LoanAuthorizationService {
         },
       });
 
+      // Save history
       await tx.loanHistory.create({
         data: {
           loanApplicationId: loanId,
@@ -71,17 +77,17 @@ export class LoanAuthorizationService {
           bankAccountNumber: loan.bankAccountNumber,
           interestRate: loan.interestRate,
           monthlyInstallment: loan.monthlyInstallment,
-          action: 'DISBURSED',
+          action: 'AUTHORIZED_AND_DISBURSED',
           actionAt: new Date(),
           actionBy: ketuaId,
-          notes: `Otorisasi dilakukan pada ${dto.authorizationDate} jam ${dto.authorizationTime}`,
+          notes: `Otorisasi dilakukan pada ${dto.authorizationDate} jam ${dto.authorizationTime}. Pinjaman telah dicairkan.`,
         },
       });
 
       return updated;
     });
 
-    // Notify all relevant parties
+    // Notify all relevant parties about completion
     try {
       await this.notificationService.notifyLoanCompleted(loanId);
     } catch (error) {
@@ -99,7 +105,7 @@ export class LoanAuthorizationService {
    */
   async bulkProcessAuthorization(ketuaId: string, dto: BulkProcessAuthorizationDto) {
     const results = {
-      success: [] as string[],
+      success: [] as { id: string; newStatus: LoanStatus }[],
       failed: [] as { id: string; reason: string }[],
     };
 
@@ -110,7 +116,10 @@ export class LoanAuthorizationService {
           authorizationTime: dto.authorizationTime,
           notes: dto.notes,
         });
-        results.success.push(loanId);
+        results.success.push({
+          id: loanId,
+          newStatus: LoanStatus.DISBURSED,
+        });
       } catch (error) {
         results.failed.push({
           id: loanId,

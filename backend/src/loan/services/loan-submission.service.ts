@@ -16,6 +16,7 @@ export class LoanSubmissionService {
 
   /**
    * Submit loan application
+   * Flow: DRAFT -> SUBMITTED -> UNDER_REVIEW_DSP
    */
   async submitLoan(userId: string, loanId: string) {
     const loan = await this.prisma.loanApplication.findUnique({
@@ -46,11 +47,11 @@ export class LoanSubmissionService {
     await this.validationService.validateLoanTenor(loan.loanTenor);
 
     const result = await this.prisma.$transaction(async (tx) => {
-      // Update loan status
+      // Update loan status to UNDER_REVIEW_DSP (not just SUBMITTED)
       const updated = await tx.loanApplication.update({
         where: { id: loanId },
         data: {
-          status: LoanStatus.SUBMITTED,
+          status: LoanStatus.UNDER_REVIEW_DSP, // Langsung ke UNDER_REVIEW_DSP
           currentStep: LoanApprovalStep.DIVISI_SIMPAN_PINJAM,
           submittedAt: new Date(),
         },
@@ -65,7 +66,7 @@ export class LoanSubmissionService {
         ],
       });
 
-      // Save history
+      // Save history for submission
       await tx.loanHistory.create({
         data: {
           loanApplicationId: loanId,
@@ -80,6 +81,25 @@ export class LoanSubmissionService {
           action: 'SUBMITTED',
           actionAt: new Date(),
           actionBy: userId,
+        },
+      });
+
+      // Save history for status change to UNDER_REVIEW_DSP
+      await tx.loanHistory.create({
+        data: {
+          loanApplicationId: loanId,
+          status: LoanStatus.UNDER_REVIEW_DSP,
+          loanType: loan.loanType,
+          loanAmount: updated.loanAmount,
+          loanTenor: updated.loanTenor,
+          loanPurpose: updated.loanPurpose,
+          bankAccountNumber: updated.bankAccountNumber,
+          interestRate: updated.interestRate,
+          monthlyInstallment: updated.monthlyInstallment,
+          action: 'STATUS_CHANGED',
+          actionAt: new Date(),
+          actionBy: userId,
+          notes: 'Pinjaman masuk ke review Divisi Simpan Pinjam',
         },
       });
 
