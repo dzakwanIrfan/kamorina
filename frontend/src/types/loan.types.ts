@@ -57,6 +57,7 @@ export interface GoodsOnlineDetail {
   itemName: string;
   itemPrice: number;
   itemUrl: string;
+  shopMarginRate: number; 
   notes?: string;
   createdAt: string;
   updatedAt: string;

@@ -98,6 +98,24 @@ export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
                 </p>
               </div>
             </div>
+            
+            {loan.goodsOnlineDetails.shopMarginRate && (
+              <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3">
+                <p className="text-sm text-muted-foreground mb-1">Informasi Margin Toko</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Rate Margin:</span>
+                  <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                    {loan.goodsOnlineDetails.shopMarginRate}%
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Margin: {formatCurrency(
+                    loan.loanAmount * (loan.goodsOnlineDetails.shopMarginRate / 100)
+                  )}
+                </p>
+              </div>
+            )}
+
             <div>
               <p className="text-sm text-muted-foreground mb-1">Link Barang</p>
               <a
@@ -143,13 +161,6 @@ export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
                   <p className="text-xl font-bold text-primary">
                     {formatCurrency(loan.goodsPhoneDetails.cooperativePrice)}
                   </p>
-                </div>
-                <div className="col-span-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    Hemat {formatCurrency(
-                      loan.goodsPhoneDetails.retailPrice - loan.goodsPhoneDetails.cooperativePrice
-                    )}
-                  </Badge>
                 </div>
               </div>
             ) : (

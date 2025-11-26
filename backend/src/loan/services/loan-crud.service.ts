@@ -62,13 +62,24 @@ export class LoanCrudService {
     const loanNumber = await this.numberService.generateLoanNumber(dto.loanType);
     
     // Calculate loan details (skip for GOODS_PHONE)
-    let calculations: { interestRate: number | null; monthlyInstallment: number | null; totalRepayment: number | null } = {
+    let calculations: { 
+      interestRate: number | null; 
+      shopMarginRate: number | null;
+      monthlyInstallment: number | null; 
+      totalRepayment: number | null;
+    } = {
       interestRate: null,
+      shopMarginRate: null,
       monthlyInstallment: null,
       totalRepayment: null,
     };
+    
     if (dto.loanType !== LoanType.GOODS_PHONE && loanAmount > 0) {
-      calculations = await this.calculationService.calculateLoanDetails(loanAmount, dto.loanTenor);
+      calculations = await this.calculationService.calculateLoanDetails(
+        loanAmount, 
+        dto.loanTenor,
+        dto.loanType
+      );
     }
 
     const loan = await this.prisma.$transaction(async (tx) => {
@@ -84,12 +95,14 @@ export class LoanCrudService {
           loanPurpose: dto.loanPurpose,
           attachments: dto.attachments || [],
           status: LoanStatus.DRAFT,
-          ...calculations,
+          interestRate: calculations.interestRate,
+          monthlyInstallment: calculations.monthlyInstallment,
+          totalRepayment: calculations.totalRepayment,
         },
       });
 
-      // Create type-specific details
-      await handler.createTypeSpecificDetails(tx, loanApp.id, dto);
+      // Create type-specific details (pass shopMarginRate for GOODS_ONLINE)
+      await handler.createTypeSpecificDetails(tx, loanApp.id, dto, calculations.shopMarginRate);
 
       return loanApp;
     });
@@ -177,13 +190,21 @@ export class LoanCrudService {
     }
 
     // Recalculate if amount or tenor changed (skip for GOODS_PHONE)
+    let shopMarginRate: number | null = null;
     if ((updateData.loanAmount !== undefined || updateData.loanTenor !== undefined) && 
         loan.loanType !== LoanType.GOODS_PHONE && 
         newLoanAmount > 0) {
       const amount = updateData.loanAmount ?? loan.loanAmount.toNumber();
       const tenor = updateData.loanTenor ?? loan.loanTenor;
-      const calculations = await this.calculationService.calculateLoanDetails(amount, tenor);
-      Object.assign(updateData, calculations);
+      const calculations = await this.calculationService.calculateLoanDetails(
+        amount, 
+        tenor,
+        loan.loanType
+      );
+      updateData.interestRate = calculations.interestRate;
+      updateData.monthlyInstallment = calculations.monthlyInstallment;
+      updateData.totalRepayment = calculations.totalRepayment;
+      shopMarginRate = calculations.shopMarginRate;
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
@@ -193,8 +214,8 @@ export class LoanCrudService {
         data: updateData,
       });
 
-      // Update type-specific details
-      await handler.updateTypeSpecificDetails(tx, loanId, dto);
+      // Update type-specific details (pass shopMarginRate for GOODS_ONLINE)
+      await handler.updateTypeSpecificDetails(tx, loanId, dto, shopMarginRate);
 
       return loanApp;
     });

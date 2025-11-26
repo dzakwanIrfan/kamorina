@@ -1,24 +1,21 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { ThemeProvider } from '@/providers/theme-provider';
-import { AuthProvider } from '@/providers/auth-provider';
-import { ProgressProvider } from '@/providers/progress-provider';
-import { Toaster } from '@/components/ui/sonner';
-import './globals.css';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Providers } from "@/components/providers";
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: 'Surya Niaga Kamorina',
-  description: 'Sistem Informasi Koperasi Surya Niaga Kamorina',
+  title: "Surya Niaga Kamorina",
+  description: "Sistem Informasi Koperasi Surya Niaga Kamorina",
 };
 
 export default function RootLayout({
@@ -31,19 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <ProgressProvider>
-              {children}
-            </ProgressProvider>
-            <Toaster position="top-right" richColors />
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

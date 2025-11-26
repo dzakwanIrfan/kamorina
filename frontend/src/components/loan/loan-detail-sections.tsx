@@ -57,6 +57,19 @@ export function CalculationBreakdown({ loan }: CalculationBreakdownProps) {
   }
 
   const totalInterest = loan.totalRepayment - loan.loanAmount;
+  
+  // Calculate shop margin for GOODS_ONLINE
+  let shopMargin = 0;
+  let shopMarginRate = 0;
+  if (loan.loanType === LoanType.GOODS_ONLINE && loan.goodsOnlineDetails?.shopMarginRate) {
+    shopMarginRate = loan.goodsOnlineDetails.shopMarginRate;
+    shopMargin = loan.loanAmount * (shopMarginRate / 100);
+  }
+
+  // Calculate pure interest (without shop margin)
+  const pureInterest = loan.loanType === LoanType.GOODS_ONLINE 
+    ? totalInterest - shopMargin 
+    : totalInterest;
 
   return (
     <Card>
@@ -82,12 +95,35 @@ export function CalculationBreakdown({ loan }: CalculationBreakdownProps) {
 
           <Separator />
 
+          {/* Shop Margin (only for GOODS_ONLINE) */}
+          {loan.loanType === LoanType.GOODS_ONLINE && shopMargin > 0 && (
+            <div className="flex justify-between items-center py-2 bg-purple-50 dark:bg-purple-950/30 rounded-lg px-4">
+              <span className="text-muted-foreground">
+                Margin Toko ({shopMarginRate}%)
+              </span>
+              <span className="font-medium text-purple-600">
+                {formatCurrency(shopMargin)}
+              </span>
+            </div>
+          )}
+
           <div className="flex justify-between items-center py-2">
-            <span className="text-muted-foreground">Total Bunga</span>
+            <span className="text-muted-foreground">
+              {loan.loanType === LoanType.GOODS_ONLINE ? 'Bunga Pinjaman' : 'Total Bunga'}
+            </span>
             <span className="font-medium text-orange-600">
-              {formatCurrency(totalInterest)}
+              {formatCurrency(pureInterest)}
             </span>
           </div>
+
+          {loan.loanType === LoanType.GOODS_ONLINE && shopMargin > 0 && (
+            <div className="flex justify-between items-center py-2">
+              <span className="text-muted-foreground">Total Biaya (Margin + Bunga)</span>
+              <span className="font-medium text-orange-600">
+                {formatCurrency(totalInterest)}
+              </span>
+            </div>
+          )}
 
           <div className="flex justify-between items-center py-2 bg-muted rounded-lg px-4">
             <span className="font-semibold">Total Pembayaran</span>
@@ -108,9 +144,17 @@ export function CalculationBreakdown({ loan }: CalculationBreakdownProps) {
 
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            <strong>Catatan:</strong> Perhitungan menggunakan metode bunga flat rate.
-            Cicilan akan dipotong langsung dari gaji setiap bulan.
+          <AlertDescription className="text-xs space-y-1">
+            <div>
+              <strong>Catatan:</strong> Perhitungan menggunakan metode bunga flat rate.
+              Cicilan akan dipotong langsung dari gaji setiap bulan.
+            </div>
+            {loan.loanType === LoanType.GOODS_ONLINE && shopMargin > 0 && (
+              <div className="mt-2 pt-2 border-t">
+                Untuk kredit barang online, total pembayaran sudah termasuk margin toko {shopMarginRate}% 
+                sebesar {formatCurrency(shopMargin)}.
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       </CardContent>

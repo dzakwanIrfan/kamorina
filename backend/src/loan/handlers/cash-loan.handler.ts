@@ -12,6 +12,18 @@ export class CashLoanHandler implements LoanTypeHandler {
 
   constructor(private prisma: PrismaService) {}
 
+  private async getSettingNumber(key: string, defaultValue: number): Promise<number> {
+    try {
+      const setting = await this.prisma.cooperativeSetting.findUnique({
+        where: { key },
+      });
+      return setting ? parseFloat(setting.value) : defaultValue;
+    } catch (error) {
+      console.error(`Failed to get setting ${key}, using default:`, defaultValue);
+      return defaultValue;
+    }
+  }
+
   async validateLoanAmount(userId: string, amount: number): Promise<void> {
     // Get user with employee and golongan data
     const user = await this.prisma.user.findUnique({
@@ -56,11 +68,8 @@ export class CashLoanHandler implements LoanTypeHandler {
       );
     }
 
-    // Get min loan from settings
-    const minLoanSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'min_loan_amount' },
-    });
-    const minLoanAmount = minLoanSetting ? parseFloat(minLoanSetting.value) : 1000000;
+    // Get min loan from settings (DYNAMIC)
+    const minLoanAmount = await this.getSettingNumber('min_loan_amount', 1000000);
 
     if (amount < minLoanAmount) {
       throw new BadRequestException(
@@ -73,6 +82,7 @@ export class CashLoanHandler implements LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: CreateCashLoanDto,
+    shopMarginRate?: number | null,
   ): Promise<void> {
     await tx.cashLoanDetail.create({
       data: {
@@ -86,6 +96,7 @@ export class CashLoanHandler implements LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: UpdateCashLoanDto,
+    shopMarginRate?: number | null,
   ): Promise<void> {
     const existing = await tx.cashLoanDetail.findUnique({
       where: { loanApplicationId },
@@ -103,6 +114,7 @@ export class CashLoanHandler implements LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: ReviseCashLoanDto,
+    shopMarginRate?: number | null,
   ): Promise<void> {
     // No specific fields to revise for cash loan
     // loanAmount is already handled in main loan application

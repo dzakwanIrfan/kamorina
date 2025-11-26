@@ -9,18 +9,21 @@ export interface LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: any,
+    shopMarginRate?: number | null,
   ): Promise<void>;
   
   updateTypeSpecificDetails(
     tx: any,
     loanApplicationId: string,
     dto: any,
+    shopMarginRate?: number | null,
   ): Promise<void>;
   
   reviseTypeSpecificDetails(
     tx: any,
     loanApplicationId: string,
     dto: any,
+    shopMarginRate?: number | null,
   ): Promise<void>;
   
   getIncludeRelations(): any;

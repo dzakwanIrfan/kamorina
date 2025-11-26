@@ -1,16 +1,16 @@
+// frontend/src/components/loan/loan-form.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Loader2, Upload, X, FileText, DollarSign, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 import { loanService } from '@/services/loan.service';
@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { LoanEligibility, LoanType, CreateLoanDto } from '@/types/loan.types';
 import { createLoanFormSchema, getDefaultFormValues } from '@/lib/loan-form-schemas';
 import { formatCurrency } from '@/lib/loan-utils';
+import { useSetting, getSettingValue } from '@/hooks/use-settings';
 
 import { LoanTypeSelector } from './loan-type-selector';
 import { CommonLoanFields } from './form-fields/common-loan-fields';
@@ -56,6 +57,13 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const [eligibility, setEligibility] = useState<LoanEligibility | null>(null);
   const [eligibilityError, setEligibilityError] = useState<string | null>(null);
 
+  // Fetch dynamic settings
+  const { data: shopMarginData } = useSetting('shop_margin_rate');
+  const { data: maxGoodsLoanData } = useSetting('max_goods_loan_amount');
+
+  const shopMarginRate = shopMarginData ? getSettingValue(shopMarginData) : 5;
+  const maxGoodsLoanAmount = maxGoodsLoanData ? getSettingValue(maxGoodsLoanData) : 15000000;
+
   const formSchema = eligibility && selectedType 
     ? createLoanFormSchema(selectedType, eligibility)
     : null;
@@ -87,16 +95,36 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     }
   };
 
-  const calculateLoan = (amount: number, tenor: number) => {
+  const calculateLoan = (amount: number, tenor: number, loanType: LoanType) => {
     if (!eligibility || !amount || !tenor) return null;
 
     const annualRate = eligibility.loanLimit.interestRate / 100;
     const totalInterest = amount * annualRate * (tenor / 12);
-    const totalRepayment = amount + totalInterest;
+    
+    let shopMargin = 0;
+    let totalRepayment = 0;
+
+    switch (loanType) {
+      case LoanType.CASH_LOAN:
+      case LoanType.GOODS_REIMBURSE:
+      case LoanType.GOODS_PHONE:
+        totalRepayment = amount + totalInterest;
+        break;
+
+      case LoanType.GOODS_ONLINE:
+        shopMargin = amount * (shopMarginRate / 100);
+        totalRepayment = amount + shopMargin + totalInterest;
+        break;
+
+      default:
+        totalRepayment = amount + totalInterest;
+    }
+
     const monthlyInstallment = totalRepayment / tenor;
 
     return {
       totalInterest,
+      shopMargin: loanType === LoanType.GOODS_ONLINE ? shopMargin : undefined,
       totalRepayment,
       monthlyInstallment,
     };
@@ -110,7 +138,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       case LoanType.GOODS_ONLINE:
         return formData.itemPrice || 0;
       case LoanType.GOODS_PHONE:
-        return 0; // Will be set by DSP
+        return 0;
       default:
         return 0;
     }
@@ -118,7 +146,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
 
   const loanAmount = getLoanAmount(form.watch());
   const loanTenor = form.watch('loanTenor');
-  const calculations = loanAmount && loanTenor ? calculateLoan(loanAmount, loanTenor) : null;
+  const calculations = loanAmount && loanTenor && selectedType
+    ? calculateLoan(loanAmount, loanTenor, selectedType) 
+    : null;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -245,6 +275,10 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     );
   }
 
+  const displayMaxAmount = selectedType === LoanType.CASH_LOAN 
+    ? eligibility.loanLimit.maxLoanAmount 
+    : maxGoodsLoanAmount;
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
@@ -277,17 +311,13 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                 <div>
                   <p className="text-muted-foreground">Plafond Minimum</p>
                   <p className="font-bold text-green-700">
-                    {selectedType === LoanType.CASH_LOAN
-                      ? formatCurrency(eligibility.loanLimit.minLoanAmount)
-                      : 'Rp 1.000.000'}
+                    {formatCurrency(eligibility.loanLimit.minLoanAmount)}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Plafond Maksimum</p>
                   <p className="font-bold text-green-700">
-                    {selectedType === LoanType.CASH_LOAN
-                      ? formatCurrency(eligibility.loanLimit.maxLoanAmount)
-                      : 'Rp 15.000.000'}
+                    {formatCurrency(displayMaxAmount)}
                   </p>
                 </div>
               </div>
@@ -317,7 +347,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
             {selectedType === LoanType.GOODS_REIMBURSE && (
               <GoodsReimburseFields
                 form={form}
-                maxAmount={15000000}
+                maxAmount={maxGoodsLoanAmount}
                 isSubmitting={isSubmitting}
               />
             )}
@@ -325,7 +355,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
             {selectedType === LoanType.GOODS_ONLINE && (
               <GoodsOnlineFields
                 form={form}
-                maxAmount={15000000}
+                maxAmount={maxGoodsLoanAmount}
                 isSubmitting={isSubmitting}
               />
             )}
@@ -340,6 +370,8 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                 <LoanCalculationPreview
                   calculations={calculations}
                   interestRate={eligibility.loanLimit.interestRate}
+                  shopMarginRate={selectedType === LoanType.GOODS_ONLINE ? shopMarginRate : undefined}
+                  loanType={selectedType}
                 />
               </>
             )}
@@ -363,6 +395,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                   <li>Pencairan dilakukan setelah semua approval selesai</li>
                   {selectedType === LoanType.GOODS_PHONE && (
                     <li>Harga handphone akan ditentukan oleh DSP berdasarkan harga rekanan</li>
+                  )}
+                  {selectedType === LoanType.GOODS_ONLINE && (
+                    <li>Total pembayaran sudah termasuk margin toko {shopMarginRate}%</li>
                   )}
                 </ul>
               </AlertDescription>

@@ -12,17 +12,24 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
 
   constructor(private prisma: PrismaService) {}
 
+  private async getSettingNumber(key: string, defaultValue: number): Promise<number> {
+    try {
+      const setting = await this.prisma.cooperativeSetting.findUnique({
+        where: { key },
+      });
+      return setting ? parseFloat(setting.value) : defaultValue;
+    } catch (error) {
+      console.error(`Failed to get setting ${key}, using default:`, defaultValue);
+      return defaultValue;
+    }
+  }
+
   async validateLoanAmount(userId: string, amount: number): Promise<void> {
     // For phone, cooperativePrice is the loan amount
     // Set by DSP during revision, so validation happens there
     
-    // Get max goods loan from settings (15 juta)
-    const maxGoodsLoanSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'max_goods_loan_amount' },
-    });
-    const maxGoodsLoan = maxGoodsLoanSetting 
-      ? parseFloat(maxGoodsLoanSetting.value) 
-      : 15000000;
+    // Get max goods loan from settings (DYNAMIC)
+    const maxGoodsLoan = await this.getSettingNumber('max_goods_loan_amount', 15000000);
 
     if (amount > maxGoodsLoan) {
       throw new BadRequestException(
@@ -30,11 +37,8 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
       );
     }
 
-    // Get min loan from settings
-    const minLoanSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'min_loan_amount' },
-    });
-    const minLoanAmount = minLoanSetting ? parseFloat(minLoanSetting.value) : 1000000;
+    // Get min loan from settings (DYNAMIC)
+    const minLoanAmount = await this.getSettingNumber('min_loan_amount', 1000000);
 
     if (amount < minLoanAmount) {
       throw new BadRequestException(
@@ -47,6 +51,7 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: CreateGoodsPhoneDto,
+    shopMarginRate?: number | null,
   ): Promise<void> {
     await tx.goodsPhoneDetail.create({
       data: {
@@ -63,6 +68,7 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: UpdateGoodsPhoneDto,
+    shopMarginRate?: number | null,
   ): Promise<void> {
     const existing = await tx.goodsPhoneDetail.findUnique({
       where: { loanApplicationId },
@@ -86,6 +92,7 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
     tx: any,
     loanApplicationId: string,
     dto: ReviseGoodsPhoneDto,
+    shopMarginRate?: number | null,
   ): Promise<void> {
     await tx.goodsPhoneDetail.update({
       where: { loanApplicationId },

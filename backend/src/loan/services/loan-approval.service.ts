@@ -62,7 +62,11 @@ export class LoanApprovalService {
 
     await handler.validateLoanAmount(loan.userId, newLoanAmount);
     await this.validationService.validateLoanTenor(dto.loanTenor);
-    const calculations = await this.calculationService.calculateLoanDetails(newLoanAmount, dto.loanTenor);
+    const calculations = await this.calculationService.calculateLoanDetails(
+      newLoanAmount, 
+      dto.loanTenor,
+      loan.loanType
+    );
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Update loan
@@ -71,7 +75,9 @@ export class LoanApprovalService {
         data: {
           loanAmount: newLoanAmount,
           loanTenor: dto.loanTenor,
-          ...calculations,
+          interestRate: calculations.interestRate,
+          monthlyInstallment: calculations.monthlyInstallment,
+          totalRepayment: calculations.totalRepayment,
           revisionCount: { increment: 1 },
           lastRevisedAt: new Date(),
           lastRevisedBy: approverId,
@@ -79,8 +85,8 @@ export class LoanApprovalService {
         },
       });
 
-      // Update type-specific details
-      await handler.reviseTypeSpecificDetails(tx, loanId, dto);
+      // Update type-specific details (pass shopMarginRate for GOODS_ONLINE)
+      await handler.reviseTypeSpecificDetails(tx, loanId, dto, calculations.shopMarginRate);
 
       // Save revision in approval record
       const approvalRecord = loan.approvals.find(
@@ -98,7 +104,10 @@ export class LoanApprovalService {
             revisedData: {
               loanAmount: newLoanAmount,
               loanTenor: dto.loanTenor,
-              ...calculations,
+              interestRate: calculations.interestRate,
+              monthlyInstallment: calculations.monthlyInstallment,
+              totalRepayment: calculations.totalRepayment,
+              shopMarginRate: calculations.shopMarginRate,
               typeSpecificData: { ...dto },
             },
           },

@@ -7,6 +7,21 @@ export class LoanValidationService {
   constructor(private prisma: PrismaService) {}
 
   /**
+   * Get setting value as number
+   */
+  private async getSettingNumber(key: string, defaultValue: number): Promise<number> {
+    try {
+      const setting = await this.prisma.cooperativeSetting.findUnique({
+        where: { key },
+      });
+      return setting ? parseFloat(setting.value) : defaultValue;
+    } catch (error) {
+      console.error(`Failed to get setting ${key}, using default:`, defaultValue);
+      return defaultValue;
+    }
+  }
+
+  /**
    * Check if user is verified member and eligible for loan
    */
   async checkMemberStatus(userId: string) {
@@ -45,18 +60,14 @@ export class LoanValidationService {
    * Validate loan tenor against settings
    */
   async validateLoanTenor(tenor: number) {
-    const maxTenor = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'max_loan_tenor' },
-    });
-
-    const maxTenorValue = maxTenor ? parseInt(maxTenor.value) : 36;
+    const maxTenor = await this.getSettingNumber('max_loan_tenor', 36);
 
     if (tenor < 1) {
       throw new BadRequestException('Tenor minimal 1 bulan');
     }
 
-    if (tenor > maxTenorValue) {
-      throw new BadRequestException(`Tenor maksimal ${maxTenorValue} bulan`);
+    if (tenor > maxTenor) {
+      throw new BadRequestException(`Tenor maksimal ${maxTenor} bulan`);
     }
   }
 
@@ -128,22 +139,13 @@ export class LoanValidationService {
     const yearsOfService = this.calculateYearsOfService(user.employee.employeeNumber);
 
     // Get min loan from settings
-    const minLoanSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'min_loan_amount' },
-    });
-    const minLoanAmount = minLoanSetting ? parseFloat(minLoanSetting.value) : 1000000;
+    const minLoanAmount = await this.getSettingNumber('min_loan_amount', 1000000);
 
     // Get max tenor from settings
-    const maxTenorSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'max_loan_tenor' },
-    });
-    const maxTenor = maxTenorSetting ? parseInt(maxTenorSetting.value) : 36;
+    const maxTenor = await this.getSettingNumber('max_loan_tenor', 36);
 
-    // Get interest rate
-    const interestSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'loan_interest_rate' },
-    });
-    const interestRate = interestSetting ? parseFloat(interestSetting.value) : 12;
+    // Get interest rate from settings
+    const interestRate = await this.getSettingNumber('loan_interest_rate', 8);
 
     let maxLoanAmount: number;
 
@@ -171,11 +173,8 @@ export class LoanValidationService {
 
       maxLoanAmount = Number(loanLimit.maxLoanAmount);
     } else {
-      // For goods loans, use max_goods_loan_amount setting (15 juta)
-      const maxGoodsLoanSetting = await this.prisma.cooperativeSetting.findUnique({
-        where: { key: 'max_goods_loan_amount' },
-      });
-      maxLoanAmount = maxGoodsLoanSetting ? parseFloat(maxGoodsLoanSetting.value) : 15000000;
+      // For goods loans, use max_goods_loan_amount setting
+      maxLoanAmount = await this.getSettingNumber('max_goods_loan_amount', 15000000);
     }
 
     if (maxLoanAmount === 0) {

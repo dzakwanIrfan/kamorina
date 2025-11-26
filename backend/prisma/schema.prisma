@@ -457,6 +457,7 @@ model GoodsOnlineDetail {
   itemName          String           @map("item_name")
   itemPrice         Decimal          @map("item_price") @db.Decimal(15, 2)
   itemUrl           String           @map("item_url") @db.Text
+  shopMarginRate    Decimal          @map("shop_margin_rate") @db.Decimal(5, 2)
   
   notes             String?          @db.Text
   

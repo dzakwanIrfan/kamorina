@@ -26,6 +26,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
+    "@tanstack/react-query": "^5.90.11",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.13.0",
     "class-variance-authority": "^0.7.1",
@@ -49,6 +50,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tanstack/eslint-plugin-query": "^5.91.2",
     "@types/jwt-decode": "^3.1.0",
     "@types/node": "^20.19.23",
     "@types/nprogress": "^0.2.3",

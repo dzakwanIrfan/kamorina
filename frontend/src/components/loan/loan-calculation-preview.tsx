@@ -2,43 +2,89 @@
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Info } from 'lucide-react';
 import { formatCurrency } from '@/lib/loan-utils';
+import { LoanType } from '@/types/loan.types';
 
 interface LoanCalculationPreviewProps {
   calculations: {
     totalInterest: number;
+    shopMargin?: number;
     totalRepayment: number;
     monthlyInstallment: number;
   };
   interestRate: number;
+  shopMarginRate?: number;
+  loanType: LoanType;
 }
 
-export function LoanCalculationPreview({ calculations, interestRate }: LoanCalculationPreviewProps) {
+export function LoanCalculationPreview({ 
+  calculations, 
+  interestRate, 
+  shopMarginRate,
+  loanType 
+}: LoanCalculationPreviewProps) {
   return (
     <Alert>
       <DollarSign className="h-4 w-4" />
       <AlertDescription>
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="font-semibold">Perhitungan Pinjaman:</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Bunga ({interestRate}% per tahun)</p>
-              <p className="font-bold text-primary">
+          
+          <div className="space-y-2 text-sm">
+            {/* Interest */}
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">
+                Bunga ({interestRate}% per tahun)
+              </span>
+              <span className="font-bold text-primary">
                 {formatCurrency(calculations.totalInterest)}
-              </p>
+              </span>
             </div>
-            <div>
-              <p className="text-muted-foreground">Total Pembayaran</p>
-              <p className="font-bold">{formatCurrency(calculations.totalRepayment)}</p>
+
+            {/* Shop Margin (only for GOODS_ONLINE) */}
+            {loanType === LoanType.GOODS_ONLINE && calculations.shopMargin && shopMarginRate && (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">
+                    Margin Toko ({shopMarginRate}%)
+                  </span>
+                  <span className="font-bold text-purple-600">
+                    {formatCurrency(calculations.shopMargin)}
+                  </span>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* Total Repayment */}
+            <div className="flex justify-between items-center bg-muted/50 p-2 rounded">
+              <span className="font-semibold">Total Pembayaran</span>
+              <span className="font-bold text-lg">
+                {formatCurrency(calculations.totalRepayment)}
+              </span>
             </div>
-            <div>
-              <p className="text-muted-foreground">Cicilan per Bulan</p>
-              <p className="font-bold text-orange-600">
+
+            {/* Monthly Installment */}
+            <div className="flex justify-between items-center bg-primary/5 p-2 rounded">
+              <span className="font-semibold text-primary">Cicilan per Bulan</span>
+              <span className="font-bold text-xl text-primary">
                 {formatCurrency(calculations.monthlyInstallment)}
-              </p>
+              </span>
             </div>
           </div>
+
+          {/* Additional Info */}
+          {loanType === LoanType.GOODS_ONLINE && (
+            <div className="mt-3 pt-3 border-t">
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>
+                  Untuk kredit barang online, total pembayaran sudah termasuk margin toko {shopMarginRate}%
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </AlertDescription>
     </Alert>
