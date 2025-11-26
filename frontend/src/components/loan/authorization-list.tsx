@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CheckCircle2, DollarSign } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
 
 import { DataTableAdvanced } from '@/components/data-table/data-table-advanced';

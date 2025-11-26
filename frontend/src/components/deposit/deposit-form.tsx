@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, DollarSign, Calendar as CalendarIcon, CheckCircle2, Info } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, CheckCircle2, Info } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 
 import { Button } from '@/components/ui/button';
 import {
@@ -167,7 +168,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                             htmlFor={option.value}
                             className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                           >
-                            <DollarSign className="mb-2 h-6 w-6" />
+                            <FaRupiahSign className="mb-2 h-6 w-6" />
                             <span className="text-lg font-bold">{option.label}</span>
                           </label>
                         </div>

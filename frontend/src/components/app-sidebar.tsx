@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
-  Package,
   FileText,
   Settings,
   ChevronsUpDown,
@@ -15,11 +14,11 @@ import {
   Shield,
   AlertCircle,
   AlignVerticalJustifyEnd,
-  DollarSign,
   CheckCircle2,
   Banknote,
   PiggyBank,
 } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 
 import {
   Sidebar,
@@ -56,7 +55,7 @@ const menuItems = [
   },
   {
     title: 'Pinjaman Saya',
-    icon: DollarSign,
+    icon: FaRupiahSign,
     href: '/dashboard/loans',
     requiresMemberVerified: true,
   },

@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Eye, CheckCircle2, XCircle, Clock, Plus, DollarSign } from 'lucide-react';
+import { Eye, CheckCircle2, Clock, Plus } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -217,7 +218,7 @@ export function MyLoans() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pinjaman</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <FaRupiahSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{meta.total}</div>

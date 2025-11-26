@@ -28,7 +28,8 @@ import {
 import { LoanApplication, LoanType } from '@/types/loan.types';
 import { loanService } from '@/services/loan.service';
 import { toast } from 'sonner';
-import { Loader2, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { handleApiError } from '@/lib/axios';
 import { formatCurrency } from '@/lib/loan-utils';
 
@@ -242,7 +243,7 @@ export function ReviseLoanDialog({
                 <FormLabel>Jumlah Pinjaman yang Direvisi</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="number"
                       placeholder="5000000"
@@ -271,7 +272,7 @@ export function ReviseLoanDialog({
                 <FormLabel>Harga Barang yang Direvisi</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="number"
                       placeholder="5000000"
@@ -300,7 +301,7 @@ export function ReviseLoanDialog({
                   <FormLabel>Harga Retail</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="number"
                         placeholder="10000000"
@@ -325,7 +326,7 @@ export function ReviseLoanDialog({
                   <FormLabel>Harga Koperasi Rekanan</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="number"
                         placeholder="9000000"

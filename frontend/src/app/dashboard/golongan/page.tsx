@@ -3,7 +3,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Users, DollarSign } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -242,7 +243,7 @@ export default function GolonganPage() {
         return (
           <div className="flex items-center gap-2">
             <Badge variant={count > 0 ? 'default' : 'outline'} className="gap-1">
-              <DollarSign className="h-3 w-3" />
+              <FaRupiahSign className="h-3 w-3" />
               {count > 0 ? `${count} range` : 'Belum diatur'}
             </Badge>
             {canEdit && (

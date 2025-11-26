@@ -11,7 +11,8 @@ import {
 import { Golongan } from '@/types/golongan.types';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Users, Calendar, FileText, CheckCircle2, XCircle, DollarSign } from 'lucide-react';
+import { Users, Calendar, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -126,7 +127,7 @@ export function GolonganDetailDialog({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">
-                    <DollarSign className="inline h-4 w-4 mr-1" />
+                    <FaRupiahSign className="inline h-4 w-4 mr-1" />
                     Matrik Plafond Pinjaman
                   </h4>
                   <Badge variant="secondary">

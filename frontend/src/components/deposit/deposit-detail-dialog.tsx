@@ -20,11 +20,11 @@ import {
   XCircle,
   Clock,
   User,
-  DollarSign,
   FileText,
   History,
   Calendar,
 } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
 
 import {
@@ -133,7 +133,7 @@ export function DepositDetailDialog({
               Timeline
             </TabsTrigger>
             <TabsTrigger value="calculation">
-              <DollarSign className="h-4 w-4 mr-2" />
+              <FaRupiahSign className="h-4 w-4 mr-2" />
               Perhitungan
             </TabsTrigger>
           </TabsList>
@@ -190,7 +190,7 @@ export function DepositDetailDialog({
             {/* Deposit Details */}
             <div className="rounded-lg border p-4 space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+                <FaRupiahSign className="h-4 w-4" />
                 Detail Deposito
               </h3>
               <Separator />

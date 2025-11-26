@@ -2,7 +2,8 @@
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { DollarSign, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { formatCurrency } from '@/lib/loan-utils';
 import { LoanType } from '@/types/loan.types';
 
@@ -26,7 +27,7 @@ export function LoanCalculationPreview({
 }: LoanCalculationPreviewProps) {
   return (
     <Alert>
-      <DollarSign className="h-4 w-4" />
+      <FaRupiahSign className="h-4 w-4" />
       <AlertDescription>
         <div className="space-y-3">
           <p className="font-semibold">Perhitungan Pinjaman:</p>

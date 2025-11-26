@@ -4,7 +4,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { DollarSign } from 'lucide-react';
+import { FaRupiahSign } from 'lucide-react';
 import { LoanEligibility } from '@/types/loan.types';
 import { formatCurrency } from '@/lib/loan-utils';
 
@@ -25,7 +25,7 @@ export function CashLoanFields({ form, eligibility, isSubmitting }: CashLoanFiel
             <FormLabel>Jumlah Pinjaman</FormLabel>
             <FormControl>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="number"
                   placeholder="5000000"

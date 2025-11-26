@@ -20,13 +20,13 @@ import {
   XCircle,
   Clock,
   User,
-  DollarSign,
   FileText,
   Download,
   History,
   CreditCard,
   Edit,
 } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
 
 import {
@@ -165,7 +165,7 @@ export function LoanDetailDialog({
                 Timeline
               </TabsTrigger>
               <TabsTrigger value="calculation">
-                <DollarSign className="h-4 w-4 mr-2" />
+                <FaRupiahSign className="h-4 w-4 mr-2" />
                 Perhitungan
               </TabsTrigger>
             </TabsList>
@@ -250,7 +250,7 @@ export function LoanDetailDialog({
               {/* Update bagian Loan Details untuk menampilkan info yang lebih general */}
               <div className="rounded-lg border p-4 space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
+                  <FaRupiahSign className="h-4 w-4" />
                   Informasi Pembayaran
                 </h3>
                 <Separator />
@@ -283,7 +283,7 @@ export function LoanDetailDialog({
               {/* Loan Details */}
               <div className="rounded-lg border p-4 space-y-3">
                 <h3 className="font-semibold flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
+                  <FaRupiahSign className="h-4 w-4" />
                   Detail Pinjaman
                 </h3>
                 <Separator />

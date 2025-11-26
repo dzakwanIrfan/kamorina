@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Calendar, DollarSign, ShoppingBag } from 'lucide-react';
+import { Calendar, FaRupiahSign, ShoppingBag } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ export function GoodsReimburseFields({ form, maxAmount, isSubmitting }: GoodsRei
             <FormLabel>Harga Barang</FormLabel>
             <FormControl>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="number"
                   placeholder="5000000"
