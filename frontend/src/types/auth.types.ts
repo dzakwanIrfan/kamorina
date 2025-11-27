@@ -40,7 +40,7 @@ export interface User {
 
 export interface AuthResponse {
   message: string;
-  accessToken: string;
+  accessToken?: string; // Made optional since we use httpOnly cookie
   user: User;
 }
 
@@ -79,4 +79,9 @@ export interface ApiErrorResponse {
   statusCode: number;
   message: string | string[];
   error: string;
+}
+
+export interface ExtendedApiError extends ApiErrorResponse {
+  isNetworkError?: boolean;
+  isAuthError?: boolean;
 }

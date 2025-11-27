@@ -13,18 +13,29 @@ interface ChangePasswordData {
   confirmPassword: string;
 }
 
+interface ProfileResponse {
+  message: string;
+  user: User;
+}
+
 export const profileService = {
   async getProfile(): Promise<User> {
     const response = await apiClient.get('/profile');
     return response.data;
   },
 
-  async updateProfile(data: UpdateProfileData): Promise<{ message: string; user: User }> {
+  async updateProfile(data: UpdateProfileData): Promise<ProfileResponse> {
     const response = await apiClient.put('/profile', data);
+    
+    // Update localStorage with new user data
+    if (typeof window !== 'undefined' && response.data.user) {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   },
 
-  async uploadAvatar(file: File): Promise<{ message: string; user: User }> {
+  async uploadAvatar(file: File): Promise<ProfileResponse> {
     const formData = new FormData();
     formData.append('avatar', file);
 
@@ -33,11 +44,23 @@ export const profileService = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    
+    // Update localStorage with new user data
+    if (typeof window !== 'undefined' && response.data.user) {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   },
 
-  async deleteAvatar(): Promise<{ message: string; user: User }> {
+  async deleteAvatar(): Promise<ProfileResponse> {
     const response = await apiClient.delete('/profile/avatar');
+    
+    // Update localStorage with new user data
+    if (typeof window !== 'undefined' && response.data.user) {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    
     return response.data;
   },
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -44,7 +44,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const searchParams = useSearchParams();
+  const { setUser, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -57,6 +58,30 @@ export default function LoginPage() {
     },
   });
 
+  // Check for session expired message on mount
+  useEffect(() => {
+    const sessionExpired = searchParams.get('session') === 'expired';
+    if (sessionExpired) {
+      toast.error('Sesi Anda telah berakhir', {
+        description: 'Silakan login kembali untuk melanjutkan.',
+        duration: 5000,
+      });
+      
+      // Clean up URL without triggering navigation
+      const url = new URL(window.location.href);
+      url.searchParams.delete('session');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
+      router.replace(redirectTo);
+    }
+  }, [isAuthenticated, authLoading, router, searchParams]);
+
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
@@ -67,8 +92,11 @@ export default function LoginPage() {
       setUser(response.user);
       toast.success(response.message);
       
-      // Force reload untuk trigger middleware baca cookie
-      window.location.href = '/dashboard';
+      // Get redirect URL from query params or default to dashboard
+      const redirectTo = searchParams.get('redirect') || '/dashboard';
+      
+      // Force reload to ensure middleware reads the new cookie
+      window.location.href = redirectTo;
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
@@ -77,6 +105,15 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  // Show nothing while checking auth status to prevent flash
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-primary/10 p-4">

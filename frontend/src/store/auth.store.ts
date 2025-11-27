@@ -1,73 +1,130 @@
 import { create } from 'zustand';
 import { User } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
+import { clearAuthData } from '@/lib/axios';
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
+  authError: string | null;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => Promise<void>;
-  initializeAuth: () => void;
+  initializeAuth: () => Promise<void>;
   refreshUserSession: () => Promise<void>;
+  clearError: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+  isInitialized: false,
+  authError: null,
 
-  setUser: (user) =>
+  setUser: (user) => {
+    // Also update localStorage when setUser is called
+    if (typeof window !== 'undefined') {
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('user');
+      }
+    }
+    
     set({
       user,
       isAuthenticated: !!user,
       isLoading: false,
-    }),
+    });
+  },
 
   setLoading: (loading) =>
     set({
       isLoading: loading,
     }),
 
-  logout: async () => {
-    await authService.logout();
+  clearError: () =>
     set({
-      user: null,
-      isAuthenticated: false,
-    });
-  },
+      authError: null,
+    }),
 
-  initializeAuth: () => {
-    const user = authService.getStoredUser();
-
-    if (user) {
-      set({
-        user,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-    } else {
+  logout: async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      clearAuthData();
       set({
         user: null,
         isAuthenticated: false,
         isLoading: false,
+        authError: null,
+      });
+    }
+  },
+
+  initializeAuth: async () => {
+    // Prevent multiple initializations
+    if (get().isInitialized) {
+      return;
+    }
+
+    set({ isLoading: true });
+
+    // ALWAYS try to validate with backend if we might have a cookie
+    try {
+      const validatedUser = await authService.validateSession();
+      set({
+        user: validatedUser,
+        isAuthenticated: true,
+        isLoading: false,
+        isInitialized: true,
+        authError: null,
+      });
+    } catch (error: any) {
+      console.error('Session validation failed:', error);
+      
+      // Clear any stale data
+      clearAuthData();
+      
+      set({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isInitialized: true,
+        authError: null,
       });
     }
   },
 
   refreshUserSession: async () => {
     try {
-      set({ isLoading: true });
       const updatedUser = await authService.refreshUserSession();
+      
       set({
         user: updatedUser,
         isAuthenticated: true,
-        isLoading: false,
+        authError: null,
       });
-    } catch (error) {
+      
+      return;
+    } catch (error: any) {
       console.error('Failed to refresh user session:', error);
-      set({ isLoading: false });
+      
+      // Only clear auth if it's a 401 error
+      if (error?.response?.status === 401 || error?.isAuthError) {
+        clearAuthData();
+        set({
+          user: null,
+          isAuthenticated: false,
+          authError: 'Sesi Anda telah berakhir.',
+        });
+      }
+      
       throw error;
     }
   },

@@ -35,8 +35,8 @@ import { EnvironmentVariables } from '../config/env.config';
             fileSize: 5 * 1024 * 1024, // 5MB
           },
           fileFilter: (req, file, callback) => {
-            if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-              return callback(new Error('Only image files are allowed!'), false);
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp|pdf|)$/)) {
+              return callback(new Error('Only image and PDF files are allowed!'), false);
             }
             callback(null, true);
           },

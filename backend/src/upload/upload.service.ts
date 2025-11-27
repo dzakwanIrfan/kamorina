@@ -33,10 +33,10 @@ export class UploadService {
   }
 
   validateImageFile(file: Express.Multer.File): void {
-    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
     
     if (!allowedMimes.includes(file.mimetype)) {
-      throw new BadRequestException('Format file tidak valid. Hanya jpg, jpeg, png, gif, dan webp yang diperbolehkan.');
+      throw new BadRequestException('Format file tidak valid. Hanya jpg, jpeg, png, gif, webp, dan pdf yang diperbolehkan.');
     }
 
     const maxSize = 5 * 1024 * 1024; // 5MB

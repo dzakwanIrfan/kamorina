@@ -15,7 +15,7 @@ import { Loader2, Camera, Trash2, User, Lock, CheckCircle2, AlertCircle } from '
 import { toast } from 'sonner';
 
 export default function ProfilePage() {
-  const { user, refreshUserSession } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -80,8 +80,13 @@ export default function ProfilePage() {
 
     setIsLoading(true);
     try {
-      await profileService.uploadAvatar(avatarFile);
-      await refreshUserSession();
+      const response = await profileService.uploadAvatar(avatarFile);
+      
+      // Directly update user 
+      if (response.user) {
+        setUser(response.user);
+      }
+      
       toast.success('Avatar berhasil diupdate');
       setAvatarFile(null);
       setAvatarPreview(null);
@@ -95,8 +100,13 @@ export default function ProfilePage() {
   const handleDeleteAvatar = async () => {
     setIsLoading(true);
     try {
-      await profileService.deleteAvatar();
-      await refreshUserSession();
+      const response = await profileService.deleteAvatar();
+      
+      // Directly update user 
+      if (response.user) {
+        setUser(response.user);
+      }
+      
       toast.success('Avatar berhasil dihapus');
       setAvatarPreview(null);
     } catch (error) {
@@ -116,8 +126,13 @@ export default function ProfilePage() {
     setIsLoading(true);
 
     try {
-      await profileService.updateProfile(profileData);
-      await refreshUserSession();
+      const response = await profileService.updateProfile(profileData);
+      
+      // Directly update user
+      if (response.user) {
+        setUser(response.user);
+      }
+      
       toast.success('Profile berhasil diupdate');
     } catch (error) {
       toast.error(handleApiError(error));
@@ -194,7 +209,12 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <Avatar className="h-32 w-32">
-              <AvatarImage src={avatarPreview || user.avatar || ''} alt={user.name} className='object-cover object-center' />
+              <AvatarImage 
+                src={avatarPreview || user.avatar || ''} 
+                alt={user.name} 
+                className='object-cover object-center'
+                key={user.avatar} 
+              />
               <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                 {getInitials(user.name)}
               </AvatarFallback>
@@ -217,12 +237,12 @@ export default function ProfilePage() {
                   />
                 </Label>
 
-                {(user.avatar || avatarPreview) && (
+                {(user.avatar && !avatarPreview) && (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleDeleteAvatar}
-                    disabled={isLoading || !!avatarPreview}
+                    disabled={isLoading}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Hapus Foto
