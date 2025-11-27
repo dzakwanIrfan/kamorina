@@ -22,7 +22,7 @@ export function FileUploadSection({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-sm font-medium">Lampiran Dokumen (Opsional)</label>
+        <label className="text-sm font-medium">Lampiran Dokumen</label>
         <p className="text-sm text-muted-foreground">
           Upload maksimal 5 file (PDF, DOC, XLS, JPG, PNG). Maksimal 10MB per file.
         </p>

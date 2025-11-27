@@ -190,6 +190,16 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const onSubmit = async (data: any) => {
     if (!selectedType) return;
 
+    if (selectedType === LoanType.GOODS_ONLINE && uploadedFiles.length === 0) {
+      toast.error('Untuk kredit barang online, lampiran dokumen wajib diupload.');
+      return;
+    }
+
+    if (selectedType === LoanType.GOODS_REIMBURSE && uploadedFiles.length === 0) {
+      toast.error('Untuk kredit barang reimburse, lampiran dokumen wajib diupload.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
