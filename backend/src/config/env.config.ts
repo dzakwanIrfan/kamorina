@@ -16,6 +16,7 @@ export interface EnvironmentVariables {
   // App
   FRONTEND_URL: string;
   API_URL: string;
+  BASE_URL: string;
   APP_PORT: number;
   NODE_ENV: string;
 }

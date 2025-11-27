@@ -4,7 +4,8 @@ import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { FaRupiahSign, ShoppingCart, Link as LinkIcon } from 'lucide-react';
+import { ShoppingCart, Link as LinkIcon } from 'lucide-react';
+import { FaRupiahSign } from "react-icons/fa6";
 import { formatCurrency } from '@/lib/loan-utils';
 
 interface GoodsOnlineFieldsProps {

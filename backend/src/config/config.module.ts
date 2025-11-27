@@ -17,6 +17,8 @@ import * as Joi from 'joi';
         MAIL_PASSWORD: Joi.string().required(),
         MAIL_FROM: Joi.string().required(),
         FRONTEND_URL: Joi.string().required(),
+        API_URL: Joi.string().required(),
+        BASE_URL: Joi.string().required(),
         APP_PORT: Joi.number().default(3001),
         NODE_ENV: Joi.string().default('development'),
       }),

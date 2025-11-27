@@ -11,8 +11,8 @@ export class UploadService {
   ) {}
 
   getFileUrl(filename: string): string {
-    const apiUrl = this.configService.get('API_URL', { infer: true }) || 'http://localhost:3001';
-    return `${apiUrl}/uploads/${filename}`;
+    const baseUrl = this.configService.get('BASE_URL', { infer: true }) || 'http://localhost:3001';
+    return `${baseUrl}/uploads/${filename}`;
   }
 
   deleteFile(filename: string): void {

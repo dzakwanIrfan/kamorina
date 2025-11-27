@@ -2,9 +2,9 @@
 
 import { UseFormReturn } from 'react-hook-form';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
+import { FaRupiahSign } from "react-icons/fa6";
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { FaRupiahSign } from 'lucide-react';
 import { LoanEligibility } from '@/types/loan.types';
 import { formatCurrency } from '@/lib/loan-utils';
 
