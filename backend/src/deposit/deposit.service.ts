@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
+import { DepositOptionService } from './deposit-option.service';
 import { CreateDepositDto } from './dto/create-deposit.dto';
 import { UpdateDepositDto } from './dto/update-deposit.dto';
 import { ApproveDepositDto } from './dto/approve-deposit.dto';
@@ -15,8 +16,6 @@ import {
   DepositStatus,
   DepositApprovalStep,
   DepositApprovalDecision,
-  DepositAmount,
-  DepositTenor,
 } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
@@ -25,6 +24,7 @@ export class DepositService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private depositOptionService: DepositOptionService,
   ) {}
 
   /**
@@ -50,34 +50,6 @@ export class DepositService {
     }
 
     return `DEP-${dateStr}-${sequence.toString().padStart(4, '0')}`;
-  }
-
-  /**
-   * Convert enum to numeric value
-   */
-  private getAmountValue(depositAmount: DepositAmount): number {
-    const amountMap = {
-      [DepositAmount.AMOUNT_200K]: 200000,
-      [DepositAmount.AMOUNT_500K]: 500000,
-      [DepositAmount.AMOUNT_1000K]: 1000000,
-      [DepositAmount.AMOUNT_1500K]: 1500000,
-      [DepositAmount.AMOUNT_2000K]: 2000000,
-      [DepositAmount.AMOUNT_3000K]: 3000000,
-    };
-    return amountMap[depositAmount];
-  }
-
-  /**
-   * Convert enum to numeric tenor
-   */
-  private getTenorMonths(depositTenor: DepositTenor): number {
-    const tenorMap = {
-      [DepositTenor.TENOR_3]: 3,
-      [DepositTenor.TENOR_6]: 6,
-      [DepositTenor.TENOR_9]: 9,
-      [DepositTenor.TENOR_12]: 12,
-    };
-    return tenorMap[depositTenor];
   }
 
   /**
@@ -140,8 +112,20 @@ export class DepositService {
       throw new BadRequestException('Anda harus menyetujui syarat dan ketentuan');
     }
 
-    const amountValue = this.getAmountValue(dto.depositAmount);
-    const tenorMonths = this.getTenorMonths(dto.depositTenor);
+    // Validate and get amount option
+    const amountOption = await this.depositOptionService.findAmountOptionByCode(dto.depositAmountCode);
+    if (!amountOption.isActive) {
+      throw new BadRequestException('Opsi jumlah deposito tidak aktif');
+    }
+
+    // Validate and get tenor option
+    const tenorOption = await this.depositOptionService.findTenorOptionByCode(dto.depositTenorCode);
+    if (!tenorOption.isActive) {
+      throw new BadRequestException('Opsi tenor deposito tidak aktif');
+    }
+
+    const amountValue = amountOption.amount.toNumber();
+    const tenorMonths = tenorOption.months;
     const depositNumber = await this.generateDepositNumber();
     const calculations = await this.calculateDepositReturn(amountValue, tenorMonths);
 
@@ -149,8 +133,8 @@ export class DepositService {
       data: {
         depositNumber,
         userId,
-        depositAmount: dto.depositAmount,
-        depositTenor: dto.depositTenor,
+        depositAmountCode: dto.depositAmountCode,
+        depositTenorCode: dto.depositTenorCode,
         amountValue,
         tenorMonths,
         agreedToTerms: dto.agreedToTerms,
@@ -199,14 +183,22 @@ export class DepositService {
 
     const updateData: any = {};
 
-    if (dto.depositAmount) {
-      updateData.depositAmount = dto.depositAmount;
-      updateData.amountValue = this.getAmountValue(dto.depositAmount);
+    if (dto.depositAmountCode) {
+      const amountOption = await this.depositOptionService.findAmountOptionByCode(dto.depositAmountCode);
+      if (!amountOption.isActive) {
+        throw new BadRequestException('Opsi jumlah deposito tidak aktif');
+      }
+      updateData.depositAmountCode = dto.depositAmountCode;
+      updateData.amountValue = amountOption.amount.toNumber();
     }
 
-    if (dto.depositTenor) {
-      updateData.depositTenor = dto.depositTenor;
-      updateData.tenorMonths = this.getTenorMonths(dto.depositTenor);
+    if (dto.depositTenorCode) {
+      const tenorOption = await this.depositOptionService.findTenorOptionByCode(dto.depositTenorCode);
+      if (!tenorOption.isActive) {
+        throw new BadRequestException('Opsi tenor deposito tidak aktif');
+      }
+      updateData.depositTenorCode = dto.depositTenorCode;
+      updateData.tenorMonths = tenorOption.months;
     }
 
     if (dto.agreedToTerms !== undefined) {
@@ -214,13 +206,9 @@ export class DepositService {
     }
 
     // Recalculate if amount or tenor changed
-    if (dto.depositAmount || dto.depositTenor) {
-      const amount = dto.depositAmount
-        ? this.getAmountValue(dto.depositAmount)
-        : deposit.amountValue.toNumber();
-      const tenor = dto.depositTenor
-        ? this.getTenorMonths(dto.depositTenor)
-        : deposit.tenorMonths;
+    if (dto.depositAmountCode || dto.depositTenorCode) {
+      const amount = updateData.amountValue ?? deposit.amountValue.toNumber();
+      const tenor = updateData.tenorMonths ?? deposit.tenorMonths;
       const calculations = await this.calculateDepositReturn(amount, tenor);
       Object.assign(updateData, calculations);
     }
@@ -299,8 +287,8 @@ export class DepositService {
         data: {
           depositApplicationId: depositId,
           status: DepositStatus.SUBMITTED,
-          depositAmount: updated.depositAmount,
-          depositTenor: updated.depositTenor,
+          depositAmountCode: updated.depositAmountCode,
+          depositTenorCode: updated.depositTenorCode,
           amountValue: updated.amountValue,
           tenorMonths: updated.tenorMonths,
           interestRate: updated.interestRate,
@@ -624,8 +612,8 @@ export class DepositService {
           data: {
             depositApplicationId: depositId,
             status: DepositStatus.REJECTED,
-            depositAmount: deposit.depositAmount,
-            depositTenor: deposit.depositTenor,
+            depositAmountCode: deposit.depositAmountCode,
+            depositTenorCode: deposit.depositTenorCode,
             amountValue: deposit.amountValue,
             tenorMonths: deposit.tenorMonths,
             interestRate: deposit.interestRate,
@@ -695,8 +683,8 @@ export class DepositService {
           data: {
             depositApplicationId: depositId,
             status: newStatus,
-            depositAmount: deposit.depositAmount,
-            depositTenor: deposit.depositTenor,
+            depositAmountCode: deposit.depositAmountCode,
+            depositTenorCode: deposit.depositTenorCode,
             amountValue: deposit.amountValue,
             tenorMonths: deposit.tenorMonths,
             interestRate: deposit.interestRate,
@@ -796,7 +784,7 @@ export class DepositService {
     return { message: 'Draft deposito berhasil dihapus' };
   }
 
-  // ============ NOTIFICATION HELPERS ============
+  // NOTIFICATION HELPERS
 
   private async notifyApprovers(
     depositId: string,

@@ -23,7 +23,7 @@ export default function CreateDepositPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Ajukan Deposito Baru</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Ajukan Tabungan Deposito Baru</h1>
           <p className="text-muted-foreground">
             Lengkapi formulir pengajuan tabungan deposito
           </p>

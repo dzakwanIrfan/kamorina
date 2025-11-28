@@ -17,6 +17,8 @@ import {
   CheckCircle2,
   Banknote,
   PiggyBank,
+  Wallet,
+  Clock,
 } from 'lucide-react';
 import { FaRupiahSign } from "react-icons/fa6";
 
@@ -79,6 +81,20 @@ const managementItems = [
     title: 'Deposit Approvals',
     icon: PiggyBank,
     href: '/dashboard/deposits/approvals',
+    roles: ['ketua', 'divisi_simpan_pinjam'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Opsi Jumlah Deposito',
+    icon: Wallet,
+    href: '/dashboard/deposit-options/amounts',
+    roles: ['ketua', 'divisi_simpan_pinjam'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Opsi Tenor Deposito',
+    icon: Clock,
+    href: '/dashboard/deposit-options/tenors',
     roles: ['ketua', 'divisi_simpan_pinjam'],
     requiresMemberVerified: true,
   },

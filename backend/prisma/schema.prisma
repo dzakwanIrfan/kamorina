@@ -575,20 +575,30 @@ model LoanAuthorization {
   @@map("loan_authorizations")
 }
 
-enum DepositAmount {
-  AMOUNT_200K
-  AMOUNT_500K
-  AMOUNT_1000K
-  AMOUNT_1500K
-  AMOUNT_2000K
-  AMOUNT_3000K
+model DepositAmountOption {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g., AMOUNT_200K
+  label       String   // e.g., Rp 200.000
+  amount      Decimal  @db.Decimal(15, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("deposit_amount_options")
 }
 
-enum DepositTenor {
-  TENOR_3
-  TENOR_6
-  TENOR_9
-  TENOR_12
+model DepositTenorOption {
+  id          String   @id @default(uuid())
+  code        String   @unique // e.g., TENOR_3
+  label       String   // e.g., 3 Bulan
+  months      Int
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("deposit_tenor_options")
 }
 
 enum DepositStatus {
@@ -620,8 +630,8 @@ model DepositApplication {
   userId                String               @map("user_id")
   user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  depositAmount         DepositAmount        @map("deposit_amount")
-  depositTenor          DepositTenor         @map("deposit_tenor")
+  depositAmountCode     String               @map("deposit_amount_code")
+  depositTenorCode      String               @map("deposit_tenor_code")
   amountValue           Decimal              @map("amount_value") @db.Decimal(15, 2)
   tenorMonths           Int                  @map("tenor_months")
   
@@ -651,6 +661,30 @@ model DepositApplication {
   @@map("deposit_applications")
 }
 
+model DepositHistory {
+  id                    String             @id @default(uuid())
+  depositApplicationId  String             @map("deposit_application_id")
+  depositApplication    DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
+  
+  status                DepositStatus
+  depositAmountCode     String             @map("deposit_amount_code")
+  depositTenorCode      String             @map("deposit_tenor_code")
+  amountValue           Decimal            @db.Decimal(15, 2)
+  tenorMonths           Int
+  interestRate          Decimal?           @db.Decimal(5, 2)
+  projectedInterest     Decimal?           @db.Decimal(15, 2)
+  
+  action                String
+  actionAt              DateTime           @map("action_at")
+  actionBy              String?            @map("action_by")
+  actionByUser          User?              @relation("deposit_processor", fields: [actionBy], references: [id])
+  notes                 String?            @db.Text
+  
+  createdAt             DateTime           @default(now()) @map("created_at")
+  
+  @@map("deposit_history")
+}
+
 model DepositApproval {
   id                    String                   @id @default(uuid())
   depositApplicationId  String                   @map("deposit_application_id")
@@ -666,28 +700,4 @@ model DepositApproval {
   createdAt             DateTime                 @default(now()) @map("created_at")
   
   @@map("deposit_approvals")
-}
-
-model DepositHistory {
-  id                    String             @id @default(uuid())
-  depositApplicationId  String             @map("deposit_application_id")
-  depositApplication    DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
-  
-  status                DepositStatus
-  depositAmount         DepositAmount
-  depositTenor          DepositTenor
-  amountValue           Decimal            @db.Decimal(15, 2)
-  tenorMonths           Int
-  interestRate          Decimal?           @db.Decimal(5, 2)
-  projectedInterest     Decimal?           @db.Decimal(15, 2)
-  
-  action                String
-  actionAt              DateTime           @map("action_at")
-  actionBy              String?            @map("action_by")
-  actionByUser          User?              @relation("deposit_processor", fields: [actionBy], references: [id])
-  notes                 String?            @db.Text
-  
-  createdAt             DateTime           @default(now()) @map("created_at")
-  
-  @@map("deposit_history")
 }

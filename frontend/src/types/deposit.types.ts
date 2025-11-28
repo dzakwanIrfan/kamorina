@@ -1,19 +1,3 @@
-export enum DepositAmount {
-  AMOUNT_200K = 'AMOUNT_200K',
-  AMOUNT_500K = 'AMOUNT_500K',
-  AMOUNT_1000K = 'AMOUNT_1000K',
-  AMOUNT_1500K = 'AMOUNT_1500K',
-  AMOUNT_2000K = 'AMOUNT_2000K',
-  AMOUNT_3000K = 'AMOUNT_3000K',
-}
-
-export enum DepositTenor {
-  TENOR_3 = 'TENOR_3',
-  TENOR_6 = 'TENOR_6',
-  TENOR_9 = 'TENOR_9',
-  TENOR_12 = 'TENOR_12',
-}
-
 export enum DepositStatus {
   DRAFT = 'DRAFT',
   SUBMITTED = 'SUBMITTED',
@@ -53,8 +37,8 @@ export interface DepositApproval {
 export interface DepositHistory {
   id: string;
   status: DepositStatus;
-  depositAmount: DepositAmount;
-  depositTenor: DepositTenor;
+  depositAmountCode: string;
+  depositTenorCode: string;
   amountValue: number;
   tenorMonths: number;
   interestRate: number | null;
@@ -74,8 +58,8 @@ export interface DepositApplication {
   id: string;
   depositNumber: string;
   userId: string;
-  depositAmount: DepositAmount;
-  depositTenor: DepositTenor;
+  depositAmountCode: string;
+  depositTenorCode: string;
   amountValue: number;
   tenorMonths: number;
   interestRate: number | null;
@@ -116,14 +100,14 @@ export interface DepositApplication {
 }
 
 export interface CreateDepositDto {
-  depositAmount: DepositAmount;
-  depositTenor: DepositTenor;
+  depositAmountCode: string;
+  depositTenorCode: string;
   agreedToTerms: boolean;
 }
 
 export interface UpdateDepositDto {
-  depositAmount?: DepositAmount;
-  depositTenor?: DepositTenor;
+  depositAmountCode?: string;
+  depositTenorCode?: string;
   agreedToTerms?: boolean;
 }
 

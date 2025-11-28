@@ -23,56 +23,35 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { depositService } from '@/services/deposit.service';
 import { handleApiError } from '@/lib/axios';
-import { useAuthStore } from '@/store/auth.store';
-import { DepositAmount, DepositTenor } from '@/types/deposit.types';
-
-const DEPOSIT_OPTIONS = [
-  { value: DepositAmount.AMOUNT_200K, label: 'Rp 200.000', amount: 200000 },
-  { value: DepositAmount.AMOUNT_500K, label: 'Rp 500.000', amount: 500000 },
-  { value: DepositAmount.AMOUNT_1000K, label: 'Rp 1.000.000', amount: 1000000 },
-  { value: DepositAmount.AMOUNT_1500K, label: 'Rp 1.500.000', amount: 1500000 },
-  { value: DepositAmount.AMOUNT_2000K, label: 'Rp 2.000.000', amount: 2000000 },
-  { value: DepositAmount.AMOUNT_3000K, label: 'Rp 3.000.000', amount: 3000000 },
-];
-
-const TENOR_OPTIONS = [
-  { value: DepositTenor.TENOR_3, label: '3 Bulan', months: 3 },
-  { value: DepositTenor.TENOR_6, label: '6 Bulan', months: 6 },
-  { value: DepositTenor.TENOR_9, label: '9 Bulan', months: 9 },
-  { value: DepositTenor.TENOR_12, label: '12 Bulan', months: 12 },
-];
-
-// Default interest rate (you can fetch this from settings)
-const DEFAULT_INTEREST_RATE = 6; // 6% per year
+import { useDepositConfig } from '@/hooks/use-deposit-config';
 
 interface DepositFormProps {
   onSuccess: () => void;
   onCancel?: () => void;
 }
 
-const formSchema = z.object({
-  depositAmount: z.enum(DepositAmount, {
-    error: 'Pilih jumlah deposito',
-  }),
-  depositTenor: z.enum(DepositTenor, {
-    error: 'Pilih jangka waktu',
-  }),
-  agreedToTerms: z.boolean().refine((val) => val === true, {
-    message: 'Anda harus menyetujui syarat dan ketentuan',
-  }),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
 export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
-  const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: config, isLoading: isLoadingConfig } = useDepositConfig();
+
+  const formSchema = z.object({
+    depositAmountCode: z.string().min(1, 'Pilih jumlah deposito'),
+    depositTenorCode: z.string().min(1, 'Pilih jangka waktu'),
+    agreedToTerms: z.boolean().refine((val) => val === true, {
+      message: 'Anda harus menyetujui syarat dan ketentuan',
+    }),
+  });
+
+  type FormData = z.infer<typeof formSchema>;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      depositAmountCode: '',
+      depositTenorCode: '',
       agreedToTerms: false,
     },
   });
@@ -86,13 +65,9 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
     }).format(amount);
   };
 
-  const calculateReturn = (amount: number, months: number) => {
-    const annualRate = DEFAULT_INTEREST_RATE;
-    const interestRate = annualRate;
-
-    // Calculate interest
-    const projectedInterest = amount * (annualRate / 100) * (months / 12);
-    const totalReturn = amount + projectedInterest;
+  const calculateReturn = (amount: number, months: number, interestRate: number) => {
+    const projectedInterest = amount * (interestRate / 100) * (months / 12);
+    const totalReturn = Number(amount) + Number(projectedInterest);
 
     return {
       interestRate,
@@ -102,15 +77,16 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   };
 
   // Watch form values
-  const depositAmount = form.watch('depositAmount');
-  const depositTenor = form.watch('depositTenor');
+  const depositAmountCode = form.watch('depositAmountCode');
+  const depositTenorCode = form.watch('depositTenorCode');
 
   // Calculate return when both amount and tenor are selected
   const calculations =
-    depositAmount && depositTenor
+    depositAmountCode && depositTenorCode && config
       ? calculateReturn(
-          DEPOSIT_OPTIONS.find((o) => o.value === depositAmount)?.amount || 0,
-          TENOR_OPTIONS.find((o) => o.value === depositTenor)?.months || 0
+          config.amounts.find((o) => o.code === depositAmountCode)?.amount || 0,
+          config.tenors.find((o) => o.code === depositTenorCode)?.months || 0,
+          config.interestRate
         )
       : null;
 
@@ -119,7 +95,11 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
       setIsSubmitting(true);
 
       // Create draft first
-      const draftResult = await depositService.createDraft(data);
+      const draftResult = await depositService.createDraft({
+        depositAmountCode: data.depositAmountCode,
+        depositTenorCode: data.depositTenorCode,
+        agreedToTerms: data.agreedToTerms,
+      });
 
       // Then submit
       await depositService.submitDeposit(draftResult.deposit.id);
@@ -132,6 +112,50 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoadingConfig) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardHeader>
+          <Skeleton className="h-6 w-64" />
+          <Skeleton className="h-4 w-96 mt-2" />
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Skeleton className="h-4 w-32 mb-3" />
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          </div>
+          <div>
+            <Skeleton className="h-4 w-32 mb-3" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-24 w-full" />
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!config) {
+    return (
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="py-10">
+          <Alert variant="destructive">
+            <AlertTitle>Gagal memuat konfigurasi</AlertTitle>
+            <AlertDescription>
+              Tidak dapat memuat opsi deposito. Silakan coba lagi nanti.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -147,7 +171,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
             {/* Deposit Amount */}
             <FormField
               control={form.control}
-              name="depositAmount"
+              name="depositAmountCode"
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel>Jumlah Deposito</FormLabel>
@@ -157,16 +181,16 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                       value={field.value}
                       className="grid grid-cols-2 md:grid-cols-3 gap-4"
                     >
-                      {DEPOSIT_OPTIONS.map((option) => (
-                        <div key={option.value}>
+                      {config.amounts.map((option) => (
+                        <div key={option.code}>
                           <RadioGroupItem
-                            value={option.value}
-                            id={option.value}
+                            value={option.code}
+                            id={option.code}
                             className="peer sr-only"
                           />
                           <label
-                            htmlFor={option.value}
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                            htmlFor={option.code}
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent peer-data-[state=checked]:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                           >
                             <FaRupiahSign className="mb-2 h-6 w-6" />
                             <span className="text-lg font-bold">{option.label}</span>
@@ -183,7 +207,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
             {/* Deposit Tenor */}
             <FormField
               control={form.control}
-              name="depositTenor"
+              name="depositTenorCode"
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel>Jangka Waktu</FormLabel>
@@ -193,16 +217,16 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                       value={field.value}
                       className="grid grid-cols-2 md:grid-cols-4 gap-4"
                     >
-                      {TENOR_OPTIONS.map((option) => (
-                        <div key={option.value}>
+                      {config.tenors.map((option) => (
+                        <div key={option.code}>
                           <RadioGroupItem
-                            value={option.value}
-                            id={option.value}
+                            value={option.code}
+                            id={option.code}
                             className="peer sr-only"
                           />
                           <label
-                            htmlFor={option.value}
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                            htmlFor={option.code}
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent peer-data-[state=checked]:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                           >
                             <CalendarIcon className="mb-2 h-6 w-6" />
                             <span className="text-lg font-bold">{option.label}</span>
@@ -225,7 +249,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
                     <div>
                       <p className="text-sm text-muted-foreground">
-                        Bunga ({calculations.interestRate}%)
+                        Bunga ({calculations.interestRate}% per tahun)
                       </p>
                       <p className="text-lg font-bold text-green-600">
                         {formatCurrency(calculations.projectedInterest)}
@@ -243,7 +267,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                         {new Date(
                           new Date().setMonth(
                             new Date().getMonth() +
-                              (TENOR_OPTIONS.find((o) => o.value === depositTenor)?.months || 0)
+                              (config.tenors.find((o) => o.code === depositTenorCode)?.months || 0)
                           )
                         ).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                       </p>
@@ -288,7 +312,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                   <li>Deposito akan dipotong otomatis dari gaji bulanan</li>
                   <li>Pengajuan akan melalui 2 tahap approval: DSP → Ketua</li>
                   <li>Setelah disetujui, pemotongan akan dimulai pada periode gaji berikutnya</li>
-                  <li>Bunga deposito dihitung berdasarkan suku bunga yang berlaku</li>
+                  <li>Bunga deposito: {config.interestRate}% per tahun</li>
                   <li>Dana dapat dicairkan setelah jatuh tempo</li>
                 </ul>
               </AlertDescription>

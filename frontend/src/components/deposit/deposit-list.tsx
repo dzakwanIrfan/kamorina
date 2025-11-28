@@ -26,8 +26,6 @@ import {
   DepositStatus,
   DepositApprovalStep,
   DepositApprovalDecision,
-  DepositAmount,
-  DepositTenor,
 } from '@/types/deposit.types';
 import { DataTableConfig } from '@/types/data-table.types';
 import * as XLSX from 'xlsx';
@@ -47,22 +45,6 @@ const statusMap = {
 const stepMap = {
   [DepositApprovalStep.DIVISI_SIMPAN_PINJAM]: 'Divisi Simpan Pinjam',
   [DepositApprovalStep.KETUA]: 'Ketua',
-};
-
-const amountMap = {
-  [DepositAmount.AMOUNT_200K]: 200000,
-  [DepositAmount.AMOUNT_500K]: 500000,
-  [DepositAmount.AMOUNT_1000K]: 1000000,
-  [DepositAmount.AMOUNT_1500K]: 1500000,
-  [DepositAmount.AMOUNT_2000K]: 2000000,
-  [DepositAmount.AMOUNT_3000K]: 3000000,
-};
-
-const tenorMap = {
-  [DepositTenor.TENOR_3]: 3,
-  [DepositTenor.TENOR_6]: 6,
-  [DepositTenor.TENOR_9]: 9,
-  [DepositTenor.TENOR_12]: 12,
 };
 
 interface DepositListProps {

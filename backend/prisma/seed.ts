@@ -173,7 +173,7 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash('Admin123!', 12);
 
-  // ==================== CREATE ADMIN USERS (NO departmentId in users!) ====================
+  // CREATE ADMIN USERS (NO departmentId in users!)
   
   // 1. Admin User (Ketua)
   const adminEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000001' } });
@@ -330,7 +330,7 @@ async function main() {
 
   console.log('✅ Shopkeeper user created');
 
-  // ==================== CREATE TEST USERS WITH APPLICATIONS ====================
+  // CREATE TEST USERS WITH APPLICATIONS
 
   // Helper function to create user with application (NO departmentId param!)
   async function createUserWithApplication(
@@ -811,6 +811,64 @@ async function main() {
   }
 
   console.log('✨ Loan Limit Matrix seeding completed!');
+
+  console.log('🔄 Creating deposit master data...');
+
+  // Deposit Amount Options
+  const depositAmounts = [
+    { code: 'AMOUNT_200K', label: 'Rp 200.000', amount: 200000, sortOrder: 1 },
+    { code: 'AMOUNT_500K', label: 'Rp 500.000', amount: 500000, sortOrder: 2 },
+    { code: 'AMOUNT_1000K', label: 'Rp 1.000.000', amount: 1000000, sortOrder: 3 },
+    { code: 'AMOUNT_1500K', label: 'Rp 1.500.000', amount: 1500000, sortOrder: 4 },
+    { code: 'AMOUNT_2000K', label: 'Rp 2.000.000', amount: 2000000, sortOrder: 5 },
+    { code: 'AMOUNT_3000K', label: 'Rp 3.000.000', amount: 3000000, sortOrder: 6 },
+  ];
+
+  for (const item of depositAmounts) {
+    await prisma.depositAmountOption.upsert({
+      where: { code: item.code },
+      update: {},
+      create: item,
+    });
+  }
+
+  console.log('✅ Deposit amount options created');
+
+  // Deposit Tenor Options
+  const depositTenors = [
+    { code: 'TENOR_3', label: '3 Bulan', months: 3, sortOrder: 1 },
+    { code: 'TENOR_6', label: '6 Bulan', months: 6, sortOrder: 2 },
+    { code: 'TENOR_9', label: '9 Bulan', months: 9, sortOrder: 3 },
+    { code: 'TENOR_12', label: '12 Bulan', months: 12, sortOrder: 4 },
+  ];
+
+  for (const item of depositTenors) {
+    await prisma.depositTenorOption.upsert({
+      where: { code: item.code },
+      update: {},
+      create: item,
+    });
+  }
+
+  console.log('✅ Deposit tenor options created');
+
+  // Add deposit interest rate to settings if not exists
+  await prisma.cooperativeSetting.upsert({
+    where: { key: 'deposit_interest_rate' },
+    update: {},
+    create: {
+      key: 'deposit_interest_rate',
+      value: '6',
+      type: SettingType.NUMBER,
+      category: SettingCategory.SAVINGS,
+      label: 'Bunga Deposito',
+      description: 'Persentase bunga deposito per tahun',
+      unit: 'Persen',
+      validation: { min: 0, max: 100, required: true },
+    },
+  });
+
+  console.log('✅ Deposit interest rate setting created');
 
   console.log('');
   console.log('🎉 Seeding completed successfully!');
