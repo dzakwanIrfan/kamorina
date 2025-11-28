@@ -38,6 +38,18 @@ export class DepositOptionController {
     return this.depositOptionService.getDepositConfig();
   }
 
+  /**
+   * Preview calculation before submitting
+   */
+  @Get('preview-calculation')
+  @HttpCode(HttpStatus.OK)
+  async previewCalculation(
+    @Query('amountCode') amountCode: string,
+    @Query('tenorCode') tenorCode: string,
+  ) {
+    return this.depositOptionService.previewCalculation(amountCode, tenorCode);
+  }
+
   // AMOUNT OPTIONS
 
   /**

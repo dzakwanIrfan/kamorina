@@ -143,7 +143,6 @@ export class DepositOptionService {
   async deleteAmountOption(id: string) {
     const option = await this.findAmountOptionById(id);
 
-    // Check if used in any deposit application
     const usedCount = await this.prisma.depositApplication.count({
       where: { depositAmountCode: option.code },
     });
@@ -287,7 +286,6 @@ export class DepositOptionService {
   async deleteTenorOption(id: string) {
     const option = await this.findTenorOptionById(id);
 
-    // Check if used in any deposit application
     const usedCount = await this.prisma.depositApplication.count({
       where: { depositTenorCode: option.code },
     });
@@ -308,11 +306,14 @@ export class DepositOptionService {
   // GET DEPOSIT CONFIG
 
   async getDepositConfig() {
-    const [amounts, tenors, interestSetting] = await Promise.all([
+    const [amounts, tenors, interestSetting, calculationMethodSetting] = await Promise.all([
       this.findAllActiveAmountOptions(),
       this.findAllActiveTenorOptions(),
       this.prisma.cooperativeSetting.findUnique({
         where: { key: 'deposit_interest_rate' },
+      }),
+      this.prisma.cooperativeSetting.findUnique({
+        where: { key: 'deposit_calculation_method' },
       }),
     ]);
 
@@ -320,6 +321,118 @@ export class DepositOptionService {
       amounts,
       tenors,
       interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
+      calculationMethod: calculationMethodSetting?.value || 'SIMPLE', // SIMPLE or COMPOUND
     };
+  }
+
+  // CALCULATE DEPOSIT RETURN
+  
+  /**
+   * Calculate deposit return based on calculation method
+   * 
+   * SIMPLE (Bunga Sederhana):
+   * Bunga = Pokok × (Suku Bunga Tahunan / 100) × (Tenor dalam bulan / 12)
+   * 
+   * COMPOUND (Bunga Majemuk - compounding monthly):
+   * Total = Pokok × (1 + (Suku Bunga Tahunan / 100) / 12)^Tenor
+   * Bunga = Total - Pokok
+   */
+  calculateDepositReturn(
+    principal: number,
+    tenorMonths: number,
+    annualInterestRate: number,
+    calculationMethod: 'SIMPLE' | 'COMPOUND' = 'SIMPLE',
+  ) {
+    let projectedInterest: number;
+    let totalReturn: number;
+    let effectiveRate: number;
+    let monthlyInterestBreakdown: Array<{
+      month: number;
+      openingBalance: number;
+      interest: number;
+      closingBalance: number;
+    }> = [];
+
+    if (calculationMethod === 'COMPOUND') {
+      // Compound Interest (Bunga Majemuk)
+      // Monthly compounding: A = P × (1 + r/12)^n
+      const monthlyRate = annualInterestRate / 100 / 12;
+      totalReturn = principal * Math.pow(1 + monthlyRate, tenorMonths);
+      projectedInterest = totalReturn - principal;
+      
+      // Calculate effective annual rate
+      effectiveRate = (Math.pow(1 + monthlyRate, 12) - 1) * 100;
+
+      // Generate monthly breakdown for compound
+      let balance = principal;
+      for (let month = 1; month <= tenorMonths; month++) {
+        const monthInterest = balance * monthlyRate;
+        const closingBalance = balance + monthInterest;
+        monthlyInterestBreakdown.push({
+          month,
+          openingBalance: Math.round(balance),
+          interest: Math.round(monthInterest),
+          closingBalance: Math.round(closingBalance),
+        });
+        balance = closingBalance;
+      }
+    } else {
+      // Simple Interest (Bunga Sederhana)
+      // I = P × r × t
+      // Where: P = Principal, r = annual rate (decimal), t = time in years
+      const timeInYears = tenorMonths / 12;
+      projectedInterest = principal * (annualInterestRate / 100) * timeInYears;
+      totalReturn = principal + projectedInterest;
+      effectiveRate = annualInterestRate;
+
+      // Generate monthly breakdown for simple
+      const monthlyInterest = projectedInterest / tenorMonths;
+      let balance = principal;
+      for (let month = 1; month <= tenorMonths; month++) {
+        const closingBalance = balance + monthlyInterest;
+        monthlyInterestBreakdown.push({
+          month,
+          openingBalance: Math.round(balance),
+          interest: Math.round(monthlyInterest),
+          closingBalance: Math.round(closingBalance),
+        });
+        balance = closingBalance;
+      }
+    }
+
+    return {
+      principal,
+      tenorMonths,
+      annualInterestRate,
+      calculationMethod,
+      effectiveRate: Math.round(effectiveRate * 100) / 100,
+      projectedInterest: Math.round(projectedInterest),
+      totalReturn: Math.round(totalReturn),
+      monthlyInterestBreakdown,
+    };
+  }
+
+  /**
+   * Preview calculation for frontend
+   */
+  async previewCalculation(
+    amountCode: string,
+    tenorCode: string,
+  ) {
+    const [amountOption, tenorOption, config] = await Promise.all([
+      this.findAmountOptionByCode(amountCode),
+      this.findTenorOptionByCode(tenorCode),
+      this.getDepositConfig(),
+    ]);
+
+    const principal = amountOption.amount.toNumber();
+    const tenorMonths = tenorOption.months;
+
+    return this.calculateDepositReturn(
+      principal,
+      tenorMonths,
+      config.interestRate,
+      config.calculationMethod as 'SIMPLE' | 'COMPOUND',
+    );
   }
 }

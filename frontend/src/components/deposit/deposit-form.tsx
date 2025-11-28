@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Calendar as CalendarIcon, CheckCircle2, Info } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, CheckCircle2, Info, TrendingUp } from 'lucide-react';
 import { FaRupiahSign } from "react-icons/fa6";
 
 import { Button } from '@/components/ui/button';
@@ -24,9 +24,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
 import { depositService } from '@/services/deposit.service';
+import { depositOptionService } from '@/services/deposit-option.service';
 import { handleApiError } from '@/lib/axios';
 import { useDepositConfig } from '@/hooks/use-deposit-config';
+import { DepositCalculation } from '@/types/deposit-option.types';
 
 interface DepositFormProps {
   onSuccess: () => void;
@@ -35,6 +51,9 @@ interface DepositFormProps {
 
 export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [calculation, setCalculation] = useState<DepositCalculation | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const { data: config, isLoading: isLoadingConfig } = useDepositConfig();
 
   const formSchema = z.object({
@@ -65,30 +84,35 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
     }).format(amount);
   };
 
-  const calculateReturn = (amount: number, months: number, interestRate: number) => {
-    const projectedInterest = amount * (interestRate / 100) * (months / 12);
-    const totalReturn = Number(amount) + Number(projectedInterest);
-
-    return {
-      interestRate,
-      projectedInterest: Math.round(projectedInterest),
-      totalReturn: Math.round(totalReturn),
-    };
-  };
-
   // Watch form values
   const depositAmountCode = form.watch('depositAmountCode');
   const depositTenorCode = form.watch('depositTenorCode');
 
-  // Calculate return when both amount and tenor are selected
-  const calculations =
-    depositAmountCode && depositTenorCode && config
-      ? calculateReturn(
-          config.amounts.find((o) => o.code === depositAmountCode)?.amount || 0,
-          config.tenors.find((o) => o.code === depositTenorCode)?.months || 0,
-          config.interestRate
-        )
-      : null;
+  // Fetch calculation when both amount and tenor are selected
+  useEffect(() => {
+    const fetchCalculation = async () => {
+      if (!depositAmountCode || !depositTenorCode) {
+        setCalculation(null);
+        return;
+      }
+
+      try {
+        setIsCalculating(true);
+        const result = await depositOptionService.previewCalculation(
+          depositAmountCode,
+          depositTenorCode
+        );
+        setCalculation(result);
+      } catch (error) {
+        console.error('Failed to fetch calculation:', error);
+        setCalculation(null);
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+
+    fetchCalculation();
+  }, [depositAmountCode, depositTenorCode]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -157,6 +181,11 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
     );
   }
 
+  const selectedTenor = config.tenors.find((t) => t.code === depositTenorCode);
+  const maturityDate = selectedTenor
+    ? new Date(new Date().setMonth(new Date().getMonth() + selectedTenor.months))
+    : null;
+
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
@@ -190,7 +219,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                           />
                           <label
                             htmlFor={option.code}
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent peer-data-[state=checked]:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                           >
                             <FaRupiahSign className="mb-2 h-6 w-6" />
                             <span className="text-lg font-bold">{option.label}</span>
@@ -226,7 +255,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                           />
                           <label
                             htmlFor={option.code}
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent peer-data-[state=checked]:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                           >
                             <CalendarIcon className="mb-2 h-6 w-6" />
                             <span className="text-lg font-bold">{option.label}</span>
@@ -241,40 +270,108 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
             />
 
             {/* Calculation Preview */}
-            {calculations && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Proyeksi Return Deposito</AlertTitle>
-                <AlertDescription>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Bunga ({calculations.interestRate}% per tahun)
-                      </p>
-                      <p className="text-lg font-bold text-green-600">
-                        {formatCurrency(calculations.projectedInterest)}
-                      </p>
+            {isCalculating && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span className="text-muted-foreground">Menghitung proyeksi...</span>
+              </div>
+            )}
+
+            {calculation && !isCalculating && (
+              <div className="space-y-4">
+                <Alert className="bg-primary/5 border-primary/20">
+                  <TrendingUp className="h-4 w-4" />
+                  <AlertTitle className="flex items-center gap-2">
+                    Proyeksi Return Deposito
+                    <Badge variant="outline" className="text-xs">
+                      {calculation.calculationMethod === 'SIMPLE' ? 'Bunga Sederhana' : 'Bunga Majemuk'}
+                    </Badge>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                      <div className="bg-background rounded-lg p-3 border">
+                        <p className="text-xs text-muted-foreground mb-1">Pokok Deposito</p>
+                        <p className="text-lg font-bold">{formatCurrency(calculation.principal)}</p>
+                      </div>
+                      <div className="bg-background rounded-lg p-3 border">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Suku Bunga ({calculation.annualInterestRate}% p.a.)
+                        </p>
+                        <p className="text-lg font-bold text-green-600">
+                          +{formatCurrency(calculation.projectedInterest)}
+                        </p>
+                      </div>
+                      <div className="bg-background rounded-lg p-3 border">
+                        <p className="text-xs text-muted-foreground mb-1">Total Return</p>
+                        <p className="text-xl font-bold text-primary">
+                          {formatCurrency(calculation.totalReturn)}
+                        </p>
+                      </div>
+                      <div className="bg-background rounded-lg p-3 border">
+                        <p className="text-xs text-muted-foreground mb-1">Jatuh Tempo</p>
+                        <p className="text-lg font-bold">
+                          {maturityDate?.toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Return</p>
-                      <p className="text-lg font-bold text-primary">
-                        {formatCurrency(calculations.totalReturn)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Jatuh Tempo</p>
-                      <p className="text-lg font-bold">
-                        {new Date(
-                          new Date().setMonth(
-                            new Date().getMonth() +
-                              (config.tenors.find((o) => o.code === depositTenorCode)?.months || 0)
-                          )
-                        ).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
+
+                    {/* Monthly Breakdown Collapsible */}
+                    <Collapsible open={showBreakdown} onOpenChange={setShowBreakdown} className="mt-4">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="w-full">
+                          {showBreakdown ? 'Sembunyikan' : 'Lihat'} Rincian Bulanan
+                          <Info className="ml-2 h-4 w-4" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-2">
+                        <div className="rounded-md border overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-16">Bulan</TableHead>
+                                <TableHead className="text-right">Saldo Awal</TableHead>
+                                <TableHead className="text-right">Bunga</TableHead>
+                                <TableHead className="text-right">Saldo Akhir</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {calculation.monthlyInterestBreakdown.map((row) => (
+                                <TableRow key={row.month}>
+                                  <TableCell className="font-medium">{row.month}</TableCell>
+                                  <TableCell className="text-right">
+                                    {formatCurrency(row.openingBalance)}
+                                  </TableCell>
+                                  <TableCell className="text-right text-green-600">
+                                    +{formatCurrency(row.interest)}
+                                  </TableCell>
+                                  <TableCell className="text-right font-medium">
+                                    {formatCurrency(row.closingBalance)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                          * Perhitungan menggunakan metode{' '}
+                          <strong>
+                            {calculation.calculationMethod === 'SIMPLE'
+                              ? 'Bunga Sederhana (Simple Interest)'
+                              : 'Bunga Majemuk (Compound Interest)'}
+                          </strong>
+                          {calculation.calculationMethod === 'SIMPLE'
+                            ? '. Bunga dihitung dari pokok awal dan dibagi rata setiap bulan.'
+                            : '. Bunga dihitung dari saldo akhir bulan sebelumnya.'}
+                        </p>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </AlertDescription>
+                </Alert>
+              </div>
             )}
 
             <Separator />
@@ -312,8 +409,11 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                   <li>Deposito akan dipotong otomatis dari gaji bulanan</li>
                   <li>Pengajuan akan melalui 2 tahap approval: DSP → Ketua</li>
                   <li>Setelah disetujui, pemotongan akan dimulai pada periode gaji berikutnya</li>
-                  <li>Bunga deposito: {config.interestRate}% per tahun</li>
-                  <li>Dana dapat dicairkan setelah jatuh tempo</li>
+                  <li>
+                    Suku bunga: <strong>{config.interestRate}% per tahun</strong> (
+                    {config.calculationMethod === 'SIMPLE' ? 'Bunga Sederhana' : 'Bunga Majemuk'})
+                  </li>
+                  <li>Dana beserta bunga dapat dicairkan setelah jatuh tempo</li>
                 </ul>
               </AlertDescription>
             </Alert>
@@ -331,7 +431,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                   Batal
                 </Button>
               )}
-              <Button type="submit" disabled={isSubmitting} className="flex-1">
+              <Button type="submit" disabled={isSubmitting || isCalculating} className="flex-1">
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Submit Pengajuan
               </Button>

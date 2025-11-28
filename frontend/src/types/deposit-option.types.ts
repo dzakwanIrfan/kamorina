@@ -24,6 +24,25 @@ export interface DepositConfig {
   amounts: DepositAmountOption[];
   tenors: DepositTenorOption[];
   interestRate: number;
+  calculationMethod: 'SIMPLE' | 'COMPOUND';
+}
+
+export interface MonthlyInterestBreakdown {
+  month: number;
+  openingBalance: number;
+  interest: number;
+  closingBalance: number;
+}
+
+export interface DepositCalculation {
+  principal: number;
+  tenorMonths: number;
+  annualInterestRate: number;
+  calculationMethod: 'SIMPLE' | 'COMPOUND';
+  effectiveRate: number;
+  projectedInterest: number;
+  totalReturn: number;
+  monthlyInterestBreakdown: MonthlyInterestBreakdown[];
 }
 
 export interface CreateDepositAmountDto {

@@ -175,9 +175,17 @@ export function DepositList({ defaultStatus, defaultStep }: DepositListProps) {
     }).format(amount);
   };
 
-  const handleViewDetail = (deposit: DepositApplication) => {
-    setSelectedDeposit(deposit);
-    setDetailDialogOpen(true);
+  const handleViewDetail = async (deposit: DepositApplication) => {
+    try {
+      // Fetch full detail with calculation breakdown
+      const fullDeposit = await depositService.getDepositById(deposit.id);
+      setSelectedDeposit(fullDeposit);
+      setDetailDialogOpen(true);
+    } catch (error) {
+      // Fallback to basic deposit if fetch fails
+      setSelectedDeposit(deposit);
+      setDetailDialogOpen(true);
+    }
   };
 
   const handleBulkAction = async (decision: DepositApprovalDecision, notes?: string) => {

@@ -53,24 +53,43 @@ export class DepositService {
   }
 
   /**
-   * Calculate deposit return
+   * Get interest rate and calculation method from settings
    */
-  private async calculateDepositReturn(amount: number, tenorMonths: number) {
-    const interestSetting = await this.prisma.cooperativeSetting.findUnique({
-      where: { key: 'deposit_interest_rate' },
-    });
-
-    const annualRate = interestSetting ? parseFloat(interestSetting.value) : 6;
-    const interestRate = annualRate;
-
-    // Calculate interest
-    const projectedInterest = amount * (annualRate / 100) * (tenorMonths / 12);
-    const totalReturn = amount + projectedInterest;
+  private async getDepositSettings() {
+    const [interestSetting, calculationMethodSetting] = await Promise.all([
+      this.prisma.cooperativeSetting.findUnique({
+        where: { key: 'deposit_interest_rate' },
+      }),
+      this.prisma.cooperativeSetting.findUnique({
+        where: { key: 'deposit_calculation_method' },
+      }),
+    ]);
 
     return {
-      interestRate,
-      projectedInterest: Math.round(projectedInterest),
-      totalReturn: Math.round(totalReturn),
+      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
+      calculationMethod: (calculationMethodSetting?.value || 'SIMPLE') as 'SIMPLE' | 'COMPOUND',
+    };
+  }
+
+  /**
+   * Calculate deposit return using DepositOptionService
+   */
+  private async calculateDepositReturn(amount: number, tenorMonths: number) {
+    const settings = await this.getDepositSettings();
+    
+    const calculation = this.depositOptionService.calculateDepositReturn(
+      amount,
+      tenorMonths,
+      settings.interestRate,
+      settings.calculationMethod,
+    );
+
+    return {
+      interestRate: calculation.annualInterestRate,
+      effectiveRate: calculation.effectiveRate,
+      projectedInterest: calculation.projectedInterest,
+      totalReturn: calculation.totalReturn,
+      calculationMethod: calculation.calculationMethod,
     };
   }
 
@@ -139,7 +158,9 @@ export class DepositService {
         tenorMonths,
         agreedToTerms: dto.agreedToTerms,
         status: DepositStatus.DRAFT,
-        ...calculations,
+        interestRate: calculations.interestRate,
+        projectedInterest: calculations.projectedInterest,
+        totalReturn: calculations.totalReturn,
       },
       include: {
         user: {
@@ -158,6 +179,7 @@ export class DepositService {
     return {
       message: 'Draft deposito berhasil dibuat',
       deposit,
+      calculation: calculations,
     };
   }
 
@@ -182,6 +204,8 @@ export class DepositService {
     }
 
     const updateData: any = {};
+    let newAmountValue = deposit.amountValue.toNumber();
+    let newTenorMonths = deposit.tenorMonths;
 
     if (dto.depositAmountCode) {
       const amountOption = await this.depositOptionService.findAmountOptionByCode(dto.depositAmountCode);
@@ -190,6 +214,7 @@ export class DepositService {
       }
       updateData.depositAmountCode = dto.depositAmountCode;
       updateData.amountValue = amountOption.amount.toNumber();
+      newAmountValue = amountOption.amount.toNumber();
     }
 
     if (dto.depositTenorCode) {
@@ -199,6 +224,7 @@ export class DepositService {
       }
       updateData.depositTenorCode = dto.depositTenorCode;
       updateData.tenorMonths = tenorOption.months;
+      newTenorMonths = tenorOption.months;
     }
 
     if (dto.agreedToTerms !== undefined) {
@@ -207,10 +233,10 @@ export class DepositService {
 
     // Recalculate if amount or tenor changed
     if (dto.depositAmountCode || dto.depositTenorCode) {
-      const amount = updateData.amountValue ?? deposit.amountValue.toNumber();
-      const tenor = updateData.tenorMonths ?? deposit.tenorMonths;
-      const calculations = await this.calculateDepositReturn(amount, tenor);
-      Object.assign(updateData, calculations);
+      const calculations = await this.calculateDepositReturn(newAmountValue, newTenorMonths);
+      updateData.interestRate = calculations.interestRate;
+      updateData.projectedInterest = calculations.projectedInterest;
+      updateData.totalReturn = calculations.totalReturn;
     }
 
     const updated = await this.prisma.depositApplication.update({
@@ -442,7 +468,19 @@ export class DepositService {
       throw new ForbiddenException('Anda tidak memiliki akses ke deposito ini');
     }
 
-    return deposit;
+    // Add calculation breakdown
+    const settings = await this.getDepositSettings();
+    const calculationBreakdown = this.depositOptionService.calculateDepositReturn(
+      deposit.amountValue.toNumber(),
+      deposit.tenorMonths,
+      deposit.interestRate?.toNumber() || settings.interestRate,
+      settings.calculationMethod,
+    );
+
+    return {
+      ...deposit,
+      calculationBreakdown,
+    };
   }
 
   /**
@@ -784,7 +822,7 @@ export class DepositService {
     return { message: 'Draft deposito berhasil dihapus' };
   }
 
-  // NOTIFICATION HELPERS
+  // ============ NOTIFICATION HELPERS ============
 
   private async notifyApprovers(
     depositId: string,

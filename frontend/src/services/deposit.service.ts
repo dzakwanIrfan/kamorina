@@ -13,7 +13,7 @@ export const depositService = {
   // Member endpoints
   async createDraft(
     data: CreateDepositDto
-  ): Promise<{ message: string; deposit: DepositApplication }> {
+  ): Promise<{ message: string; deposit: DepositApplication; calculation?: any }> {
     const response = await apiClient.post('/deposits/draft', data);
     return response.data;
   },
@@ -41,7 +41,7 @@ export const depositService = {
     return response.data;
   },
 
-  async getMyDepositById(depositId: string): Promise<DepositApplication> {
+  async getMyDepositById(depositId: string): Promise<DepositApplication & { calculationBreakdown?: any }> {
     const response = await apiClient.get(`/deposits/my-deposits/${depositId}`);
     return response.data;
   },
@@ -52,7 +52,7 @@ export const depositService = {
     return response.data;
   },
 
-  async getDepositById(depositId: string): Promise<DepositApplication> {
+  async getDepositById(depositId: string): Promise<DepositApplication & { calculationBreakdown?: any }> {
     const response = await apiClient.get(`/deposits/${depositId}`);
     return response.data;
   },

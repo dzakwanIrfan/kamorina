@@ -616,6 +616,16 @@ async function main() {
       unit: 'Persen',
       validation: { min: 0, max: 100, required: true },
     },
+    {
+      key: 'deposit_calculation_method',
+      value: 'SIMPLE',
+      type: SettingType.STRING,
+      category: SettingCategory.SAVINGS,
+      label: 'Metode Perhitungan Bunga Deposito',
+      description: 'Metode perhitungan bunga deposito (SIMPLE/COMPOUND)',
+      unit: null,
+      validation: { required: true, enum: ['SIMPLE', 'COMPOUND'] },
+    },
     
     // LOAN
     {

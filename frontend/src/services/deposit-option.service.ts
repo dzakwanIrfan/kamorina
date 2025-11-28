@@ -3,6 +3,7 @@ import {
   DepositAmountOption,
   DepositTenorOption,
   DepositConfig,
+  DepositCalculation,
   CreateDepositAmountDto,
   UpdateDepositAmountDto,
   CreateDepositTenorDto,
@@ -15,6 +16,14 @@ export const depositOptionService = {
   // Config endpoint (for deposit form)
   async getConfig(): Promise<DepositConfig> {
     const response = await apiClient.get('/deposit-options/config');
+    return response.data;
+  },
+
+  // Preview calculation
+  async previewCalculation(amountCode: string, tenorCode: string): Promise<DepositCalculation> {
+    const response = await apiClient.get('/deposit-options/preview-calculation', {
+      params: { amountCode, tenorCode },
+    });
     return response.data;
   },
 
