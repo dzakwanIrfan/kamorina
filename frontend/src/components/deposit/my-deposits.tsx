@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Eye, CheckCircle2, XCircle, Clock, Plus, PiggyBank } from 'lucide-react';
+import { Eye, CheckCircle2, XCircle, Clock, Plus, PiggyBank, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -13,6 +13,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DepositDetailDialog } from '@/components/deposit/deposit-detail-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
 import { depositService } from '@/services/deposit.service';
 import { DepositApplication, DepositStatus } from '@/types/deposit.types';
@@ -22,7 +29,7 @@ const statusMap = {
   [DepositStatus.DRAFT]: { label: 'Draft', variant: 'secondary' as const, icon: Clock },
   [DepositStatus.SUBMITTED]: { label: 'Submitted', variant: 'default' as const, icon: Clock },
   [DepositStatus.UNDER_REVIEW_DSP]: { label: 'Review DSP', variant: 'default' as const, icon: Clock },
-  [DepositStatus.UNDER_REVIEW_KETUA]: { label: 'Review Ketua', variant: 'default' as const, icon: Clock },
+  [DepositStatus. UNDER_REVIEW_KETUA]: { label: 'Review Ketua', variant: 'default' as const, icon: Clock },
   [DepositStatus.APPROVED]: { label: 'Disetujui', variant: 'default' as const, icon: CheckCircle2 },
   [DepositStatus.ACTIVE]: { label: 'Aktif', variant: 'default' as const, icon: CheckCircle2 },
   [DepositStatus.COMPLETED]: { label: 'Selesai', variant: 'default' as const, icon: CheckCircle2 },
@@ -60,7 +67,7 @@ export function MyDeposits() {
         page: meta.page,
         limit: meta.limit,
         search: searchValue || undefined,
-        status: filters.status || undefined,
+        status: filters. status || undefined,
         sortBy: 'createdAt',
         sortOrder: 'desc',
       });
@@ -88,14 +95,27 @@ export function MyDeposits() {
   };
 
   const handleCreateNew = () => {
-    router.push('/dashboard/deposits/create');
+    router. push('/dashboard/deposits/create');
+  };
+
+  const handleRequestChange = (depositId: string) => {
+    router.push(`/dashboard/deposit-changes/create/${depositId}`);
+  };
+
+  const handleViewChangeHistory = () => {
+    router.push('/dashboard/deposit-changes');
+  };
+
+  // Check if deposit can be changed
+  const canChangeDeposit = (status: DepositStatus) => {
+    return status === DepositStatus.APPROVED || status === DepositStatus. ACTIVE;
   };
 
   const columns: ColumnDef<DepositApplication>[] = useMemo(
     () => [
       {
         accessorKey: 'depositNumber',
-        header: 'No. Deposito',
+        header: 'No.  Deposito',
         cell: ({ row }) => (
           <span className="font-mono font-medium text-sm">
             {row.original.depositNumber}
@@ -128,7 +148,7 @@ export function MyDeposits() {
         cell: ({ row }) => (
           <span className="text-sm font-medium text-green-600 dark:text-green-400">
             {row.original.totalReturn
-              ? formatCurrency(row.original.totalReturn)
+              ? formatCurrency(row. original.totalReturn)
               : '-'}
           </span>
         ),
@@ -164,14 +184,25 @@ export function MyDeposits() {
       {
         id: 'actions',
         cell: ({ row }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleViewDetail(row.original)}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Detail
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleViewDetail(row.original)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Lihat Detail
+              </DropdownMenuItem>
+              {canChangeDeposit(row. original.status) && (
+                <DropdownMenuItem onClick={() => handleRequestChange(row.original. id)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Ajukan Perubahan
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         ),
       },
     ],
@@ -180,7 +211,7 @@ export function MyDeposits() {
 
   const tableConfig: DataTableConfig<DepositApplication> = {
     searchable: true,
-    searchPlaceholder: 'Cari berdasarkan nomor deposito...',
+    searchPlaceholder: 'Cari berdasarkan nomor deposito.. .',
     filterable: true,
     selectable: false,
     filterFields: [
@@ -192,15 +223,21 @@ export function MyDeposits() {
         options: [
           { label: 'Semua Status', value: 'all' },
           { label: 'Draft', value: DepositStatus.DRAFT },
-          { label: 'Submitted', value: DepositStatus.SUBMITTED },
+          { label: 'Submitted', value: DepositStatus. SUBMITTED },
           { label: 'Disetujui', value: DepositStatus.APPROVED },
-          { label: 'Aktif', value: DepositStatus.ACTIVE },
+          { label: 'Aktif', value: DepositStatus. ACTIVE },
           { label: 'Selesai', value: DepositStatus.COMPLETED },
           { label: 'Ditolak', value: DepositStatus.REJECTED },
         ],
       },
     ],
     toolbarActions: [
+      {
+        label: 'Riwayat Perubahan',
+        icon: Edit,
+        onClick: handleViewChangeHistory,
+        variant: 'outline',
+      },
       {
         label: 'Ajukan Deposito Baru',
         icon: Plus,
@@ -216,7 +253,7 @@ export function MyDeposits() {
     .reduce((sum, d) => sum + d.amountValue, 0);
 
   const totalProjectedReturn = data
-    .filter((d) => d.status === DepositStatus.ACTIVE || d.status === DepositStatus.APPROVED)
+    .filter((d) => d.status === DepositStatus.ACTIVE || d. status === DepositStatus. APPROVED)
     .reduce((sum, d) => sum + (d.totalReturn || 0), 0);
 
   return (

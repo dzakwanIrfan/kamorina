@@ -5,22 +5,31 @@ import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer. Transporter;
 
   constructor(private configService: ConfigService<EnvironmentVariables>) {
-    this.transporter = nodemailer.createTransport({
+    this.transporter = nodemailer. createTransport({
       host: this.configService.get('MAIL_HOST', { infer: true }),
       port: this.configService.get('MAIL_PORT', { infer: true }),
       secure: false,
       auth: {
         user: this.configService.get('MAIL_USER', { infer: true }),
-        pass: this.configService.get('MAIL_PASSWORD', { infer: true }),
+        pass: this.configService. get('MAIL_PASSWORD', { infer: true }),
       },
     });
   }
 
+  // Helper untuk format currency
+  private formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  }
+
   async sendEmailVerification(email: string, name: string, token: string) {
-    const verificationUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/auth/verify-email?token=${token}`;
+    const verificationUrl = `${this.configService. get('FRONTEND_URL', { infer: true })}/auth/verify-email?token=${token}`;
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -28,7 +37,7 @@ export class MailService {
       subject: 'Verifikasi Email - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${name},</h2>
-        <p>Terima kasih telah mendaftar di Koperasi Kamorina Surya Niaga.</p>
+        <p>Terima kasih telah mendaftar di Koperasi Kamorina Surya Niaga. </p>
         <p>Silakan klik link berikut untuk memverifikasi email Anda:</p>
         <a href="${verificationUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Verifikasi Email
@@ -46,7 +55,7 @@ export class MailService {
     const resetUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/auth/reset-password?token=${token}`;
 
     await this.transporter.sendMail({
-      from: this.configService.get('MAIL_FROM', { infer: true }),
+      from: this. configService.get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Reset Password - Koperasi Kamorina Surya Niaga',
       html: `
@@ -91,7 +100,7 @@ export class MailService {
           <li><strong>NIK:</strong> ${employeeNumber}</li>
         </ul>
         <br>
-        <p>Sebagai <strong>${roleName.toUpperCase().replace('_', ' ')}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
+        <p>Sebagai <strong>${roleName. toUpperCase(). replace('_', ' ')}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
         <br>
         <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Lihat Pengajuan
@@ -137,13 +146,13 @@ export class MailService {
   async sendMembershipApproved(email: string, memberName: string) {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard`;
 
-    await this.transporter.sendMail({
+    await this.transporter. sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Selamat! Keanggotaan Anda Disetujui - Koperasi Kamorina Surya Niaga',
+      subject: 'Selamat!  Keanggotaan Anda Disetujui - Koperasi Kamorina Surya Niaga',
       html: `
-        <h2>Selamat ${memberName}! 🎉</h2>
-        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Kamorina Surya Niaga telah <strong>DISETUJUI</strong>!</p>
+        <h2>Selamat ${memberName}!  🎉</h2>
+        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Kamorina Surya Niaga telah <strong>DISETUJUI</strong>! </p>
         <br>
         <p>Sekarang Anda dapat mengakses seluruh fitur member koperasi, termasuk:</p>
         <ul>
@@ -158,7 +167,7 @@ export class MailService {
         </a>
         <p>Atau kunjungi: ${dashboardUrl}</p>
         <br>
-        <p>Selamat bergabung dengan keluarga besar Koperasi!</p>
+        <p>Selamat bergabung dengan keluarga besar Koperasi! </p>
       `,
     });
   }
@@ -202,14 +211,10 @@ export class MailService {
     roleName: string,
   ) {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans`;
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(loanAmount);
+    const formattedAmount = this.formatCurrency(loanAmount);
 
-    await this.transporter.sendMail({
-      from: this.configService.get('MAIL_FROM', { infer: true }),
+    await this. transporter.sendMail({
+      from: this.configService. get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Pengajuan Pinjaman Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
@@ -246,8 +251,8 @@ export class MailService {
   ) {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans/my-loans`;
 
-    await this.transporter.sendMail({
-      from: this.configService.get('MAIL_FROM', { infer: true }),
+    await this. transporter.sendMail({
+      from: this.configService. get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Pengajuan Pinjaman Anda Direvisi - Koperasi Kamorina Surya Niaga',
       html: `
@@ -259,14 +264,14 @@ export class MailService {
           ${revisionNotes}
         </p>
         <br>
-        <p>Silakan cek detail pinjaman Anda di dashboard.</p>
+        <p>Silakan cek detail pinjaman Anda di dashboard. </p>
         <br>
         <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Lihat Detail Pinjaman
         </a>
         <p>Atau akses: ${dashboardUrl}</p>
         <br>
-        <p>Terima kasih.</p>
+        <p>Terima kasih. </p>
       `,
     });
   }
@@ -311,12 +316,8 @@ export class MailService {
     loanAmount: number,
     bankAccountNumber: string,
   ) {
-    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans/disbursement`;
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(loanAmount);
+    const dashboardUrl = `${this.configService. get('FRONTEND_URL', { infer: true })}/dashboard/loans/disbursement`;
+    const formattedAmount = this.formatCurrency(loanAmount);
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -334,7 +335,7 @@ export class MailService {
           <li><strong>No. Rekening:</strong> ${bankAccountNumber}</li>
         </ul>
         <br>
-        <p>Silakan proses transaksi BCA dan konfirmasi pencairan di sistem.</p>
+        <p>Silakan proses transaksi BCA dan konfirmasi pencairan di sistem. </p>
         <br>
         <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Proses Pencairan
@@ -356,12 +357,8 @@ export class MailService {
     loanNumber: string,
     loanAmount: number,
   ) {
-    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/loans/authorization`;
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(loanAmount);
+    const dashboardUrl = `${this.configService. get('FRONTEND_URL', { infer: true })}/dashboard/loans/authorization`;
+    const formattedAmount = this.formatCurrency(loanAmount);
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -400,19 +397,15 @@ export class MailService {
     loanAmount: number,
     bankAccountNumber: string,
   ) {
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(loanAmount);
+    const formattedAmount = this.formatCurrency(loanAmount);
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Pinjaman Anda Telah Dicairkan - Koperasi Kamorina Surya Niaga',
       html: `
-        <h2>Selamat ${applicantName}! 🎉</h2>
-        <p>Pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DICAIRKAN</strong>!</p>
+        <h2>Selamat ${applicantName}!  🎉</h2>
+        <p>Pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DICAIRKAN</strong>! </p>
         <br>
         <h3>Detail Pencairan:</h3>
         <ul>
@@ -420,14 +413,14 @@ export class MailService {
           <li><strong>No. Rekening:</strong> ${bankAccountNumber}</li>
         </ul>
         <br>
-        <p>Dana akan segera masuk ke rekening Anda. Harap periksa mutasi rekening Anda.</p>
+        <p>Dana akan segera masuk ke rekening Anda.  Harap periksa mutasi rekening Anda.</p>
         <br>
         <p style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3;">
           <strong>Catatan Penting:</strong><br>
-          Jangan lupa untuk membayar cicilan sesuai jadwal yang telah ditentukan.
+          Jangan lupa untuk membayar cicilan sesuai jadwal yang telah ditentukan. 
         </p>
         <br>
-        <p>Terima kasih telah menggunakan layanan koperasi.</p>
+        <p>Terima kasih telah menggunakan layanan koperasi. </p>
       `,
     });
   }
@@ -441,14 +434,10 @@ export class MailService {
     loanNumber: string,
     loanAmount: number,
   ) {
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(loanAmount);
+    const formattedAmount = this.formatCurrency(loanAmount);
 
     await this.transporter.sendMail({
-      from: this.configService.get('MAIL_FROM', { infer: true }),
+      from: this. configService.get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Pinjaman Telah Selesai Dicairkan - Koperasi Kamorina Surya Niaga',
       html: `
@@ -467,7 +456,7 @@ export class MailService {
     });
   }
 
-    /**
+  /**
    * Send deposit approval request notification to approver
    */
   async sendDepositApprovalRequest(
@@ -479,14 +468,10 @@ export class MailService {
     roleName: string,
   ) {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposits/approvals`;
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(depositAmount);
+    const formattedAmount = this.formatCurrency(depositAmount);
 
-    await this.transporter.sendMail({
-      from: this.configService.get('MAIL_FROM', { infer: true }),
+    await this. transporter.sendMail({
+      from: this.configService. get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Pengajuan Deposito Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
@@ -507,7 +492,7 @@ export class MailService {
         </a>
         <p>Atau akses dashboard di: ${dashboardUrl}</p>
         <br>
-        <p>Terima kasih atas perhatian Anda.</p>
+        <p>Terima kasih atas perhatian Anda. </p>
       `,
     });
   }
@@ -551,18 +536,14 @@ export class MailService {
     depositAmount: number,
     tenorMonths: number,
   ) {
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(depositAmount);
+    const formattedAmount = this.formatCurrency(depositAmount);
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Pengajuan Deposito Disetujui - Koperasi Kamorina Surya Niaga',
       html: `
-        <h2>Selamat ${applicantName}! 🎉</h2>
+        <h2>Selamat ${applicantName}!  🎉</h2>
         <p>Pengajuan deposito Anda dengan nomor <strong>${depositNumber}</strong> telah <strong>DISETUJUI</strong>!</p>
         <br>
         <h3>Detail Deposito:</h3>
@@ -573,7 +554,7 @@ export class MailService {
         <br>
         <p style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3;">
           <strong>Catatan Penting:</strong><br>
-          Deposito akan dipotong dari gaji bulanan Anda. Pastikan saldo gaji mencukupi.
+          Deposito akan dipotong dari gaji bulanan Anda.  Pastikan saldo gaji mencukupi. 
         </p>
         <br>
         <p>Terima kasih telah menggunakan layanan koperasi.</p>
@@ -591,13 +572,9 @@ export class MailService {
     depositNumber: string,
     depositAmount: number,
   ) {
-    const formattedAmount = new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(depositAmount);
+    const formattedAmount = this.formatCurrency(depositAmount);
 
-    await this.transporter.sendMail({
+    await this.transporter. sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
       subject: 'Deposito Baru Telah Disetujui - Koperasi Kamorina Surya Niaga',
@@ -615,6 +592,504 @@ export class MailService {
         <p>Mohon untuk menambahkan pemotongan deposito ini ke dalam sistem payroll.</p>
         <br>
         <p>Terima kasih atas perhatian Anda.</p>
+      `,
+    });
+  }
+
+  // ============ DEPOSIT CHANGE EMAIL METHODS ============
+
+  /**
+   * Send deposit change approval request to approvers
+   */
+  async sendDepositChangeApprovalRequest(
+    email: string,
+    approverName: string,
+    applicantName: string,
+    changeNumber: string,
+    depositNumber: string,
+    currentAmount: number,
+    newAmount: number,
+    roleName: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposit-changes/approvals`;
+    const formattedCurrentAmount = this.formatCurrency(currentAmount);
+    const formattedNewAmount = this.formatCurrency(newAmount);
+    const roleLabel = roleName === 'divisi_simpan_pinjam' 
+      ? 'Divisi Simpan Pinjam' 
+      : 'Ketua Koperasi';
+
+    const amountDifference = newAmount - currentAmount;
+    const differenceLabel = amountDifference >= 0 
+      ? `+${this.formatCurrency(amountDifference)}` 
+      : this.formatCurrency(amountDifference);
+
+    await this. transporter.sendMail({
+      from: this.configService. get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `[Perlu Review] Pengajuan Perubahan Deposito ${changeNumber} - Koperasi Kamorina`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1976d2;">Halo ${approverName},</h2>
+          <p>Ada pengajuan perubahan deposito yang memerlukan persetujuan Anda.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Pengajuan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Perubahan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${changeNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Deposito:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${depositNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pemohon:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${applicantName}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #e65100;">Perubahan Deposito:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Saat Ini:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${formattedCurrentAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Baru:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #1976d2;">${formattedNewAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Selisih:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: ${amountDifference >= 0 ? '#4caf50' : '#f44336'};">
+                  ${differenceLabel}
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <p>Sebagai <strong>${roleLabel}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Review Pengajuan
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">Atau akses dashboard di: <a href="${dashboardUrl}">${dashboardUrl}</a></p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga. 
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit change rejected notification to applicant
+   */
+  async sendDepositChangeRejected(
+    email: string,
+    applicantName: string,
+    changeNumber: string,
+    depositNumber: string,
+    reason: string,
+  ) {
+    const dashboardUrl = `${this. configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposit-changes/my-requests`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Pengajuan Perubahan Deposito Ditolak - ${changeNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #d32f2f;">Halo ${applicantName},</h2>
+          <p>Kami informasikan bahwa pengajuan perubahan deposito Anda telah <strong style="color: #d32f2f;">DITOLAK</strong>.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Pengajuan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Perubahan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${changeNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Deposito:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${depositNumber}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; border-left: 4px solid #d32f2f; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #d32f2f;">Alasan Penolakan:</h4>
+            <p style="margin-bottom: 0; color: #333;">${reason}</p>
+          </div>
+
+          <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #757575; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Riwayat Pengajuan
+            </a>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit change approved notification to applicant
+   */
+  async sendDepositChangeApproved(
+    email: string,
+    applicantName: string,
+    changeNumber: string,
+    depositNumber: string,
+    currentAmount: number,
+    newAmount: number,
+    currentTenor: number,
+    newTenor: number,
+    adminFee: number,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposits/my-deposits`;
+    const formattedCurrentAmount = this.formatCurrency(currentAmount);
+    const formattedNewAmount = this.formatCurrency(newAmount);
+    const formattedAdminFee = this.formatCurrency(adminFee);
+
+    await this.transporter.sendMail({
+      from: this. configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Perubahan Deposito Disetujui - ${changeNumber} 🎉`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4caf50;">Selamat ${applicantName}!  🎉</h2>
+          <p>Pengajuan perubahan deposito Anda telah <strong style="color: #4caf50;">DISETUJUI</strong> dan telah diterapkan! </p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Pengajuan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Perubahan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${changeNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Deposito:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${depositNumber}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #2e7d32;">Ringkasan Perubahan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; width: 40%; color: #666;"></td>
+                <td style="padding: 8px 0; font-weight: bold; color: #666;">Sebelum</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #2e7d32;">Sesudah</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah:</td>
+                <td style="padding: 8px 0;">${formattedCurrentAmount}</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #2e7d32;">${formattedNewAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Tenor:</td>
+                <td style="padding: 8px 0;">${currentTenor} bulan</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #2e7d32;">${newTenor} bulan</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
+            <p style="margin: 0; color: #e65100;">
+              <strong>⚠️ Biaya Admin:</strong> ${formattedAdminFee}<br>
+              <small>Biaya admin akan dipotong langsung dari tabungan/gaji Anda.</small>
+            </p>
+          </div>
+
+          <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 20px 0;">
+            <p style="margin: 0; color: #1565c0;">
+              <strong>📝 Catatan Penting:</strong><br>
+              Perubahan deposito telah berlaku efektif.  Pemotongan gaji akan disesuaikan mulai periode berikutnya.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Deposito Saya
+            </a>
+          </div>
+          
+          <p>Terima kasih telah menggunakan layanan koperasi! </p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit change notification to payroll
+   */
+  async sendDepositChangePayrollNotification(
+    email: string,
+    payrollName: string,
+    applicantName: string,
+    changeNumber: string,
+    depositNumber: string,
+    currentAmount: number,
+    newAmount: number,
+    adminFee: number,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/payroll/deposit-changes`;
+    const formattedCurrentAmount = this.formatCurrency(currentAmount);
+    const formattedNewAmount = this.formatCurrency(newAmount);
+    const formattedAdminFee = this. formatCurrency(adminFee);
+
+    const amountDifference = newAmount - currentAmount;
+    const differenceLabel = amountDifference >= 0 
+      ? `+${this.formatCurrency(amountDifference)}` 
+      : this.formatCurrency(amountDifference);
+
+    await this.transporter.sendMail({
+      from: this. configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `[Payroll] Perubahan Deposito Karyawan - ${changeNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1976d2;">Halo ${payrollName},</h2>
+          <p>Ada perubahan deposito karyawan yang telah disetujui dan perlu diupdate di sistem payroll.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Perubahan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Perubahan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${changeNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Deposito:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${depositNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Karyawan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${applicantName}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #e65100;">Perubahan Pemotongan Gaji:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pemotongan Lama:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${formattedCurrentAmount}/bulan</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pemotongan Baru:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #1976d2;">${formattedNewAmount}/bulan</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Selisih:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: ${amountDifference >= 0 ? '#4caf50' : '#f44336'};">
+                  ${differenceLabel}/bulan
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #d32f2f; margin: 20px 0;">
+            <p style="margin: 0; color: #c62828;">
+              <strong>💰 Biaya Admin (potong sekali):</strong> ${formattedAdminFee}<br>
+              <small>Biaya admin harus dipotong pada periode gaji berikutnya.</small>
+            </p>
+          </div>
+
+          <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #1565c0;">📋 Yang Perlu Dilakukan:</h4>
+            <ol style="margin-bottom: 0; padding-left: 20px; color: #333;">
+              <li>Update pemotongan deposito bulanan di sistem payroll</li>
+              <li>Potong biaya admin ${formattedAdminFee} pada gaji periode berikutnya</li>
+              <li>Pastikan perubahan berlaku mulai periode gaji mendatang</li>
+            </ol>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Detail di Dashboard
+            </a>
+          </div>
+          
+          <p>Terima kasih atas perhatian Anda. </p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit change notification to employee (when change is applied)
+   */
+  async sendDepositChangeNotificationToEmployee(
+    email: string,
+    employeeName: string,
+    changeNumber: string,
+    depositNumber: string,
+    currentAmount: number,
+    newAmount: number,
+    currentTenor: number,
+    newTenor: number,
+    adminFee: number,
+    effectiveDate: Date,
+  ) {
+    const dashboardUrl = `${this. configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposits/my-deposits`;
+    const formattedCurrentAmount = this. formatCurrency(currentAmount);
+    const formattedNewAmount = this.formatCurrency(newAmount);
+    const formattedAdminFee = this.formatCurrency(adminFee);
+    const formattedDate = effectiveDate.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Notifikasi Perubahan Deposito - ${depositNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1976d2;">Halo ${employeeName},</h2>
+          <p>Berikut adalah konfirmasi perubahan deposito Anda yang telah disetujui dan diterapkan:</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Informasi Deposito:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Perubahan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${changeNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Deposito:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${depositNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Tanggal Efektif:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${formattedDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="display: flex; gap: 20px; margin: 20px 0;">
+            <div style="flex: 1; background-color: #ffebee; padding: 15px; border-radius: 8px;">
+              <h4 style="margin-top: 0; color: #c62828;">Sebelum</h4>
+              <p style="margin: 5px 0;"><strong>Jumlah:</strong> ${formattedCurrentAmount}</p>
+              <p style="margin: 5px 0;"><strong>Tenor:</strong> ${currentTenor} bulan</p>
+            </div>
+            <div style="flex: 1; background-color: #e8f5e9; padding: 15px; border-radius: 8px;">
+              <h4 style="margin-top: 0; color: #2e7d32;">Sesudah</h4>
+              <p style="margin: 5px 0;"><strong>Jumlah:</strong> ${formattedNewAmount}</p>
+              <p style="margin: 5px 0;"><strong>Tenor:</strong> ${newTenor} bulan</p>
+            </div>
+          </div>
+
+          <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
+            <p style="margin: 0; color: #e65100;">
+              <strong>💰 Biaya Admin:</strong> ${formattedAdminFee}<br>
+              <small>Biaya admin akan dipotong dari gaji Anda pada periode berikutnya.</small>
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Deposito Saya
+            </a>
+          </div>
+          
+          <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam. </p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send deposit change step notification (when moving to next approval step)
+   */
+  async sendDepositChangeStepNotification(
+    email: string,
+    applicantName: string,
+    changeNumber: string,
+    depositNumber: string,
+    currentStep: string,
+    approverName: string,
+  ) {
+    const dashboardUrl = `${this.configService. get('FRONTEND_URL', { infer: true })}/dashboard/deposit-changes/my-requests`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Update Status Pengajuan Perubahan Deposito - ${changeNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1976d2;">Halo ${applicantName},</h2>
+          <p>Pengajuan perubahan deposito Anda sedang diproses. </p>
+          
+          <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1565c0;">Status Terkini:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Perubahan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${changeNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Deposito:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${depositNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Step Saat Ini:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #ff9800;">${currentStep}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Disetujui oleh:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${approverName}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p>Pengajuan Anda telah disetujui pada tahap sebelumnya dan sedang menunggu persetujuan selanjutnya.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Status Pengajuan
+            </a>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
       `,
     });
   }

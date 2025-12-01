@@ -19,6 +19,7 @@ import {
   PiggyBank,
   Wallet,
   Clock,
+  Edit,
 } from 'lucide-react';
 import { FaRupiahSign } from "react-icons/fa6";
 
@@ -67,6 +68,12 @@ const menuItems = [
     href: '/dashboard/deposits',
     requiresMemberVerified: true,
   },
+  {
+    title: 'Perubahan Deposito',
+    icon: Edit,
+    href: '/dashboard/deposit-changes',
+    requiresMemberVerified: true,
+  },
 ];
 
 const managementItems = [
@@ -81,6 +88,13 @@ const managementItems = [
     title: 'Deposit Approvals',
     icon: PiggyBank,
     href: '/dashboard/deposits/approvals',
+    roles: ['ketua', 'divisi_simpan_pinjam'],
+    requiresMemberVerified: true,
+  },
+  {
+    title: 'Perubahan Deposito',
+    icon: Edit,
+    href: '/dashboard/deposit-changes/approvals',
     roles: ['ketua', 'divisi_simpan_pinjam'],
     requiresMemberVerified: true,
   },

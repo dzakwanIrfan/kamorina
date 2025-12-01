@@ -618,13 +618,23 @@ async function main() {
     },
     {
       key: 'deposit_calculation_method',
-      value: 'SIMPLE',
+      value: 'COMPOUND',
       type: SettingType.STRING,
       category: SettingCategory.SAVINGS,
       label: 'Metode Perhitungan Bunga Deposito',
       description: 'Metode perhitungan bunga deposito (SIMPLE/COMPOUND)',
       unit: null,
       validation: { required: true, enum: ['SIMPLE', 'COMPOUND'] },
+    },
+    {
+      key: 'deposit_change_admin_fee',
+      value: '15000',
+      type: SettingType.NUMBER,
+      category: SettingCategory.SAVINGS,
+      label: 'Biaya Admin Perubahan Deposito',
+      description: 'Biaya administrasi untuk setiap perubahan tabungan deposito',
+      unit: 'Rupiah',
+      validation: { min: 0, required: true },
     },
     
     // LOAN
