@@ -617,16 +617,6 @@ async function main() {
       validation: { min: 0, max: 100, required: true },
     },
     {
-      key: 'deposit_calculation_method',
-      value: 'COMPOUND',
-      type: SettingType.STRING,
-      category: SettingCategory.SAVINGS,
-      label: 'Metode Perhitungan Bunga Deposito',
-      description: 'Metode perhitungan bunga deposito (SIMPLE/COMPOUND)',
-      unit: null,
-      validation: { required: true, enum: ['SIMPLE', 'COMPOUND'] },
-    },
-    {
       key: 'deposit_change_admin_fee',
       value: '15000',
       type: SettingType.NUMBER,

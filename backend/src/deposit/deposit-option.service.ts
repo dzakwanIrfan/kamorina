@@ -33,8 +33,8 @@ export class DepositOptionService {
         code: dto.code,
         label: dto.label,
         amount: dto.amount,
-        isActive: dto.isActive ?? true,
-        sortOrder: dto.sortOrder ?? 0,
+        isActive: dto.isActive ??  true,
+        sortOrder: dto.sortOrder ??  0,
       },
     });
   }
@@ -65,7 +65,7 @@ export class DepositOptionService {
     }
 
     const [data, total] = await Promise.all([
-      this.prisma.depositAmountOption.findMany({
+      this.prisma. depositAmountOption.findMany({
         where,
         skip,
         take: limit,
@@ -111,7 +111,7 @@ export class DepositOptionService {
       where: { code },
     });
 
-    if (!option) {
+    if (! option) {
       throw new NotFoundException('Opsi jumlah deposito tidak ditemukan');
     }
 
@@ -149,7 +149,7 @@ export class DepositOptionService {
 
     if (usedCount > 0) {
       throw new BadRequestException(
-        `Tidak dapat menghapus. Opsi ini digunakan di ${usedCount} pengajuan deposito.`,
+        `Tidak dapat menghapus.  Opsi ini digunakan di ${usedCount} pengajuan deposito. `,
       );
     }
 
@@ -177,7 +177,7 @@ export class DepositOptionService {
         label: dto.label,
         months: dto.months,
         isActive: dto.isActive ?? true,
-        sortOrder: dto.sortOrder ?? 0,
+        sortOrder: dto. sortOrder ?? 0,
       },
     });
   }
@@ -194,7 +194,7 @@ export class DepositOptionService {
 
     const skip = (page - 1) * limit;
 
-    const where: Prisma.DepositTenorOptionWhereInput = {};
+    const where: Prisma. DepositTenorOptionWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -208,7 +208,7 @@ export class DepositOptionService {
     }
 
     const [data, total] = await Promise.all([
-      this.prisma.depositTenorOption.findMany({
+      this. prisma.depositTenorOption.findMany({
         where,
         skip,
         take: limit,
@@ -238,11 +238,11 @@ export class DepositOptionService {
   }
 
   async findTenorOptionById(id: string) {
-    const option = await this.prisma.depositTenorOption.findUnique({
+    const option = await this.prisma. depositTenorOption.findUnique({
       where: { id },
     });
 
-    if (!option) {
+    if (! option) {
       throw new NotFoundException('Opsi tenor deposito tidak ditemukan');
     }
 
@@ -286,7 +286,7 @@ export class DepositOptionService {
   async deleteTenorOption(id: string) {
     const option = await this.findTenorOptionById(id);
 
-    const usedCount = await this.prisma.depositApplication.count({
+    const usedCount = await this. prisma.depositApplication.count({
       where: { depositTenorCode: option.code },
     });
 
@@ -296,7 +296,7 @@ export class DepositOptionService {
       );
     }
 
-    await this.prisma.depositTenorOption.delete({
+    await this. prisma.depositTenorOption.delete({
       where: { id },
     });
 
@@ -308,7 +308,7 @@ export class DepositOptionService {
   async getDepositConfig() {
     const [amounts, tenors, interestSetting, calculationMethodSetting] = await Promise.all([
       this.findAllActiveAmountOptions(),
-      this.findAllActiveTenorOptions(),
+      this. findAllActiveTenorOptions(),
       this.prisma.cooperativeSetting.findUnique({
         where: { key: 'deposit_interest_rate' },
       }),
@@ -320,95 +320,137 @@ export class DepositOptionService {
     return {
       amounts,
       tenors,
-      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
-      calculationMethod: calculationMethodSetting?.value || 'SIMPLE', // SIMPLE or COMPOUND
+      interestRate: interestSetting ?  parseFloat(interestSetting.value) : 6,
+      calculationMethod: calculationMethodSetting?. value || 'SIMPLE',
     };
   }
 
   // CALCULATE DEPOSIT RETURN
   
   /**
-   * Calculate deposit return based on calculation method
+   * Calculate deposit return for MONTHLY INSTALLMENT savings (Tabungan Berjangka)
    * 
-   * SIMPLE (Bunga Sederhana):
-   * Bunga = Pokok × (Suku Bunga Tahunan / 100) × (Tenor dalam bulan / 12)
+   * Ini adalah TABUNGAN BERJANGKA dengan setoran bulanan, bukan deposito lump sum! 
    * 
-   * COMPOUND (Bunga Majemuk - compounding monthly):
-   * Total = Pokok × (1 + (Suku Bunga Tahunan / 100) / 12)^Tenor
-   * Bunga = Total - Pokok
+   * Konsep:
+   * - User memilih jumlah setoran per bulan (misal 200rb, 500rb, 1jt, dst)
+   * - Tenor adalah berapa bulan user akan menabung (3, 6, 9, 12 bulan)
+   * - Setiap bulan dipotong dari gaji sesuai jumlah yang dipilih
+   * - Bunga dihitung dari akumulasi tabungan
+   * 
+   * Metode Perhitungan:
+   * 
+   * 1.  SIMPLE INTEREST (Bunga Sederhana):
+   *    - Bunga dihitung berdasarkan saldo rata-rata
+   *    - Saldo Rata-rata = (Setoran × Tenor × (Tenor + 1)) / (2 × Tenor)
+   *    - Bunga = Saldo Rata-rata × Rate × (Tenor/12)
+   * 
+   * 2.  COMPOUND INTEREST (Bunga Majemuk - Monthly Compounding):
+   *    - Setiap setoran bulanan mendapat bunga sejak bulan masuk
+   *    - Setoran bulan pertama dapat bunga selama (tenor) bulan
+   *    - Setoran bulan kedua dapat bunga selama (tenor-1) bulan, dst
+   *    - Menggunakan Future Value of Annuity formula
    */
   calculateDepositReturn(
-    principal: number,
-    tenorMonths: number,
-    annualInterestRate: number,
+    monthlyDeposit: number,        // Setoran per bulan (amount yang dipilih user)
+    tenorMonths: number,            // Berapa bulan menabung
+    annualInterestRate: number,     // Bunga tahunan (%)
     calculationMethod: 'SIMPLE' | 'COMPOUND' = 'SIMPLE',
   ) {
+    const totalPrincipal = monthlyDeposit * tenorMonths; // Total uang yang disetor
     let projectedInterest: number;
     let totalReturn: number;
     let effectiveRate: number;
     let monthlyInterestBreakdown: Array<{
       month: number;
-      openingBalance: number;
-      interest: number;
-      closingBalance: number;
+      monthlyDeposit: number;
+      depositAccumulation: number;
+      interestAccumulation: number;
+      totalBalance: number;
     }> = [];
 
     if (calculationMethod === 'COMPOUND') {
-      // Compound Interest (Bunga Majemuk)
-      // Monthly compounding: A = P × (1 + r/12)^n
-      const monthlyRate = annualInterestRate / 100 / 12;
-      totalReturn = principal * Math.pow(1 + monthlyRate, tenorMonths);
-      projectedInterest = totalReturn - principal;
+      // COMPOUND INTEREST - Future Value of Annuity (FV Anuitas)
+      // FV = PMT × [((1 + r)^n - 1) / r]
+      // Dimana bunga compound monthly
       
-      // Calculate effective annual rate
+      const monthlyRate = annualInterestRate / 100 / 12;
+      let depositBalance = 0;
+      let interestBalance = 0;
+
+      // Hitung bunga untuk setiap setoran
+      for (let month = 1; month <= tenorMonths; month++) {
+        // Tambah setoran bulan ini
+        depositBalance += monthlyDeposit;
+        
+        // Hitung bunga untuk seluruh saldo (deposit + interest sebelumnya)
+        const thisMonthInterest = (depositBalance + interestBalance) * monthlyRate;
+        interestBalance += thisMonthInterest;
+
+        monthlyInterestBreakdown.push({
+          month,
+          monthlyDeposit,
+          depositAccumulation: Math.round(depositBalance),
+          interestAccumulation: Math.round(interestBalance),
+          totalBalance: Math.round(depositBalance + interestBalance),
+        });
+      }
+
+      projectedInterest = interestBalance;
+      totalReturn = depositBalance + interestBalance;
+      
+      // Effective annual rate
       effectiveRate = (Math.pow(1 + monthlyRate, 12) - 1) * 100;
 
-      // Generate monthly breakdown for compound
-      let balance = principal;
-      for (let month = 1; month <= tenorMonths; month++) {
-        const monthInterest = balance * monthlyRate;
-        const closingBalance = balance + monthInterest;
-        monthlyInterestBreakdown.push({
-          month,
-          openingBalance: Math.round(balance),
-          interest: Math.round(monthInterest),
-          closingBalance: Math.round(closingBalance),
-        });
-        balance = closingBalance;
-      }
     } else {
-      // Simple Interest (Bunga Sederhana)
-      // I = P × r × t
-      // Where: P = Principal, r = annual rate (decimal), t = time in years
+      // SIMPLE INTEREST - Berdasarkan saldo rata-rata
+      // Formula saldo rata-rata untuk setoran bulanan:
+      // Avg Balance = (Monthly Deposit × Tenor × (Tenor + 1)) / (2 × Tenor)
+      // 
+      // Contoh: Setoran 3jt/bulan selama 12 bulan
+      // Bulan 1: saldo = 3jt
+      // Bulan 2: saldo = 6jt
+      // ... 
+      // Bulan 12: saldo = 36jt
+      // Rata-rata = (3jt × 12 × 13) / (2 × 12) = 19. 5jt
+      
+      const averageBalance = (monthlyDeposit * tenorMonths * (tenorMonths + 1)) / (2 * tenorMonths);
       const timeInYears = tenorMonths / 12;
-      projectedInterest = principal * (annualInterestRate / 100) * timeInYears;
-      totalReturn = principal + projectedInterest;
+      
+      // Bunga = Saldo Rata-rata × Rate × Time
+      projectedInterest = averageBalance * (annualInterestRate / 100) * timeInYears;
+      totalReturn = totalPrincipal + projectedInterest;
       effectiveRate = annualInterestRate;
 
-      // Generate monthly breakdown for simple
-      const monthlyInterest = projectedInterest / tenorMonths;
-      let balance = principal;
+      // Generate monthly breakdown
+      let depositBalance = 0;
+      const monthlyInterest = projectedInterest / tenorMonths; // Bagi rata bunga ke setiap bulan
+      let interestBalance = 0;
+
       for (let month = 1; month <= tenorMonths; month++) {
-        const closingBalance = balance + monthlyInterest;
+        depositBalance += monthlyDeposit;
+        interestBalance += monthlyInterest;
+
         monthlyInterestBreakdown.push({
           month,
-          openingBalance: Math.round(balance),
-          interest: Math.round(monthlyInterest),
-          closingBalance: Math.round(closingBalance),
+          monthlyDeposit,
+          depositAccumulation: Math. round(depositBalance),
+          interestAccumulation: Math.round(interestBalance),
+          totalBalance: Math.round(depositBalance + interestBalance),
         });
-        balance = closingBalance;
       }
     }
 
     return {
-      principal,
-      tenorMonths,
-      annualInterestRate,
-      calculationMethod,
+      monthlyDeposit,                                      // Setoran per bulan
+      tenorMonths,                                         // Jangka waktu (bulan)
+      totalPrincipal,                                      // Total setoran (deposit × tenor)
+      annualInterestRate,                                  // Bunga tahunan
+      calculationMethod,                                   // Metode hitung
       effectiveRate: Math.round(effectiveRate * 100) / 100,
-      projectedInterest: Math.round(projectedInterest),
-      totalReturn: Math.round(totalReturn),
-      monthlyInterestBreakdown,
+      projectedInterest: Math.round(projectedInterest),    // Total bunga yang didapat
+      totalReturn: Math. round(totalReturn),                // Total uang yang diterima
+      monthlyInterestBreakdown,                            // Rincian per bulan
     };
   }
 
@@ -425,11 +467,11 @@ export class DepositOptionService {
       this.getDepositConfig(),
     ]);
 
-    const principal = amountOption.amount.toNumber();
+    const monthlyDeposit = amountOption.amount. toNumber();
     const tenorMonths = tenorOption.months;
 
     return this.calculateDepositReturn(
-      principal,
+      monthlyDeposit,
       tenorMonths,
       config.interestRate,
       config.calculationMethod as 'SIMPLE' | 'COMPOUND',
