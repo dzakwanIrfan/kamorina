@@ -15,7 +15,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -28,7 +27,7 @@ import {
 import { LoanApplication, LoanType } from '@/types/loan.types';
 import { loanService } from '@/services/loan.service';
 import { toast } from 'sonner';
-import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Percent } from 'lucide-react';
 import { FaRupiahSign } from "react-icons/fa6";
 import { handleApiError } from '@/lib/axios';
 import { formatCurrency } from '@/lib/loan-utils';
@@ -64,8 +63,17 @@ function createReviseSchema(loanType: LoanType) {
       return z.object({
         ...baseSchema,
         retailPrice: z.number().positive('Harga retail harus lebih dari 0'),
+        partnerMarginPercent: z.number()
+          .min(0, 'Margin tidak boleh negatif')
+          .max(100, 'Margin maksimal 100%'),
         cooperativePrice: z.number().positive('Harga koperasi harus lebih dari 0'),
-      });
+      }). refine(
+        (data) => data.cooperativePrice <= data.retailPrice,
+        {
+          message: 'Harga koperasi tidak boleh lebih besar dari harga retail',
+          path: ['cooperativePrice'],
+        }
+      );
 
     default:
       return z.object(baseSchema);
@@ -86,6 +94,10 @@ export function ReviseLoanDialog({
     resolver: zodResolver(formSchema),
   });
 
+  // Watch retail price and margin for GOODS_PHONE
+  const retailPrice = form.watch('retailPrice');
+  const partnerMarginPercent = form.watch('partnerMarginPercent');
+
   useEffect(() => {
     if (loan && open) {
       const defaultValues: any = {
@@ -104,20 +116,47 @@ export function ReviseLoanDialog({
           defaultValues.itemPrice = loan.goodsOnlineDetails?.itemPrice || loan.loanAmount;
           break;
         case LoanType.GOODS_PHONE:
-          defaultValues.retailPrice = loan.goodsPhoneDetails?.retailPrice || 0;
-          defaultValues.cooperativePrice = loan.goodsPhoneDetails?.cooperativePrice || 0;
+          const currentRetail = loan.goodsPhoneDetails?.retailPrice || 0;
+          const currentCoop = loan.goodsPhoneDetails?.cooperativePrice || 0;
+          
+          // Calculate existing margin percentage if prices exist
+          let existingMargin = 3; // default 3%
+          if (currentRetail > 0 && currentCoop > 0 && currentCoop < currentRetail) {
+            existingMargin = ((currentRetail - currentCoop) / currentRetail) * 100;
+          }
+          
+          defaultValues.retailPrice = currentRetail;
+          defaultValues.cooperativePrice = currentCoop;
+          defaultValues.partnerMarginPercent = Math.round(existingMargin * 100) / 100; // round to 2 decimals
           break;
       }
 
       form.reset(defaultValues);
     }
-  }, [loan, open]);
+  }, [loan, open, form]);
+
+  // Auto-calculate cooperativePrice when retailPrice or margin changes (GOODS_PHONE only)
+  useEffect(() => {
+    if (loan?.loanType === LoanType.GOODS_PHONE && retailPrice > 0 && partnerMarginPercent >= 0) {
+      const calculatedCoopPrice = retailPrice - (retailPrice * (partnerMarginPercent / 100));
+      form.setValue('cooperativePrice', Math.round(calculatedCoopPrice), { 
+        shouldValidate: true 
+      });
+    }
+  }, [retailPrice, partnerMarginPercent, loan?.loanType, form]);
 
   const onSubmit = async (data: any) => {
     if (!loan) return;
 
     try {
       setIsSubmitting(true);
+      
+      // For GOODS_PHONE, ensure cooperativePrice is calculated correctly
+      if (loan.loanType === LoanType.GOODS_PHONE) {
+        const finalCoopPrice = data.retailPrice - (data.retailPrice * (data.partnerMarginPercent / 100));
+        data.cooperativePrice = Math.round(finalCoopPrice);
+      }
+      
       await loanService.reviseLoan(loan.id, data);
       toast.success('Pinjaman berhasil direvisi');
       onSuccess?.();
@@ -200,6 +239,14 @@ export function ReviseLoanDialog({
         );
 
       case LoanType.GOODS_PHONE:
+        const currentRetail = loan.goodsPhoneDetails?.retailPrice || 0;
+        const currentCoop = loan.goodsPhoneDetails?.cooperativePrice || 0;
+        let currentMargin = 0;
+        
+        if (currentRetail > 0 && currentCoop > 0 && currentCoop < currentRetail) {
+          currentMargin = ((currentRetail - currentCoop) / currentRetail) * 100;
+        }
+        
         return (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -219,9 +266,21 @@ export function ReviseLoanDialog({
                   </p>
                 </div>
                 <div>
+                  <p className="text-muted-foreground">Margin Rekanan</p>
+                  <p className="font-semibold">
+                    {currentMargin > 0 ? `${currentMargin.toFixed(2)}%` : '-'}
+                  </p>
+                </div>
+                <div>
                   <p className="text-muted-foreground">Harga Koperasi</p>
                   <p className="font-semibold">
                     {formatCurrency(loan.goodsPhoneDetails.cooperativePrice)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Selisih</p>
+                  <p className="font-semibold text-green-600">
+                    {formatCurrency(currentRetail - currentCoop)}
                   </p>
                 </div>
               </>
@@ -291,6 +350,11 @@ export function ReviseLoanDialog({
         );
 
       case LoanType.GOODS_PHONE:
+        const watchedRetail = form.watch('retailPrice') || 0;
+        const watchedMargin = form.watch('partnerMarginPercent') || 0;
+        const watchedCoop = form.watch('cooperativePrice') || 0;
+        const discount = watchedRetail - watchedCoop;
+        
         return (
           <>
             <FormField
@@ -298,7 +362,7 @@ export function ReviseLoanDialog({
               name="retailPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Harga Retail</FormLabel>
+                  <FormLabel>Harga Retail dari Toko</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -312,7 +376,7 @@ export function ReviseLoanDialog({
                       />
                     </div>
                   </FormControl>
-                  <FormDescription>Harga retail dari toko</FormDescription>
+                  <FormDescription>Harga retail yang diberikan oleh toko</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -320,6 +384,36 @@ export function ReviseLoanDialog({
 
             <FormField
               control={form.control}
+              name="partnerMarginPercent"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Persentase Margin Rekanan (%)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Percent className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        placeholder="10"
+                        step="0.01"
+                        min="0"
+                        max="100"
+                        className="pl-10"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Persentase potongan yang diberikan rekanan (contoh: 10 untuk 10%)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form. control}
               name="cooperativePrice"
               render={({ field }) => (
                 <FormItem>
@@ -330,20 +424,62 @@ export function ReviseLoanDialog({
                       <Input
                         type="number"
                         placeholder="9000000"
-                        className="pl-10"
+                        className="pl-10 bg-muted"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        disabled={isSubmitting}
+                        value={field.value || 0}
+                        disabled={true}
+                        readOnly
                       />
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Harga dari rekanan koperasi (ini yang akan menjadi jumlah pinjaman)
+                    Otomatis terhitung: Retail - (Retail × Margin%)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Display calculation summary */}
+            {watchedRetail > 0 && (
+              <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 p-4 space-y-2">
+                <h4 className="font-semibold mb-3">
+                  Ringkasan Perhitungan
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className='text-muted-foreground'>Harga Retail</p>
+                    <p className="font-bold">
+                      {formatCurrency(watchedRetail)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-muted-foreground'>Margin Rekanan</p>
+                    <p className="font-bold">
+                      {watchedMargin.toFixed(2)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-muted-foreground'>Potongan</p>
+                    <p className="font-bold">
+                      {formatCurrency(discount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className='text-muted-foreground'>Harga Koperasi</p>
+                    <p className="font-bold">
+                      {formatCurrency(watchedCoop)}
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-green-200 dark:border-green-800">
+                  <p className="text-xs text-green-600">
+                    <strong>Jumlah Pinjaman</strong> yang akan diberikan:{' '}
+                    <strong>{formatCurrency(watchedCoop)}</strong>
+                  </p>
+                </div>
+              </div>
+            )}
           </>
         );
     }
@@ -355,7 +491,7 @@ export function ReviseLoanDialog({
         <DialogHeader>
           <DialogTitle>Revisi Pengajuan Pinjaman</DialogTitle>
           <DialogDescription>
-            Ubah jumlah pinjaman atau tenor yang diajukan oleh pemohon.
+            Ubah jumlah pinjaman atau tenor yang diajukan oleh pemohon. 
           </DialogDescription>
         </DialogHeader>
 
