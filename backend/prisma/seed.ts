@@ -407,7 +407,7 @@ async function main() {
 
   console.log('🔄 Creating test users with applications...');
 
-  // ===== 1. UNDER_REVIEW - Waiting DSP Approval (5 users) =====
+  // 1. UNDER_REVIEW - Waiting DSP Approval (5 users)
   const waitingDSPUsers = [
     { empNum: '100000006', name: 'Budi Santoso', email: 'budi.santoso@test.com', nik: '3201011990010001', npwp: '1234567890123461' },
     { empNum: '100000007', name: 'Siti Nurhaliza', email: 'siti.nur@test.com', nik: '3201011991020002', npwp: '1234567890123462' },
@@ -442,7 +442,7 @@ async function main() {
 
   console.log('✅ Created 5 users waiting DSP approval');
 
-  // ===== 2. UNDER_REVIEW - Waiting Ketua Approval (4 users) =====
+  // 2. UNDER_REVIEW - Waiting Ketua Approval (4 users)
   const waitingKetuaUsers = [
     { empNum: '100000011', name: 'Dewi Sartika', email: 'dewi.sartika@test.com', nik: '3201011995060006', npwp: '1234567890123466' },
     { empNum: '100000012', name: 'Andi Setiawan', email: 'andi.setiawan@test.com', nik: '3201011996070007', npwp: '1234567890123467' },
@@ -485,7 +485,7 @@ async function main() {
 
   console.log('✅ Created 4 users waiting Ketua approval');
 
-  // ===== 3. APPROVED (6 users) =====
+  // 3. APPROVED (6 users)
   const approvedUsers = [
     { empNum: '100000015', name: 'Mega Wati', email: 'mega.wati@test.com', nik: '3201011999100010', npwp: '1234567890123470' },
     { empNum: '100000016', name: 'Hendra Gunawan', email: 'hendra.g@test.com', nik: '3201012000110011', npwp: '1234567890123471' },
@@ -538,7 +538,7 @@ async function main() {
 
   console.log('✅ Created 6 approved users');
 
-  // ===== 4. REJECTED (3 users) =====
+  // 4. REJECTED (3 users)
   const rejectedUsers = [
     { empNum: '100000021', name: 'Doni Pratama', email: 'doni.p@test.com', nik: '3201012005160016', npwp: '1234567890123476', reason: 'Data tidak lengkap' },
     { empNum: '100000022', name: 'Yuni Shara', email: 'yuni.shara@test.com', nik: '3201012006170017', npwp: '1234567890123477', reason: 'NIK tidak valid' },

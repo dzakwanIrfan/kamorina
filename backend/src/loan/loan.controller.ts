@@ -41,7 +41,7 @@ export class LoanController {
   ) {}
 
   /**
-   * ==================== MEMBER ENDPOINTS ====================
+   * MEMBER ENDPOINTS
    */
 
   /**
@@ -175,7 +175,7 @@ export class LoanController {
   }
 
   /**
-   * ==================== APPROVER ENDPOINTS (DSP, Ketua, Pengawas) ====================
+   * APPROVER ENDPOINTS (DSP, Ketua, Pengawas)
    */
 
   /**
@@ -254,7 +254,7 @@ export class LoanController {
   }
 
   /**
-   * ==================== SHOPKEEPER ENDPOINTS ====================
+   * SHOPKEEPER ENDPOINTS
    */
 
   /**
@@ -301,7 +301,7 @@ export class LoanController {
   }
 
   /**
-   * ==================== KETUA ENDPOINTS (Authorization) ====================
+   * KETUA ENDPOINTS (Authorization)
    */
 
   /**

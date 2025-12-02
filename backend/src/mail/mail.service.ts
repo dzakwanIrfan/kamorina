@@ -596,7 +596,7 @@ export class MailService {
     });
   }
 
-  // ============ DEPOSIT CHANGE EMAIL METHODS ============
+  // DEPOSIT CHANGE EMAIL METHODS
 
   /**
    * Send deposit change approval request to approvers

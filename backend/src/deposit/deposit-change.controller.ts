@@ -27,7 +27,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 export class DepositChangeController {
   constructor(private readonly depositChangeService: DepositChangeService) {}
 
-  // ============ MEMBER ENDPOINTS ============
+  // MEMBER ENDPOINTS
 
   /**
    * Preview change calculation before creating draft
@@ -119,7 +119,7 @@ export class DepositChangeController {
     return this.depositChangeService.getChangeRequestById(id, user.userId);
   }
 
-  // ============ APPROVER ENDPOINTS ============
+  // APPROVER ENDPOINTS
 
   /**
    * Get all change requests (for approvers)

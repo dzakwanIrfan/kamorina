@@ -25,8 +25,6 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
   }
 
   async validateLoanAmount(userId: string, amount: number): Promise<void> {
-    // For phone, cooperativePrice is the loan amount
-    // Set by DSP during revision, so validation happens there
     
     // Get max goods loan from settings (DYNAMIC)
     const maxGoodsLoan = await this.getSettingNumber('max_goods_loan_amount', 15000000);
@@ -94,7 +92,21 @@ export class GoodsPhoneHandler implements LoanTypeHandler {
     dto: ReviseGoodsPhoneDto,
     shopMarginRate?: number | null,
   ): Promise<void> {
-    await tx.goodsPhoneDetail.update({
+    // Validate cooperativePrice <= retailPrice
+    if (dto.cooperativePrice > dto.retailPrice) {
+      throw new BadRequestException(
+        'Harga koperasi tidak boleh lebih besar dari harga retail'
+      );
+    }
+
+    // Validate both prices are positive
+    if (dto.retailPrice <= 0 || dto.cooperativePrice <= 0) {
+      throw new BadRequestException(
+        'Harga retail dan harga koperasi harus lebih dari 0'
+      );
+    }
+
+    await tx.goodsPhoneDetail. update({
       where: { loanApplicationId },
       data: {
         retailPrice: dto.retailPrice,

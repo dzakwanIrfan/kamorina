@@ -1128,7 +1128,7 @@ export class DepositChangeService {
     };
   }
 
-  // ============ NOTIFICATION HELPERS ============
+  // NOTIFICATION HELPERS
 
   private async notifyApprovers(
     changeId: string,

@@ -30,12 +30,12 @@ export class LoanService {
     private validationService: LoanValidationService,
   ) {}
 
-  // ============ ELIGIBILITY ============
+  // ELIGIBILITY
   async getLoanEligibility(userId: string, loanType: LoanType) {
     return this.validationService.getLoanEligibility(userId, loanType);
   }
 
-  // ============ CRUD OPERATIONS ============
+  // CRUD OPERATIONS
   async createDraft(userId: string, dto: CreateLoanDto) {
     return this.crudService.createDraft(userId, dto);
   }
@@ -48,12 +48,12 @@ export class LoanService {
     return this.crudService.deleteDraft(userId, loanId);
   }
 
-  // ============ SUBMISSION ============
+  // SUBMISSION
   async submitLoan(userId: string, loanId: string) {
     return this.submissionService.submitLoan(userId, loanId);
   }
 
-  // ============ APPROVAL PROCESS ============
+  // APPROVAL PROCESS
   async reviseLoan(loanId: string, approverId: string, dto: ReviseLoanDto) {
     return this.approvalService.reviseLoan(loanId, approverId, dto);
   }
@@ -75,7 +75,7 @@ export class LoanService {
     return this.approvalService.bulkProcessApproval(approverId, approverRoles, dto);
   }
 
-  // ============ DISBURSEMENT ============
+  // DISBURSEMENT
   async processDisbursement(
     loanId: string,
     shopkeeperId: string,
@@ -88,7 +88,7 @@ export class LoanService {
     return this.disbursementService.bulkProcessDisbursement(shopkeeperId, dto);
   }
 
-  // ============ AUTHORIZATION ============
+  // AUTHORIZATION
   async processAuthorization(
     loanId: string,
     ketuaId: string,
@@ -101,7 +101,7 @@ export class LoanService {
     return this.authorizationService.bulkProcessAuthorization(ketuaId, dto);
   }
 
-  // ============ QUERY OPERATIONS ============
+  // QUERY OPERATIONS
   async getMyLoans(userId: string, query: QueryLoanDto) {
     return this.queryService.getMyLoans(userId, query);
   }
