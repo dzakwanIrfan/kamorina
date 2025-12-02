@@ -45,9 +45,10 @@ import {
 } from '@/types/deposit.types';
 import { depositService } from '@/services/deposit.service';
 import { handleApiError } from '@/lib/axios';
+import { DepositCalculation } from '@/types/deposit-option.types';
 
 interface DepositDetailDialogProps {
-  deposit: (DepositApplication & { calculationBreakdown?: any }) | null;
+  deposit: (DepositApplication & { calculationBreakdown?: DepositCalculation }) | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
@@ -383,18 +384,11 @@ export function DepositDetailDialog({
             <div className="rounded-lg border p-6 space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-lg">Rincian Perhitungan Deposito</h3>
-                {calculationBreakdown && (
-                  <Badge variant="outline">
-                    {calculationBreakdown.calculationMethod === 'SIMPLE'
-                      ? 'Bunga Sederhana'
-                      : 'Bunga Majemuk'}
-                  </Badge>
-                )}
               </div>
               <Separator />
 
               {/* Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-xs text-muted-foreground mb-1">Pokok Deposito</p>
                   <p className="text-lg font-bold">{formatCurrency(deposit.amountValue)}</p>
@@ -408,14 +402,8 @@ export function DepositDetailDialog({
                   <p className="text-lg font-bold">{deposit.interestRate}% p.a.</p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    {calculationBreakdown?.calculationMethod === 'COMPOUND'
-                      ? 'Effective Rate'
-                      : 'Rate Efektif'}
-                  </p>
-                  <p className="text-lg font-bold">
-                    {calculationBreakdown?.effectiveRate || deposit.interestRate}%
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-1">Proyeksi Bunga</p>
+                  <p className="text-lg font-bold">{formatCurrency(deposit.projectedInterest || 0)}</p>
                 </div>
               </div>
 
@@ -423,7 +411,7 @@ export function DepositDetailDialog({
               <div className="bg-primary/5 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Pokok Deposito</span>
-                  <span className="font-medium">{formatCurrency(deposit.amountValue)}</span>
+                  <span className="font-medium">{formatCurrency(deposit.amountValue)} × {deposit.tenorMonths}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Proyeksi Bunga</span>
@@ -455,17 +443,17 @@ export function DepositDetailDialog({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {calculationBreakdown.monthlyInterestBreakdown.map((row: any) => (
+                        {calculationBreakdown.monthlyInterestBreakdown.map((row) => (
                           <TableRow key={row.month}>
                             <TableCell className="font-medium">Ke-{row.month}</TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(row.openingBalance)}
+                              {formatCurrency(row.monthlyDeposit)}
                             </TableCell>
                             <TableCell className="text-right text-green-600">
-                              +{formatCurrency(row.interest)}
+                              +{formatCurrency(row.interestAccumulation)}
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                              {formatCurrency(row.closingBalance)}
+                              {formatCurrency(row.depositAccumulation + row.interestAccumulation)}
                             </TableCell>
                           </TableRow>
                         ))}

@@ -250,11 +250,11 @@ export function MyDeposits() {
   // Calculate total active deposits
   const totalActiveDeposits = data
     .filter((d) => d.status === DepositStatus.ACTIVE || d.status === DepositStatus.APPROVED)
-    .reduce((sum, d) => sum + d.amountValue, 0);
+    .reduce((sum, d) => sum + Number(d.amountValue), 0);
 
   const totalProjectedReturn = data
-    .filter((d) => d.status === DepositStatus.ACTIVE || d. status === DepositStatus. APPROVED)
-    .reduce((sum, d) => sum + (d.totalReturn || 0), 0);
+    .filter((d) => d.status === DepositStatus.ACTIVE || d.status === DepositStatus.APPROVED)
+    .reduce((sum, d) => sum + Number(d.totalReturn || 0), 0);
 
   return (
     <div className="space-y-6">
