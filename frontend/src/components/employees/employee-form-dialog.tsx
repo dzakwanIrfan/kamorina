@@ -50,6 +50,7 @@ const formSchema = z.object({
   employeeType: z.enum(EmployeeType, {
     error: () => ({ message: 'Tipe karyawan wajib dipilih' }),
   }),
+  permanentEmployeeDate: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -87,6 +88,7 @@ export function EmployeeFormDialog({
       departmentId: '',
       golonganId: '',
       employeeType: EmployeeType.TETAP,
+      permanentEmployeeDate: '',
     },
   });
 
@@ -105,6 +107,9 @@ export function EmployeeFormDialog({
         departmentId: employee.departmentId,
         golonganId: employee.golonganId,
         employeeType: employee.employeeType,
+        permanentEmployeeDate: employee.permanentEmployeeDate 
+          ? new Date(employee.permanentEmployeeDate).toISOString().split('T')[0]
+          : '',
       });
     } else {
       form.reset({
@@ -113,6 +118,7 @@ export function EmployeeFormDialog({
         departmentId: '',
         golonganId: '',
         employeeType: EmployeeType.TETAP,
+        permanentEmployeeDate: '',
       });
     }
   }, [employee, form]);
@@ -145,11 +151,18 @@ export function EmployeeFormDialog({
     try {
       setIsSubmitting(true);
 
+      const payload = {
+        ...data,
+        permanentEmployeeDate: data.permanentEmployeeDate 
+          ? new Date(data.permanentEmployeeDate) 
+          : undefined,
+      };
+
       if (isEdit && employee) {
-        const result = await employeeService.update(employee.id, data);
+        const result = await employeeService.update(employee.id, payload);
         toast.success(result.message);
       } else {
-        const result = await employeeService.create(data);
+        const result = await employeeService.create(payload);
         toast.success(result.message);
       }
 
@@ -296,6 +309,24 @@ export function EmployeeFormDialog({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <FormField
+              control={form.control}
+              name="permanentEmployeeDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tanggal Karyawan Permanen</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} 
             />
 
             <DialogFooter>

@@ -124,6 +124,10 @@ export function EmployeeDetailDialog({
                   <p className="font-medium">{employeeTypeLabels[employee.employeeType]}</p>
                 </div>
                 <div>
+                  <p className="text-muted-foreground">Tanggal Karyawan Permanen</p>
+                  <p className="font-medium">{employee.permanentEmployeeDate ? format(new Date(employee.permanentEmployeeDate), 'dd MMMM yyyy', { locale: id }) : '-'}</p>
+                </div>
+                <div>
                   <p className="text-muted-foreground">Jumlah User</p>
                   <p className="font-medium">{employee._count?.users || 0} user</p>
                 </div>

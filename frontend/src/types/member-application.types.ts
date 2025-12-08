@@ -85,6 +85,7 @@ export interface MemberApplication {
         id: string;
         golonganName: string;
       };
+      permanentEmployeeDate: string | null;
     };
   };
   approvals: ApplicationApproval[];
@@ -96,7 +97,6 @@ export interface SubmitApplicationRequest {
   npwp: string;
   dateOfBirth: string;
   birthPlace: string;
-  permanentEmployeeDate: string;
   installmentPlan: number;
 }
 

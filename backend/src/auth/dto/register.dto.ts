@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, Matches, Length } from 'class-validator';
+import { IsEmail, IsString, MinLength, Matches, Length, IsNotEmpty } from 'class-validator';
 
 export class RegisterDto {
   @IsString()
@@ -9,14 +9,19 @@ export class RegisterDto {
   email: string;
 
   @IsString()
-  @Length(9, 9, { message: 'Nomor Induk Karyawan harus 9 digit' })
-  @Matches(/^[0-9]+$/, { message: 'Nomor Induk Karyawan harus berupa angka' })
+  @Length(9, 10, { message: 'Nomor karyawan harus 9-10 karakter' })
+  @Matches(/^[K]?[0-9]+$/, {
+    message:
+      'Nomor karyawan harus berupa angka atau diawali huruf K diikuti angka',
+  })
+  @IsNotEmpty({ message: 'Nomor karyawan wajib diisi' })
   employeeNumber: string;
 
   @IsString()
   @MinLength(8, { message: 'Password minimal 8 karakter' })
   @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-    message: 'Password harus mengandung huruf besar, huruf kecil, dan angka atau karakter khusus',
+    message:
+      'Password harus mengandung huruf besar, huruf kecil, dan angka atau karakter khusus',
   })
   password: string;
 

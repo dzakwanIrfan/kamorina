@@ -49,9 +49,6 @@ const formSchema = z.object({
     error: 'Tanggal lahir wajib diisi',
   }),
   birthPlace: z.string().min(1, 'Tempat lahir wajib diisi'),
-  permanentEmployeeDate: z.date({
-    error: 'Tanggal pegawai tetap wajib diisi',
-  }),
   installmentPlan: z.number().min(1).max(2),
   agreeToTerms: z.boolean().refine((val) => val === true, {
     message: 'Anda harus menyetujui syarat dan ketentuan',
@@ -305,7 +302,6 @@ export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps)
       const payload = {
         ...payloadData,
         dateOfBirth: format(payloadData.dateOfBirth, 'yyyy-MM-dd'),
-        permanentEmployeeDate: format(payloadData.permanentEmployeeDate, 'yyyy-MM-dd'),
       };
 
       const response = await memberApplicationService.submitApplication(payload);
@@ -443,49 +439,6 @@ export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps)
                     />
                   </FormControl>
                   <FormDescription>Tempat lahir sesuai KTP</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Permanent Employee Date */}
-            <FormField
-              control={form.control}
-              name="permanentEmployeeDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Tanggal Pegawai Tetap</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full pl-3 text-left font-normal',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                          disabled={isSubmitting}
-                        >
-                          {field.value ? (
-                            format(field.value, 'dd MMMM yyyy')
-                          ) : (
-                            <span>Pilih tanggal</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <DatePickerForEmployeeDate
-                        date={field.value}
-                        onSelect={field.onChange}
-                        disabled={isSubmitting}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    Tanggal Anda diangkat sebagai pegawai tetap
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

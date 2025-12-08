@@ -52,6 +52,7 @@ export class EmployeeService {
           golonganId: createEmployeeDto.golonganId,
           employeeType: createEmployeeDto.employeeType,
           isActive: true,
+          permanentEmployeeDate: createEmployeeDto.permanentEmployeeDate,
         },
         include: {
           department: true,

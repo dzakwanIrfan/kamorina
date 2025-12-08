@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, Length, Matches, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, Length, Matches, IsEnum, IsDateString, IsOptional } from 'class-validator';
 
 export enum EmployeeType {
   TETAP = 'TETAP',
@@ -27,4 +27,7 @@ export class CreateEmployeeDto {
   @IsEnum(EmployeeType, { message: 'Tipe karyawan tidak valid' })
   @IsNotEmpty({ message: 'Tipe karyawan wajib diisi' })
   employeeType: EmployeeType;
+
+  @IsOptional()
+  permanentEmployeeDate?: Date;
 }

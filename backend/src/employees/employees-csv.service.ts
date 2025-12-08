@@ -7,6 +7,7 @@ export interface EmployeeCSVRow {
   departmentName: string;
   golonganName: string;
   employeeType: string;
+  permanentEmployeeDate?: string;
   isActive: string;
 }
 
@@ -22,6 +23,9 @@ export class EmployeeCsvService {
       departmentName: employee.department?.departmentName || '',
       golonganName: employee.golongan?.golonganName || '',
       employeeType: this.getEmployeeTypeLabel(employee.employeeType),
+      permanentEmployeeDate: employee.permanentEmployeeDate
+        ? new Date(employee.permanentEmployeeDate).toISOString().split('T')[0]
+        : '',
       isActive: employee.isActive ? 'Aktif' : 'Tidak Aktif',
     }));
 
@@ -44,6 +48,7 @@ export class EmployeeCsvService {
         departmentName: 'MDP',
         golonganName: 'I',
         employeeType: 'Tetap',
+        permanentEmployeeDate: '2021-01-01',
         isActive: 'Aktif',
       },
       {
@@ -52,6 +57,7 @@ export class EmployeeCsvService {
         departmentName: 'Finance',
         golonganName: 'II',
         employeeType: 'Kontrak',
+        permanentEmployeeDate: '',
         isActive: 'Aktif',
       },
     ];
@@ -90,6 +96,9 @@ export class EmployeeCsvService {
           'employee_type': 'employeeType',
           'tipe karyawan': 'employeeType',
           'tipe': 'employeeType',
+          'tanggal permanen': 'permanentEmployeeDate',
+          'permanentemployeedate': 'permanentEmployeeDate',
+          'permanent_employee_date': 'permanentEmployeeDate',
           'isactive': 'isActive',
           'is_active': 'isActive',
           'status': 'isActive',

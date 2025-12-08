@@ -13,6 +13,7 @@ import { QueryApplicationDto } from './dto/query-application.dto';
 import { BulkApproveRejectDto } from './dto/bulk-approve-reject.dto';
 import { ApplicationStatus, ApprovalStep, ApprovalDecision } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
+import { Prisma } from 'generated/prisma/browser';
 
 @Injectable()
 export class MemberApplicationService {
@@ -85,6 +86,14 @@ export class MemberApplicationService {
       }
     }
 
+    const entranceFee = await this.prisma.cooperativeSetting.findFirst({
+      where: { key: 'initial_membership_fee'}
+    });
+
+    if (!entranceFee) {
+      throw new NotFoundException('Pengaturan biaya masuk member tidak ditemukan');
+    }
+
     try {
       const result = await this.prisma.$transaction(async (tx) => {
         // SAVE HISTORY sebelum update (jika re-submit)
@@ -97,7 +106,6 @@ export class MemberApplicationService {
               npwp: user.npwp,
               dateOfBirth: user.dateOfBirth,
               birthPlace: user.birthPlace,
-              permanentEmployeeDate: user.permanentEmployeeDate,
               installmentPlan: user.installmentPlan,
               submittedAt: existingApplication.submittedAt || new Date(),
               rejectedAt: existingApplication.rejectedAt,
@@ -115,7 +123,6 @@ export class MemberApplicationService {
             npwp: dto.npwp,
             dateOfBirth: new Date(dto.dateOfBirth),
             birthPlace: dto.birthPlace,
-            permanentEmployeeDate: new Date(dto.permanentEmployeeDate),
             installmentPlan: dto.installmentPlan,
           },
         });
@@ -136,6 +143,9 @@ export class MemberApplicationService {
               rejectedAt: null,
               rejectionReason: null,
               approvedAt: null,
+              installmentPlan: dto.installmentPlan,
+              entranceFee: new Prisma.Decimal(entranceFee.value),
+              remainingAmount: new Prisma.Decimal(entranceFee.value),
             },
           });
 
@@ -152,6 +162,9 @@ export class MemberApplicationService {
               submittedAt: now,
               lastSubmittedAt: now,
               submissionCount: 1,
+              installmentPlan: dto.installmentPlan,
+              entranceFee: new Prisma.Decimal(entranceFee.value),
+              remainingAmount: new Prisma.Decimal(entranceFee.value),
             },
           });
         }
@@ -524,7 +537,6 @@ export class MemberApplicationService {
               npwp: application.user.npwp,
               dateOfBirth: application.user.dateOfBirth,
               birthPlace: application.user.birthPlace,
-              permanentEmployeeDate: application.user.permanentEmployeeDate,
               installmentPlan: application.user.installmentPlan,
               submittedAt: application.submittedAt || new Date(),
               rejectedAt: new Date(),
@@ -593,7 +605,6 @@ export class MemberApplicationService {
                 npwp: application.user.npwp,
                 dateOfBirth: application.user.dateOfBirth,
                 birthPlace: application.user.birthPlace,
-                permanentEmployeeDate: application.user.permanentEmployeeDate,
                 installmentPlan: application.user.installmentPlan,
                 submittedAt: application.submittedAt || new Date(),
                 approvedAt: new Date(),

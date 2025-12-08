@@ -35,7 +35,7 @@ export class DepositChangeService {
    */
   private async generateChangeNumber(): Promise<string> {
     const today = new Date();
-    const dateStr = today.toISOString().split('T')[0]. replace(/-/g, '');
+    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
 
     const lastChange = await this.prisma.depositChangeRequest.findFirst({
       where: {
@@ -52,7 +52,7 @@ export class DepositChangeService {
       sequence = lastSequence + 1;
     }
 
-    return `CHG-${dateStr}-${sequence. toString().padStart(4, '0')}`;
+    return `CHG-${dateStr}-${sequence.toString().padStart(4, '0')}`;
   }
 
   /**
@@ -62,7 +62,7 @@ export class DepositChangeService {
     const setting = await this.prisma.cooperativeSetting.findUnique({
       where: { key: 'deposit_change_admin_fee' },
     });
-    return setting ?  parseFloat(setting.value) : 15000;
+    return setting ? parseFloat(setting.value) : 15000;
   }
 
   /**
@@ -70,7 +70,7 @@ export class DepositChangeService {
    */
   private async getDepositSettings() {
     const [interestSetting, calculationMethodSetting] = await Promise.all([
-      this.prisma. cooperativeSetting.findUnique({
+      this.prisma.cooperativeSetting.findUnique({
         where: { key: 'deposit_interest_rate' },
       }),
       this.prisma.cooperativeSetting.findUnique({
@@ -79,8 +79,10 @@ export class DepositChangeService {
     ]);
 
     return {
-      interestRate: interestSetting ?  parseFloat(interestSetting.value) : 6,
-      calculationMethod: (calculationMethodSetting?.value || 'SIMPLE') as 'SIMPLE' | 'COMPOUND',
+      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
+      calculationMethod: (calculationMethodSetting?.value || 'SIMPLE') as
+        | 'SIMPLE'
+        | 'COMPOUND',
     };
   }
 
@@ -88,13 +90,13 @@ export class DepositChangeService {
    * Determine change type based on current vs new values
    */
   private determineChangeType(
-    currentAmountCode: string,
-    currentTenorCode: string,
-    newAmountCode: string,
-    newTenorCode: string,
+    currentAmount: number,
+    currentTenor: number,
+    newAmount: number,
+    newTenor: number,
   ): DepositChangeType {
-    const amountChanged = currentAmountCode !== newAmountCode;
-    const tenorChanged = currentTenorCode !== newTenorCode;
+    const amountChanged = currentAmount !== newAmount;
+    const tenorChanged = currentTenor !== newTenor;
 
     if (amountChanged && tenorChanged) {
       return DepositChangeType.BOTH;
@@ -150,7 +152,7 @@ export class DepositChangeService {
     }
 
     // Only allow changes for APPROVED or ACTIVE deposits
-    if (! this.isEligibleForChange(deposit.status)) {
+    if (!this.isEligibleForChange(deposit.status)) {
       throw new BadRequestException(
         'Hanya deposito yang sudah disetujui atau aktif yang dapat diubah',
       );
@@ -170,49 +172,39 @@ export class DepositChangeService {
    * Create draft change request
    */
   async createDraft(userId: string, dto: CreateDepositChangeDto) {
-    const deposit = await this.validateDepositForChange(dto.depositApplicationId, userId);
+    const deposit = await this.validateDepositForChange(
+      dto.depositApplicationId,
+      userId,
+    );
 
     if (!dto.agreedToTerms) {
-      throw new BadRequestException('Anda harus menyetujui syarat dan ketentuan');
+      throw new BadRequestException(
+        'Anda harus menyetujui syarat dan ketentuan',
+      );
     }
 
     if (!dto.agreedToAdminFee) {
       throw new BadRequestException('Anda harus menyetujui biaya admin');
     }
 
-    // Validate new amount option
-    const newAmountOption = await this.depositOptionService. findAmountOptionByCode(dto.newAmountCode);
-    if (!newAmountOption. isActive) {
-      throw new BadRequestException('Opsi jumlah deposito tidak aktif');
-    }
-
-    // Validate new tenor option
-    const newTenorOption = await this.depositOptionService. findTenorOptionByCode(dto.newTenorCode);
-    if (!newTenorOption.isActive) {
-      throw new BadRequestException('Opsi tenor deposito tidak aktif');
-    }
+    // Validate new amount and tenor values
+    const newAmountValue = dto.newAmountValue;
+    const newTenorMonths = dto.newTenorMonths;
 
     // Determine change type
     const changeType = this.determineChangeType(
-      deposit.depositAmountCode,
-      deposit.depositTenorCode,
-      dto.newAmountCode,
-      dto.newTenorCode,
+      deposit.amountValue.toNumber(),
+      deposit.tenorMonths,
+      newAmountValue,
+      newTenorMonths,
     );
 
     const settings = await this.getDepositSettings();
     const adminFee = await this.getAdminFee();
     const changeNumber = await this.generateChangeNumber();
 
-    // Calculate new projections
-    const newAmountValue = newAmountOption.amount. toNumber();
-    const newTenorMonths = newTenorOption. months;
-    const newCalculation = this.depositOptionService.calculateDepositReturn(
-      newAmountValue,
-      newTenorMonths,
-      settings.interestRate,
-      settings.calculationMethod,
-    );
+    // Calculate new interest rate
+    const newInterestRate = settings.interestRate;
 
     const changeRequest = await this.prisma.depositChangeRequest.create({
       data: {
@@ -221,23 +213,15 @@ export class DepositChangeService {
         userId,
         changeType,
 
-        // Current values
-        currentAmountCode: deposit.depositAmountCode,
-        currentTenorCode: deposit.depositTenorCode,
+        // Current values (snapshot)
         currentAmountValue: deposit.amountValue,
         currentTenorMonths: deposit.tenorMonths,
         currentInterestRate: deposit.interestRate,
-        currentProjectedInterest: deposit.projectedInterest,
-        currentTotalReturn: deposit.totalReturn,
 
         // New values
-        newAmountCode: dto.newAmountCode,
-        newTenorCode: dto.newTenorCode,
         newAmountValue,
         newTenorMonths,
-        newInterestRate: settings.interestRate,
-        newProjectedInterest: newCalculation.projectedInterest,
-        newTotalReturn: newCalculation.totalReturn,
+        newInterestRate,
 
         adminFee,
         agreedToTerms: dto.agreedToTerms,
@@ -264,22 +248,14 @@ export class DepositChangeService {
       changeRequest,
       comparison: {
         current: {
-          amountCode: deposit.depositAmountCode,
-          tenorCode: deposit. depositTenorCode,
-          amountValue: deposit.amountValue. toNumber(),
+          amountValue: deposit.amountValue.toNumber(),
           tenorMonths: deposit.tenorMonths,
-          interestRate: deposit.interestRate?. toNumber(),
-          projectedInterest: deposit.projectedInterest?.toNumber(),
-          totalReturn: deposit. totalReturn?.toNumber(),
+          interestRate: deposit.interestRate?.toNumber(),
         },
         new: {
-          amountCode: dto.newAmountCode,
-          tenorCode: dto.newTenorCode,
           amountValue: newAmountValue,
           tenorMonths: newTenorMonths,
-          interestRate: settings.interestRate,
-          projectedInterest: newCalculation.projectedInterest,
-          totalReturn: newCalculation.totalReturn,
+          interestRate: newInterestRate,
         },
         adminFee,
         changeType,
@@ -290,20 +266,26 @@ export class DepositChangeService {
   /**
    * Update draft change request
    */
-  async updateDraft(userId: string, changeId: string, dto: UpdateDepositChangeDto) {
-    const changeRequest = await this.prisma. depositChangeRequest.findUnique({
+  async updateDraft(
+    userId: string,
+    changeId: string,
+    dto: UpdateDepositChangeDto,
+  ) {
+    const changeRequest = await this.prisma.depositChangeRequest.findUnique({
       where: { id: changeId },
       include: {
         depositApplication: true,
       },
     });
 
-    if (! changeRequest) {
+    if (!changeRequest) {
       throw new NotFoundException('Pengajuan perubahan tidak ditemukan');
     }
 
     if (changeRequest.userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke pengajuan ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses ke pengajuan ini',
+      );
     }
 
     if (changeRequest.status !== DepositChangeStatus.DRAFT) {
@@ -311,43 +293,33 @@ export class DepositChangeService {
     }
 
     const updateData: Prisma.DepositChangeRequestUpdateInput = {};
-    let newAmountCode = changeRequest.newAmountCode;
-    let newTenorCode = changeRequest. newTenorCode;
+    let newAmountValue = changeRequest.newAmountValue.toNumber();
+    let newTenorMonths = changeRequest.newTenorMonths;
     let needsRecalculation = false;
 
-    if (dto.newAmountCode) {
-      const amountOption = await this.depositOptionService.findAmountOptionByCode(dto.newAmountCode);
-      if (!amountOption.isActive) {
-        throw new BadRequestException('Opsi jumlah deposito tidak aktif');
-      }
-      updateData.newAmountCode = dto.newAmountCode;
-      updateData. newAmountValue = amountOption.amount.toNumber();
-      newAmountCode = dto.newAmountCode;
+    if (dto.newAmountValue !== undefined) {
+      updateData.newAmountValue = dto.newAmountValue;
+      newAmountValue = dto.newAmountValue;
       needsRecalculation = true;
     }
 
-    if (dto.newTenorCode) {
-      const tenorOption = await this. depositOptionService.findTenorOptionByCode(dto.newTenorCode);
-      if (! tenorOption.isActive) {
-        throw new BadRequestException('Opsi tenor deposito tidak aktif');
-      }
-      updateData.newTenorCode = dto.newTenorCode;
-      updateData.newTenorMonths = tenorOption. months;
-      newTenorCode = dto.newTenorCode;
+    if (dto.newTenorMonths !== undefined) {
+      updateData.newTenorMonths = dto.newTenorMonths;
+      newTenorMonths = dto.newTenorMonths;
       needsRecalculation = true;
     }
 
     // Validate there's an actual change
     const changeType = this.determineChangeType(
-      changeRequest.currentAmountCode,
-      changeRequest.currentTenorCode,
-      newAmountCode,
-      newTenorCode,
+      changeRequest.currentAmountValue.toNumber(),
+      changeRequest.currentTenorMonths,
+      newAmountValue,
+      newTenorMonths,
     );
     updateData.changeType = changeType;
 
     if (dto.agreedToTerms !== undefined) {
-      updateData. agreedToTerms = dto. agreedToTerms;
+      updateData.agreedToTerms = dto.agreedToTerms;
     }
 
     if (dto.agreedToAdminFee !== undefined) {
@@ -357,19 +329,7 @@ export class DepositChangeService {
     // Recalculate if needed
     if (needsRecalculation) {
       const settings = await this.getDepositSettings();
-      const newAmountOption = await this.depositOptionService. findAmountOptionByCode(newAmountCode);
-      const newTenorOption = await this. depositOptionService.findTenorOptionByCode(newTenorCode);
-
-      const calculation = this.depositOptionService.calculateDepositReturn(
-        newAmountOption.amount.toNumber(),
-        newTenorOption.months,
-        settings.interestRate,
-        settings.calculationMethod,
-      );
-
       updateData.newInterestRate = settings.interestRate;
-      updateData.newProjectedInterest = calculation.projectedInterest;
-      updateData.newTotalReturn = calculation.totalReturn;
     }
 
     const updated = await this.prisma.depositChangeRequest.update({
@@ -412,16 +372,20 @@ export class DepositChangeService {
       throw new NotFoundException('Pengajuan perubahan tidak ditemukan');
     }
 
-    if (changeRequest. userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke pengajuan ini');
+    if (changeRequest.userId !== userId) {
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses ke pengajuan ini',
+      );
     }
 
-    if (changeRequest. status !== DepositChangeStatus. DRAFT) {
+    if (changeRequest.status !== DepositChangeStatus.DRAFT) {
       throw new BadRequestException('Hanya draft yang bisa disubmit');
     }
 
-    if (! changeRequest.agreedToTerms) {
-      throw new BadRequestException('Anda harus menyetujui syarat dan ketentuan');
+    if (!changeRequest.agreedToTerms) {
+      throw new BadRequestException(
+        'Anda harus menyetujui syarat dan ketentuan',
+      );
     }
 
     if (!changeRequest.agreedToAdminFee) {
@@ -430,7 +394,7 @@ export class DepositChangeService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       // Update status
-      const updated = await tx.depositChangeRequest. update({
+      const updated = await tx.depositChangeRequest.update({
         where: { id: changeId },
         data: {
           status: DepositChangeStatus.SUBMITTED,
@@ -457,12 +421,12 @@ export class DepositChangeService {
       await tx.depositChangeHistory.create({
         data: {
           depositChangeRequestId: changeId,
-          status: DepositChangeStatus. SUBMITTED,
+          status: DepositChangeStatus.SUBMITTED,
           changeType: changeRequest.changeType,
           currentAmountValue: changeRequest.currentAmountValue,
           currentTenorMonths: changeRequest.currentTenorMonths,
           newAmountValue: changeRequest.newAmountValue,
-          newTenorMonths: changeRequest. newTenorMonths,
+          newTenorMonths: changeRequest.newTenorMonths,
           adminFee: changeRequest.adminFee,
           action: 'SUBMITTED',
           actionAt: new Date(),
@@ -477,7 +441,7 @@ export class DepositChangeService {
     try {
       await this.notifyApprovers(
         changeId,
-        DepositChangeApprovalStep. DIVISI_SIMPAN_PINJAM,
+        DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM,
         'NEW_CHANGE_REQUEST',
       );
     } catch (error) {
@@ -485,7 +449,8 @@ export class DepositChangeService {
     }
 
     return {
-      message: 'Pengajuan perubahan deposito berhasil disubmit.  Menunggu review dari Divisi Simpan Pinjam.',
+      message:
+        'Pengajuan perubahan deposito berhasil disubmit. Menunggu review dari Divisi Simpan Pinjam.',
       changeRequest: result,
     };
   }
@@ -516,14 +481,18 @@ export class DepositChangeService {
     if (depositApplicationId) where.depositApplicationId = depositApplicationId;
 
     if (search) {
-      where. OR = [
+      where.OR = [
         { changeNumber: { contains: search, mode: 'insensitive' } },
-        { depositApplication: { depositNumber: { contains: search, mode: 'insensitive' } } },
+        {
+          depositApplication: {
+            depositNumber: { contains: search, mode: 'insensitive' },
+          },
+        },
       ];
     }
 
     const [data, total] = await Promise.all([
-      this.prisma. depositChangeRequest.findMany({
+      this.prisma.depositChangeRequest.findMany({
         where,
         skip,
         take: limit,
@@ -554,7 +523,7 @@ export class DepositChangeService {
           },
         },
       }),
-      this. prisma.depositChangeRequest.count({ where }),
+      this.prisma.depositChangeRequest.count({ where }),
     ]);
 
     return {
@@ -620,46 +589,32 @@ export class DepositChangeService {
     }
 
     if (userId && changeRequest.userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke pengajuan ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses ke pengajuan ini',
+      );
     }
-
-    // Add calculation comparison
-    const settings = await this.getDepositSettings();
-
-    const currentCalculation = this.depositOptionService. calculateDepositReturn(
-      changeRequest.currentAmountValue. toNumber(),
-      changeRequest. currentTenorMonths,
-      changeRequest.currentInterestRate?. toNumber() || settings.interestRate,
-      settings.calculationMethod,
-    );
-
-    const newCalculation = this.depositOptionService.calculateDepositReturn(
-      changeRequest.newAmountValue.toNumber(),
-      changeRequest.newTenorMonths,
-      changeRequest. newInterestRate?.toNumber() || settings.interestRate,
-      settings.calculationMethod,
-    );
 
     return {
       ...changeRequest,
       comparison: {
         current: {
-          ... currentCalculation,
-          amountCode: changeRequest.currentAmountCode,
-          tenorCode: changeRequest.currentTenorCode,
+          amountValue: changeRequest.currentAmountValue.toNumber(),
+          tenorMonths: changeRequest.currentTenorMonths,
+          interestRate: changeRequest.currentInterestRate?.toNumber(),
         },
         new: {
-          ...newCalculation,
-          amountCode: changeRequest.newAmountCode,
-          tenorCode: changeRequest.newTenorCode,
+          amountValue: changeRequest.newAmountValue.toNumber(),
+          tenorMonths: changeRequest.newTenorMonths,
+          interestRate: changeRequest.newInterestRate?.toNumber(),
         },
         difference: {
-          amount: changeRequest.newAmountValue.toNumber() - changeRequest.currentAmountValue.toNumber(),
-          tenor: changeRequest.newTenorMonths - changeRequest.currentTenorMonths,
-          projectedInterest: newCalculation. projectedInterest - currentCalculation.projectedInterest,
-          totalReturn: newCalculation.totalReturn - currentCalculation.totalReturn,
+          amount:
+            changeRequest.newAmountValue.toNumber() -
+            changeRequest.currentAmountValue.toNumber(),
+          tenor:
+            changeRequest.newTenorMonths - changeRequest.currentTenorMonths,
         },
-        adminFee: changeRequest.adminFee. toNumber(),
+        adminFee: changeRequest.adminFee.toNumber(),
       },
     };
   }
@@ -667,7 +622,9 @@ export class DepositChangeService {
   /**
    * Get all change requests (for approvers/admin)
    */
-  async getAllChangeRequests(query: QueryDepositChangeDto): Promise<PaginatedResult<any>> {
+  async getAllChangeRequests(
+    query: QueryDepositChangeDto,
+  ): Promise<PaginatedResult<any>> {
     const {
       page = 1,
       limit = 10,
@@ -688,23 +645,33 @@ export class DepositChangeService {
 
     if (status) where.status = status;
     if (step) where.currentStep = step;
-    if (changeType) where. changeType = changeType;
+    if (changeType) where.changeType = changeType;
     if (userId) where.userId = userId;
     if (depositApplicationId) where.depositApplicationId = depositApplicationId;
 
     if (search) {
       where.OR = [
         { changeNumber: { contains: search, mode: 'insensitive' } },
-        { depositApplication: { depositNumber: { contains: search, mode: 'insensitive' } } },
+        {
+          depositApplication: {
+            depositNumber: { contains: search, mode: 'insensitive' },
+          },
+        },
         { user: { name: { contains: search, mode: 'insensitive' } } },
         { user: { email: { contains: search, mode: 'insensitive' } } },
-        { user: { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } } },
+        {
+          user: {
+            employee: {
+              employeeNumber: { contains: search, mode: 'insensitive' },
+            },
+          },
+        },
       ];
     }
 
     if (startDate || endDate) {
       where.submittedAt = {};
-      if (startDate) where.submittedAt. gte = new Date(startDate);
+      if (startDate) where.submittedAt.gte = new Date(startDate);
       if (endDate) {
         const endDateTime = new Date(endDate);
         endDateTime.setHours(23, 59, 59, 999);
@@ -713,7 +680,7 @@ export class DepositChangeService {
     }
 
     const [data, total] = await Promise.all([
-      this.prisma. depositChangeRequest.findMany({
+      this.prisma.depositChangeRequest.findMany({
         where,
         skip,
         take: limit,
@@ -782,7 +749,7 @@ export class DepositChangeService {
       throw new NotFoundException('Pengajuan perubahan tidak ditemukan');
     }
 
-    if (! changeRequest.currentStep) {
+    if (!changeRequest.currentStep) {
       throw new BadRequestException('Pengajuan tidak dalam status review');
     }
 
@@ -797,7 +764,9 @@ export class DepositChangeService {
       .find((step) => step === changeRequest.currentStep);
 
     if (!approverStep) {
-      throw new ForbiddenException('Anda tidak memiliki akses untuk approve di step ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses untuk approve di step ini',
+      );
     }
 
     const approvalRecord = changeRequest.approvals.find(
@@ -813,9 +782,19 @@ export class DepositChangeService {
     }
 
     if (dto.decision === DepositChangeApprovalDecision.REJECTED) {
-      return this.handleRejection(changeRequest, approvalRecord, approverId, dto);
+      return this.handleRejection(
+        changeRequest,
+        approvalRecord,
+        approverId,
+        dto,
+      );
     } else {
-      return this.handleApproval(changeRequest, approvalRecord, approverId, dto);
+      return this.handleApproval(
+        changeRequest,
+        approvalRecord,
+        approverId,
+        dto,
+      );
     }
   }
 
@@ -829,7 +808,7 @@ export class DepositChangeService {
     dto: ApproveDepositChangeDto,
   ) {
     await this.prisma.$transaction(async (tx) => {
-      await tx.depositChangeApproval. update({
+      await tx.depositChangeApproval.update({
         where: { id: approvalRecord.id },
         data: {
           decision: DepositChangeApprovalDecision.REJECTED,
@@ -849,16 +828,16 @@ export class DepositChangeService {
         },
       });
 
-      await tx.depositChangeHistory. create({
+      await tx.depositChangeHistory.create({
         data: {
           depositChangeRequestId: changeRequest.id,
           status: DepositChangeStatus.REJECTED,
-          changeType: changeRequest. changeType,
+          changeType: changeRequest.changeType,
           currentAmountValue: changeRequest.currentAmountValue,
           currentTenorMonths: changeRequest.currentTenorMonths,
           newAmountValue: changeRequest.newAmountValue,
-          newTenorMonths: changeRequest. newTenorMonths,
-          adminFee: changeRequest. adminFee,
+          newTenorMonths: changeRequest.newTenorMonths,
+          adminFee: changeRequest.adminFee,
           action: 'REJECTED',
           actionAt: new Date(),
           actionBy: approverId,
@@ -870,9 +849,9 @@ export class DepositChangeService {
     // Notify applicant
     try {
       await this.mailService.sendDepositChangeRejected(
-        changeRequest.user. email,
+        changeRequest.user.email,
         changeRequest.user.name,
-        changeRequest. changeNumber,
+        changeRequest.changeNumber,
         changeRequest.depositApplication.depositNumber,
         dto.notes || 'Tidak ada catatan',
       );
@@ -914,12 +893,12 @@ export class DepositChangeService {
       });
 
       const newStatus = isLastStep
-        ? DepositChangeStatus. APPROVED
+        ? DepositChangeStatus.APPROVED
         : changeRequest.status;
 
       // Update change request
-      await tx. depositChangeRequest.update({
-        where: { id: changeRequest. id },
+      await tx.depositChangeRequest.update({
+        where: { id: changeRequest.id },
         data: {
           status: newStatus,
           currentStep: nextStep,
@@ -935,17 +914,17 @@ export class DepositChangeService {
         await tx.depositApplication.update({
           where: { id: changeRequest.depositApplicationId },
           data: {
-            depositAmountCode: changeRequest.newAmountCode,
-            depositTenorCode: changeRequest.newTenorCode,
             amountValue: changeRequest.newAmountValue,
             tenorMonths: changeRequest.newTenorMonths,
             interestRate: changeRequest.newInterestRate,
-            projectedInterest: changeRequest.newProjectedInterest,
-            totalReturn: changeRequest.newTotalReturn,
-            // Recalculate maturity date
-            maturityDate: new Date(
-              new Date(). setMonth(new Date().getMonth() + changeRequest.newTenorMonths),
-            ),
+            // Recalculate maturity date if deposit is active
+            ...(changeRequest.depositApplication.maturityDate && {
+              maturityDate: new Date(
+                new Date().setMonth(
+                  new Date().getMonth() + changeRequest.newTenorMonths,
+                ),
+              ),
+            }),
           },
         });
       }
@@ -964,7 +943,7 @@ export class DepositChangeService {
           action: 'APPROVED',
           actionAt: new Date(),
           actionBy: approverId,
-          notes: dto. notes,
+          notes: dto.notes,
         },
       });
     });
@@ -972,7 +951,7 @@ export class DepositChangeService {
     if (isLastStep) {
       // Notify applicant and payroll
       try {
-        await this.notifyChangeApproved(changeRequest. id);
+        await this.notifyChangeApproved(changeRequest.id);
       } catch (error) {
         console.error('Failed to send approval notifications:', error);
       }
@@ -983,13 +962,18 @@ export class DepositChangeService {
     } else {
       // Notify next approver
       try {
-        await this.notifyApprovers(changeRequest.id, nextStep!, 'APPROVAL_REQUEST');
+        await this.notifyApprovers(
+          changeRequest.id,
+          nextStep!,
+          'APPROVAL_REQUEST',
+        );
       } catch (error) {
         console.error('Failed to notify next approver:', error);
       }
 
       return {
-        message: 'Pengajuan perubahan berhasil disetujui.  Menunggu approval dari Ketua.',
+        message:
+          'Pengajuan perubahan berhasil disetujui. Menunggu approval dari Ketua.',
       };
     }
   }
@@ -1023,7 +1007,7 @@ export class DepositChangeService {
     }
 
     return {
-      message: `Berhasil memproses ${results. success.length} pengajuan, ${results.failed.length} gagal`,
+      message: `Berhasil memproses ${results.success.length} pengajuan, ${results.failed.length} gagal`,
       results,
     };
   }
@@ -1041,14 +1025,16 @@ export class DepositChangeService {
     }
 
     if (changeRequest.userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke pengajuan ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses ke pengajuan ini',
+      );
     }
 
     if (changeRequest.status !== DepositChangeStatus.DRAFT) {
       throw new BadRequestException('Hanya draft yang bisa dibatalkan');
     }
 
-    await this.prisma. depositChangeRequest.delete({
+    await this.prisma.depositChangeRequest.delete({
       where: { id: changeId },
     });
 
@@ -1060,8 +1046,8 @@ export class DepositChangeService {
    */
   async previewChangeCalculation(
     depositId: string,
-    newAmountCode: string,
-    newTenorCode: string,
+    newAmountValue: number,
+    newTenorMonths: number,
   ) {
     const deposit = await this.prisma.depositApplication.findUnique({
       where: { id: depositId },
@@ -1071,56 +1057,38 @@ export class DepositChangeService {
       throw new NotFoundException('Deposito tidak ditemukan');
     }
 
-    const [newAmountOption, newTenorOption, settings, adminFee] = await Promise.all([
-      this.depositOptionService.findAmountOptionByCode(newAmountCode),
-      this.depositOptionService.findTenorOptionByCode(newTenorCode),
-      this. getDepositSettings(),
-      this. getAdminFee(),
+    const [settings, adminFee] = await Promise.all([
+      this.getDepositSettings(),
+      this.getAdminFee(),
     ]);
-
-    const currentCalculation = this.depositOptionService.calculateDepositReturn(
-      deposit.amountValue.toNumber(),
-      deposit.tenorMonths,
-      deposit.interestRate?.toNumber() || settings. interestRate,
-      settings. calculationMethod,
-    );
-
-    const newCalculation = this. depositOptionService.calculateDepositReturn(
-      newAmountOption. amount.toNumber(),
-      newTenorOption.months,
-      settings.interestRate,
-      settings.calculationMethod,
-    );
 
     // Determine change type
     let changeType: DepositChangeType | null = null;
-    const amountChanged = deposit.depositAmountCode !== newAmountCode;
-    const tenorChanged = deposit.depositTenorCode !== newTenorCode;
+    const amountChanged = deposit.amountValue.toNumber() !== newAmountValue;
+    const tenorChanged = deposit.tenorMonths !== newTenorMonths;
 
     if (amountChanged && tenorChanged) {
-      changeType = DepositChangeType. BOTH;
+      changeType = DepositChangeType.BOTH;
     } else if (amountChanged) {
-      changeType = DepositChangeType. AMOUNT_CHANGE;
+      changeType = DepositChangeType.AMOUNT_CHANGE;
     } else if (tenorChanged) {
       changeType = DepositChangeType.TENOR_CHANGE;
     }
 
     return {
       current: {
-        amountCode: deposit. depositAmountCode,
-        tenorCode: deposit.depositTenorCode,
-        ... currentCalculation,
+        amountValue: deposit.amountValue.toNumber(),
+        tenorMonths: deposit.tenorMonths,
+        interestRate: deposit.interestRate?.toNumber(),
       },
       new: {
-        amountCode: newAmountCode,
-        tenorCode: newTenorCode,
-        ...newCalculation,
+        amountValue: newAmountValue,
+        tenorMonths: newTenorMonths,
+        interestRate: settings.interestRate,
       },
       difference: {
-        amount: newAmountOption.amount. toNumber() - deposit.amountValue.toNumber(),
-        tenor: newTenorOption.months - deposit. tenorMonths,
-        projectedInterest: newCalculation.projectedInterest - currentCalculation.projectedInterest,
-        totalReturn: newCalculation.totalReturn - currentCalculation. totalReturn,
+        amount: newAmountValue - deposit.amountValue.toNumber(),
+        tenor: newTenorMonths - deposit.tenorMonths,
       },
       adminFee,
       changeType,
@@ -1135,7 +1103,7 @@ export class DepositChangeService {
     step: DepositChangeApprovalStep,
     type: string,
   ) {
-    const changeRequest = await this.prisma. depositChangeRequest.findUnique({
+    const changeRequest = await this.prisma.depositChangeRequest.findUnique({
       where: { id: changeId },
       include: {
         user: {
@@ -1147,7 +1115,7 @@ export class DepositChangeService {
       },
     });
 
-    if (! changeRequest) return;
+    if (!changeRequest) return;
 
     const roleName =
       step === DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM
@@ -1172,20 +1140,23 @@ export class DepositChangeService {
           approver.email,
           approver.name,
           changeRequest.user.name,
-          changeRequest. changeNumber,
+          changeRequest.changeNumber,
           changeRequest.depositApplication.depositNumber,
-          changeRequest.currentAmountValue. toNumber(),
+          changeRequest.currentAmountValue.toNumber(),
           changeRequest.newAmountValue.toNumber(),
           roleName,
         );
       } catch (error) {
-        console.error(`Failed to send approval request to ${approver.email}:`, error);
+        console.error(
+          `Failed to send approval request to ${approver.email}:`,
+          error,
+        );
       }
     }
   }
 
   private async notifyChangeApproved(changeId: string) {
-    const changeRequest = await this. prisma.depositChangeRequest.findUnique({
+    const changeRequest = await this.prisma.depositChangeRequest.findUnique({
       where: { id: changeId },
       include: {
         user: true,
@@ -1206,7 +1177,7 @@ export class DepositChangeService {
         changeRequest.newAmountValue.toNumber(),
         changeRequest.currentTenorMonths,
         changeRequest.newTenorMonths,
-        changeRequest.adminFee. toNumber(),
+        changeRequest.adminFee.toNumber(),
       );
     } catch (error) {
       console.error('Failed to notify applicant:', error);
@@ -1228,9 +1199,9 @@ export class DepositChangeService {
     for (const payroll of payrollUsers) {
       try {
         await this.mailService.sendDepositChangePayrollNotification(
-          payroll. email,
+          payroll.email,
           payroll.name,
-          changeRequest.user. name,
+          changeRequest.user.name,
           changeRequest.changeNumber,
           changeRequest.depositApplication.depositNumber,
           changeRequest.currentAmountValue.toNumber(),
@@ -1238,7 +1209,10 @@ export class DepositChangeService {
           changeRequest.adminFee.toNumber(),
         );
       } catch (error) {
-        console.error(`Failed to send payroll notification to ${payroll.email}:`, error);
+        console.error(
+          `Failed to send payroll notification to ${payroll.email}:`,
+          error,
+        );
       }
     }
   }

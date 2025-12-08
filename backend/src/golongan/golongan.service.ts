@@ -343,13 +343,13 @@ export class GolonganService {
       throw new NotFoundException('User atau employee tidak ditemukan');
     }
 
-    if (!user.permanentEmployeeDate) {
+    if (!user.employee.permanentEmployeeDate) {
       throw new BadRequestException('Tanggal karyawan tetap belum diset');
     }
 
     // Calculate years of service
     const now = new Date();
-    const permanentDate = new Date(user.permanentEmployeeDate);
+    const permanentDate = new Date(user.employee.permanentEmployeeDate);
     const yearsDiff = now.getFullYear() - permanentDate.getFullYear();
     const monthsDiff = now.getMonth() - permanentDate.getMonth();
     const yearsOfService = monthsDiff < 0 ? yearsDiff - 1 : yearsDiff;

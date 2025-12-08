@@ -40,8 +40,9 @@ const registerSchema = z.object({
   email: z.email('Format email tidak valid'),
   employeeNumber: z
     .string()
-    .length(9, 'Nomor Induk Karyawan harus 9 digit')
-    .regex(/^[0-9]+$/, 'Nomor Induk Karyawan harus berupa angka'),
+    .min(9, 'Nomor Induk Karyawan minimal 9 karakter')
+    .max(10, 'Nomor Induk Karyawan maksimal 10 karakter')
+    .regex(/^[K]?[0-9]+$/, 'Nomor karyawan harus berupa angka atau diawali huruf K diikuti angka'),
   password: z
     .string()
     .min(8, 'Password minimal 8 karakter')

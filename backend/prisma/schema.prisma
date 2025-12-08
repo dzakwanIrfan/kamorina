@@ -15,12 +15,12 @@ enum SettingType {
 }
 
 enum SettingCategory {
-  MEMBERSHIP      // Keanggotaan
-  SAVINGS         // Simpanan
-  LOAN           // Pinjaman
-  INTEREST       // Bunga
-  PENALTY        // Denda
-  GENERAL        // Umum
+  MEMBERSHIP // Keanggotaan
+  SAVINGS // Simpanan
+  LOAN // Pinjaman
+  INTEREST // Bunga
+  PENALTY // Denda
+  GENERAL // Umum
 }
 
 enum ApplicationStatus {
@@ -45,223 +45,231 @@ enum EmployeeType {
 }
 
 model Employee {
-  id              String        @id @default(uuid())
-  employeeNumber  String        @unique @map("employee_number")
-  fullName        String        @map("full_name")
-  
-  departmentId    String        @map("department_id")
-  department      Department    @relation(fields: [departmentId], references: [id])
-  
-  golonganId      String        @map("golongan_id")
-  golongan        Golongan      @relation(fields: [golonganId], references: [id])
-  
-  employeeType    EmployeeType  @map("employee_type")
-  
-  isActive        Boolean       @default(true) @map("is_active")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id             String @id @default(uuid())
+  employeeNumber String @unique @map("employee_number")
+  fullName       String @map("full_name")
 
-  users           User[]
+  departmentId String     @map("department_id")
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  golonganId String   @map("golongan_id")
+  golongan   Golongan @relation(fields: [golonganId], references: [id])
+
+  employeeType EmployeeType @map("employee_type")
+
+  permanentEmployeeDate DateTime? @map("permanent_employee_date") @db.Date
+  isActive              Boolean   @default(true) @map("is_active")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  users User[]
 
   @@map("employees")
 }
 
 model User {
-  id                      String    @id @default(uuid())
-  name                    String
-  email                   String    @unique
-  nik                     String?   @unique
-  npwp                    String?   @unique
-  password                String
-  avatar                  String?
-  bankAccountNumber       String?   @map("bank_account_number") 
+  id                String  @id @default(uuid())
+  name              String
+  email             String  @unique
+  nik               String? @unique
+  npwp              String? @unique
+  password          String
+  avatar            String?
+  bankAccountNumber String? @map("bank_account_number")
 
-  employeeId              String    @unique @map("employee_id")
-  employee                Employee  @relation(fields: [employeeId], references: [id])
+  employeeId String   @unique @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id])
 
-  emailVerified           Boolean   @default(false) @map("email_verified")
-  emailVerifiedAt         DateTime? @map("email_verified_at")
-  emailVerificationToken  String?   @unique @map("email_verification_token")
+  emailVerified            Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt          DateTime? @map("email_verified_at")
+  emailVerificationToken   String?   @unique @map("email_verification_token")
   emailVerificationExpires DateTime? @map("email_verification_expires")
 
-  memberVerified          Boolean   @default(false) @map("member_verified")
-  memberVerifiedAt        DateTime? @map("member_verified_at")
+  memberVerified   Boolean   @default(false) @map("member_verified")
+  memberVerifiedAt DateTime? @map("member_verified_at")
 
-  dateOfBirth             DateTime? @map("date_of_birth") @db.Date
-  birthPlace              String?   @map("birth_place")
-  permanentEmployeeDate   DateTime? @map("permanent_employee_date") @db.Date
-  installmentPlan         Int?      @map("installment_plan")
+  dateOfBirth     DateTime? @map("date_of_birth") @db.Date
+  birthPlace      String?   @map("birth_place")
+  installmentPlan Int?      @map("installment_plan")
 
-  passwordResetToken      String?   @unique @map("password_reset_token")
-  passwordResetExpires    DateTime? @map("password_reset_expires")
-  
+  passwordResetToken   String?   @unique @map("password_reset_token")
+  passwordResetExpires DateTime? @map("password_reset_expires")
+
   // Refresh token & security
-  refreshToken            String?   @unique @map("refresh_token")
-  refreshTokenExpires     DateTime? @map("refresh_token_expires")
-  lastLoginAt             DateTime? @map("last_login_at")
-  lastLoginIp             String?   @map("last_login_ip")
-  failedLoginAttempts     Int       @default(0) @map("failed_login_attempts")
-  accountLockedUntil      DateTime? @map("account_locked_until")
+  refreshToken        String?   @unique @map("refresh_token")
+  refreshTokenExpires DateTime? @map("refresh_token_expires")
+  lastLoginAt         DateTime? @map("last_login_at")
+  lastLoginIp         String?   @map("last_login_ip")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  accountLockedUntil  DateTime? @map("account_locked_until")
 
-  createdAt               DateTime  @default(now()) @map("created_at")
-  updatedAt               DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  roles                   UserRole[]
-  memberApplications      MemberApplication[]
-  approvals               ApplicationApproval[] @relation("approval_approver")
-  applicationHistory      ApplicationHistory[]  @relation("history_processor")
-  cooperativeSettings     CooperativeSetting[]
-  
-  loanApplications        LoanApplication[]
-  loanApprovals          LoanApproval[] @relation("loan_approver")
-  loanHistory            LoanHistory[] @relation("loan_processor")
-  loanDisbursements      LoanDisbursement[] @relation("disbursement_processor")
-  loanAuthorizations     LoanAuthorization[] @relation("authorization_processor")
+  roles               UserRole[]
+  memberApplications  MemberApplication[]
+  approvals           ApplicationApproval[] @relation("approval_approver")
+  applicationHistory  ApplicationHistory[]  @relation("history_processor")
+  cooperativeSettings CooperativeSetting[]
 
-  depositApplications     DepositApplication[]
-  depositApprovals        DepositApproval[] @relation("deposit_approver")
-  depositHistory          DepositHistory[] @relation("deposit_processor")
-  depositChangeRequests     DepositChangeRequest[]
-  depositChangeApprovals    DepositChangeApproval[] @relation("deposit_change_approver")
-  depositChangeHistory      DepositChangeHistory[] @relation("deposit_change_processor")
-  
+  loanApplications   LoanApplication[]
+  loanApprovals      LoanApproval[]      @relation("loan_approver")
+  loanHistory        LoanHistory[]       @relation("loan_processor")
+  loanDisbursements  LoanDisbursement[]  @relation("disbursement_processor")
+  loanAuthorizations LoanAuthorization[] @relation("authorization_processor")
+
+  depositApplications    DepositApplication[]
+  depositApprovals       DepositApproval[]       @relation("deposit_approver")
+  depositHistory         DepositHistory[]        @relation("deposit_processor")
+  depositChangeRequests  DepositChangeRequest[]
+  depositChangeApprovals DepositChangeApproval[] @relation("deposit_change_approver")
+  depositChangeHistory   DepositChangeHistory[]  @relation("deposit_change_processor")
+
   // Session management
-  sessions                UserSession[]
+  sessions       UserSession[]
+  savingsAccount SavingsAccount?
 
   @@map("users")
 }
 
 // Session management model
 model UserSession {
-  id            String    @id @default(uuid())
-  userId        String    @map("user_id")
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  refreshToken  String    @unique @map("refresh_token")
-  userAgent     String?   @map("user_agent") @db.Text
-  ipAddress     String?   @map("ip_address")
-  
-  expiresAt     DateTime  @map("expires_at")
-  lastUsedAt    DateTime  @default(now()) @map("last_used_at")
-  
-  createdAt     DateTime  @default(now()) @map("created_at")
-  
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  refreshToken String  @unique @map("refresh_token")
+  userAgent    String? @map("user_agent") @db.Text
+  ipAddress    String? @map("ip_address")
+
+  expiresAt  DateTime @map("expires_at")
+  lastUsedAt DateTime @default(now()) @map("last_used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@index([userId])
   @@index([refreshToken])
   @@map("user_sessions")
 }
 
 model MemberApplication {
-  id             String            @id @default(uuid())
-  userId         String            @map("user_id")
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  status         ApplicationStatus @default(UNDER_REVIEW)
-  currentStep    ApprovalStep?     @map("current_step")
+  installmentPlan Int @default(1) // 1 = Lunas langsung, 2 = Dicicil 2x
 
-  submittedAt    DateTime?         @map("submitted_at")
-  approvedAt     DateTime?         @map("approved_at")
-  rejectedAt     DateTime?         @map("rejected_at")
-  rejectionReason String?          @map("rejection_reason")
+  entranceFee     Decimal @default(0) @map("entrance_fee") @db.Decimal(15, 2) // Besar Simpanan Pokok
+  paidAmount      Decimal @default(0) @map("paid_amount") @db.Decimal(15, 2) // Yang sudah terbayar
+  remainingAmount Decimal @default(0) @map("remaining_amount") @db.Decimal(15, 2) // Sisa tagihan
+  isPaidOff       Boolean @default(false) @map("is_paid_off") // Jika true, cron skip user ini
 
-  submissionCount Int              @default(1) @map("submission_count")
-  lastSubmittedAt DateTime?        @map("last_submitted_at")
-  
-  approvals      ApplicationApproval[]
-  history        ApplicationHistory[]
+  status      ApplicationStatus @default(UNDER_REVIEW)
+  currentStep ApprovalStep?     @map("current_step")
 
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
+  submittedAt     DateTime? @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason")
+
+  submissionCount Int       @default(1) @map("submission_count")
+  lastSubmittedAt DateTime? @map("last_submitted_at")
+
+  approvals ApplicationApproval[]
+  history   ApplicationHistory[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([userId])
   @@map("member_applications")
 }
 
 model ApplicationApproval {
-  id             String           @id @default(uuid())
-  applicationId  String           @map("application_id")
-  application    MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id            String            @id @default(uuid())
+  applicationId String            @map("application_id")
+  application   MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-  step           ApprovalStep     @map("step")
-  decision       ApprovalDecision? @map("decision")
-  decidedAt      DateTime?        @map("decided_at")
-  approverId     String?          @map("approver_id")
-  approver       User?            @relation("approval_approver", fields: [approverId], references: [id])
-  notes          String?
+  step       ApprovalStep      @map("step")
+  decision   ApprovalDecision? @map("decision")
+  decidedAt  DateTime?         @map("decided_at")
+  approverId String?           @map("approver_id")
+  approver   User?             @relation("approval_approver", fields: [approverId], references: [id])
+  notes      String?
 
-  createdAt      DateTime         @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("application_approvals")
 }
 
 model ApplicationHistory {
-  id             String            @id @default(uuid())
-  applicationId  String            @map("application_id")
-  application    MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id            String            @id @default(uuid())
+  applicationId String            @map("application_id")
+  application   MemberApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
-  status         ApplicationStatus
-  nik            String?
-  npwp           String?
-  dateOfBirth    DateTime?         @db.Date
-  birthPlace     String?
-  permanentEmployeeDate DateTime?  @db.Date
-  installmentPlan Int?
+  status                ApplicationStatus
+  nik                   String?
+  npwp                  String?
+  dateOfBirth           DateTime?         @db.Date
+  birthPlace            String?
+  permanentEmployeeDate DateTime?         @db.Date
+  installmentPlan       Int?
 
-  submittedAt    DateTime          @map("submitted_at")
-  rejectedAt     DateTime?         @map("rejected_at")
-  approvedAt     DateTime?         @map("approved_at")
-  rejectionReason String?          @map("rejection_reason")
-  
-  processedBy    String?           @map("processed_by")
-  processedByUser User?            @relation("history_processor", fields: [processedBy], references: [id])
-  
-  submissionNumber Int             @default(1) @map("submission_number")
+  submittedAt     DateTime  @map("submitted_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  approvedAt      DateTime? @map("approved_at")
+  rejectionReason String?   @map("rejection_reason")
 
-  createdAt      DateTime          @default(now()) @map("created_at")
+  processedBy     String? @map("processed_by")
+  processedByUser User?   @relation("history_processor", fields: [processedBy], references: [id])
+
+  submissionNumber Int @default(1) @map("submission_number")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@map("application_history")
 }
 
 model Department {
-  id              String     @id @default(uuid())
-  departmentName  String     @unique @map("department_name")
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
+  id             String   @id @default(uuid())
+  departmentName String   @unique @map("department_name")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  employees       Employee[]
+  employees Employee[]
 
   @@map("departments")
 }
 
 model Golongan {
-  id              String              @id @default(uuid())
-  golonganName    String              @unique @map("golongan_name")
-  description     String?
-  createdAt       DateTime            @default(now()) @map("created_at")
-  updatedAt       DateTime            @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  golonganName String   @unique @map("golongan_name")
+  description  String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  employees       Employee[]
-  loanLimits      LoanLimitMatrix[]
+  employees  Employee[]
+  loanLimits LoanLimitMatrix[]
 
   @@map("golongan")
 }
 
 // Matrik Plafond Pinjaman
 model LoanLimitMatrix {
-  id                    String    @id @default(uuid())
-  
-  golonganId            String    @map("golongan_id")
-  golongan              Golongan  @relation(fields: [golonganId], references: [id], onDelete: Cascade)
-  
+  id String @id @default(uuid())
+
+  golonganId String   @map("golongan_id")
+  golongan   Golongan @relation(fields: [golonganId], references: [id], onDelete: Cascade)
+
   // Masa kerja dalam tahun
-  minYearsOfService     Int       @map("min_years_of_service") // 0, 1, 2, 3, 6
-  maxYearsOfService     Int?      @map("max_years_of_service") // 1, 2, 3, 6, 9, null (untuk > 9)
-  
+  minYearsOfService Int  @map("min_years_of_service") // 0, 1, 2, 3, 6
+  maxYearsOfService Int? @map("max_years_of_service") // 1, 2, 3, 6, 9, null (untuk > 9)
+
   // Plafond maksimal pinjaman
-  maxLoanAmount         Decimal   @map("max_loan_amount") @db.Decimal(15, 2)
-  
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  maxLoanAmount Decimal @map("max_loan_amount") @db.Decimal(15, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([golonganId, minYearsOfService, maxYearsOfService])
   @@map("loan_limit_matrix")
@@ -274,7 +282,7 @@ model Level {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  userRoles   UserRole[]
+  userRoles UserRole[]
 
   @@map("levels")
 }
@@ -292,27 +300,27 @@ model UserRole {
 }
 
 model CooperativeSetting {
-  id          String          @id @default(uuid())
-  key         String          @unique
-  value       String
-  type        SettingType     @default(STRING)
-  category    SettingCategory
-  
+  id       String          @id @default(uuid())
+  key      String          @unique
+  value    String
+  type     SettingType     @default(STRING)
+  category SettingCategory
+
   label       String
   description String?
   unit        String?
-  
-  isEditable  Boolean         @default(true) @map("is_editable")
-  isActive    Boolean         @default(true) @map("is_active")
-  
-  validation  Json?
-  
-  updatedBy   String?         @map("updated_by")
-  updatedByUser User?         @relation(fields: [updatedBy], references: [id])
-  
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-  
+
+  isEditable Boolean @default(true) @map("is_editable")
+  isActive   Boolean @default(true) @map("is_active")
+
+  validation Json?
+
+  updatedBy     String? @map("updated_by")
+  updatedByUser User?   @relation(fields: [updatedBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("cooperative_settings")
 }
 
@@ -351,60 +359,60 @@ enum LoanApprovalDecision {
 
 // Shared fields untuk semua jenis pinjaman
 model LoanApplication {
-  id                    String        @id @default(uuid())
-  loanNumber            String        @unique @map("loan_number")
-  
+  id         String @id @default(uuid())
+  loanNumber String @unique @map("loan_number")
+
   // User reference
-  userId                String        @map("user_id")
-  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Loan type identifier
-  loanType              LoanType      @map("loan_type") @default(CASH_LOAN)
-  
+  loanType LoanType @default(CASH_LOAN) @map("loan_type")
+
   // Common fields for all loan types
-  bankAccountNumber     String        @map("bank_account_number")
-  loanAmount            Decimal       @map("loan_amount") @db.Decimal(15, 2)
-  loanTenor             Int           @map("loan_tenor")
-  loanPurpose           String        @map("loan_purpose") @db.Text
-  attachments           Json?         // Array of file URLs
-  
+  bankAccountNumber String  @map("bank_account_number")
+  loanAmount        Decimal @map("loan_amount") @db.Decimal(15, 2)
+  loanTenor         Int     @map("loan_tenor")
+  loanPurpose       String  @map("loan_purpose") @db.Text
+  attachments       Json? // Array of file URLs
+
   // Calculated fields (set by DSP during approval)
-  interestRate          Decimal?      @map("interest_rate") @db.Decimal(5, 2)
-  monthlyInstallment    Decimal?      @map("monthly_installment") @db.Decimal(15, 2)
-  totalRepayment        Decimal?      @map("total_repayment") @db.Decimal(15, 2)
-  
+  interestRate       Decimal? @map("interest_rate") @db.Decimal(5, 2)
+  monthlyInstallment Decimal? @map("monthly_installment") @db.Decimal(15, 2)
+  totalRepayment     Decimal? @map("total_repayment") @db.Decimal(15, 2)
+
   // Status tracking
-  status                LoanStatus    @default(DRAFT)
-  currentStep           LoanApprovalStep? @map("current_step")
-  
+  status      LoanStatus        @default(DRAFT)
+  currentStep LoanApprovalStep? @map("current_step")
+
   // Timestamps
-  submittedAt           DateTime?     @map("submitted_at")
-  approvedAt            DateTime?     @map("approved_at")
-  rejectedAt            DateTime?     @map("rejected_at")
-  disbursedAt           DateTime?     @map("disbursed_at")
-  rejectionReason       String?       @map("rejection_reason") @db.Text
-  
+  submittedAt     DateTime? @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  disbursedAt     DateTime? @map("disbursed_at")
+  rejectionReason String?   @map("rejection_reason") @db.Text
+
   // Revision tracking
-  revisionCount         Int           @default(0) @map("revision_count")
-  lastRevisedAt         DateTime?     @map("last_revised_at")
-  lastRevisedBy         String?       @map("last_revised_by")
-  revisionNotes         String?       @map("revision_notes") @db.Text
-  
+  revisionCount Int       @default(0) @map("revision_count")
+  lastRevisedAt DateTime? @map("last_revised_at")
+  lastRevisedBy String?   @map("last_revised_by")
+  revisionNotes String?   @map("revision_notes") @db.Text
+
   // Relations to shared tables
-  approvals             LoanApproval[]
-  history               LoanHistory[]
-  disbursement          LoanDisbursement?
-  authorization         LoanAuthorization?
-  
+  approvals     LoanApproval[]
+  history       LoanHistory[]
+  disbursement  LoanDisbursement?
+  authorization LoanAuthorization?
+
   // Relations to type-specific tables (1-to-1)
   cashLoanDetails       CashLoanDetail?
   goodsReimburseDetails GoodsReimburseDetail?
   goodsOnlineDetails    GoodsOnlineDetail?
   goodsPhoneDetails     GoodsPhoneDetail?
-  
-  createdAt             DateTime      @default(now()) @map("created_at")
-  updatedAt             DateTime      @updatedAt @map("updated_at")
-  
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@index([userId])
   @@index([loanType])
   @@index([status])
@@ -418,33 +426,33 @@ model LoanApplication {
 
 // 1. CASH LOAN (no additional fields needed, but for consistency)
 model CashLoanDetail {
-  id                String           @id @default(uuid())
-  loanApplicationId String           @unique @map("loan_application_id")
-  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  notes             String?          @db.Text
-  
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("cash_loan_details")
 }
 
 // 2. GOODS REIMBURSE (Kredit Barang - Reimburse)
 model GoodsReimburseDetail {
-  id                String           @id @default(uuid())
-  loanApplicationId String           @unique @map("loan_application_id")
-  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  itemName          String           @map("item_name")
-  itemPrice         Decimal          @map("item_price") @db.Decimal(15, 2)
-  purchaseDate      DateTime         @map("purchase_date") @db.Date
-  
-  notes             String?          @db.Text
-  
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  itemName     String   @map("item_name")
+  itemPrice    Decimal  @map("item_price") @db.Decimal(15, 2)
+  purchaseDate DateTime @map("purchase_date") @db.Date
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@index([itemName])
   @@index([itemPrice])
   @@index([purchaseDate])
@@ -453,20 +461,20 @@ model GoodsReimburseDetail {
 
 // 3. GOODS ONLINE (Kredit Barang - Online)
 model GoodsOnlineDetail {
-  id                String           @id @default(uuid())
-  loanApplicationId String           @unique @map("loan_application_id")
-  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  itemName          String           @map("item_name")
-  itemPrice         Decimal          @map("item_price") @db.Decimal(15, 2)
-  itemUrl           String           @map("item_url") @db.Text
-  shopMarginRate    Decimal          @map("shop_margin_rate") @db.Decimal(5, 2)
-  
-  notes             String?          @db.Text
-  
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  itemName       String  @map("item_name")
+  itemPrice      Decimal @map("item_price") @db.Decimal(15, 2)
+  itemUrl        String  @map("item_url") @db.Text
+  shopMarginRate Decimal @map("shop_margin_rate") @db.Decimal(5, 2)
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@index([itemName])
   @@index([itemPrice])
   @@map("goods_online_details")
@@ -474,19 +482,19 @@ model GoodsOnlineDetail {
 
 // 4. GOODS PHONE (Kredit Barang - Handphone dengan Partnership)
 model GoodsPhoneDetail {
-  id                String           @id @default(uuid())
-  loanApplicationId String           @unique @map("loan_application_id")
-  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  itemName          String           @map("item_name")
-  retailPrice       Decimal          @map("retail_price") @db.Decimal(15, 2)
-  cooperativePrice  Decimal          @map("cooperative_price") @db.Decimal(15, 2)
-  
-  notes             String?          @db.Text
-  
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  itemName         String  @map("item_name")
+  retailPrice      Decimal @map("retail_price") @db.Decimal(15, 2)
+  cooperativePrice Decimal @map("cooperative_price") @db.Decimal(15, 2)
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@index([itemName])
   @@index([retailPrice])
   @@index([cooperativePrice])
@@ -494,112 +502,112 @@ model GoodsPhoneDetail {
 }
 
 model LoanApproval {
-  id                String              @id @default(uuid())
-  loanApplicationId String              @map("loan_application_id")
-  loanApplication   LoanApplication     @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  step              LoanApprovalStep
-  decision          LoanApprovalDecision?
-  decidedAt         DateTime?           @map("decided_at")
-  approverId        String?             @map("approver_id")
-  approver          User?               @relation("loan_approver", fields: [approverId], references: [id])
-  notes             String?             @db.Text
-  
-  revisedData       Json?               @map("revised_data")
-  
-  createdAt         DateTime            @default(now()) @map("created_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  step       LoanApprovalStep
+  decision   LoanApprovalDecision?
+  decidedAt  DateTime?             @map("decided_at")
+  approverId String?               @map("approver_id")
+  approver   User?                 @relation("loan_approver", fields: [approverId], references: [id])
+  notes      String?               @db.Text
+
+  revisedData Json? @map("revised_data")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@index([loanApplicationId])
   @@index([step])
   @@map("loan_approvals")
 }
 
 model LoanHistory {
-  id                String              @id @default(uuid())
-  loanApplicationId String              @map("loan_application_id")
-  loanApplication   LoanApplication     @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  status            LoanStatus
-  loanType          LoanType
-  loanAmount        Decimal             @db.Decimal(15, 2)
-  loanTenor         Int
-  loanPurpose       String              @db.Text
-  bankAccountNumber String
-  interestRate      Decimal?            @db.Decimal(5, 2)
-  monthlyInstallment Decimal?           @db.Decimal(15, 2)
-  
-  action            String
-  actionAt          DateTime            @map("action_at")
-  actionBy          String?             @map("action_by")
-  actionByUser      User?               @relation("loan_processor", fields: [actionBy], references: [id])
-  notes             String?             @db.Text
-  
-  createdAt         DateTime            @default(now()) @map("created_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  status             LoanStatus
+  loanType           LoanType
+  loanAmount         Decimal    @db.Decimal(15, 2)
+  loanTenor          Int
+  loanPurpose        String     @db.Text
+  bankAccountNumber  String
+  interestRate       Decimal?   @db.Decimal(5, 2)
+  monthlyInstallment Decimal?   @db.Decimal(15, 2)
+
+  action       String
+  actionAt     DateTime @map("action_at")
+  actionBy     String?  @map("action_by")
+  actionByUser User?    @relation("loan_processor", fields: [actionBy], references: [id])
+  notes        String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@index([loanApplicationId])
   @@map("loan_history")
 }
 
 model LoanDisbursement {
-  id                String           @id @default(uuid())
-  loanApplicationId String           @unique @map("loan_application_id")
-  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  processedBy       String           @map("processed_by")
-  processedByUser   User             @relation("disbursement_processor", fields: [processedBy], references: [id])
-  
-  disbursementDate  DateTime         @map("disbursement_date")
-  disbursementTime  String           @map("disbursement_time")
-  
-  notes             String?          @db.Text
-  
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  processedBy     String @map("processed_by")
+  processedByUser User   @relation("disbursement_processor", fields: [processedBy], references: [id])
+
+  disbursementDate DateTime @map("disbursement_date")
+  disbursementTime String   @map("disbursement_time")
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("loan_disbursements")
 }
 
 model LoanAuthorization {
-  id                String           @id @default(uuid())
-  loanApplicationId String           @unique @map("loan_application_id")
-  loanApplication   LoanApplication  @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  
-  authorizedBy      String           @map("authorized_by")
-  authorizedByUser  User             @relation("authorization_processor", fields: [authorizedBy], references: [id])
-  
-  authorizationDate DateTime         @map("authorization_date")
-  authorizationTime String           @map("authorization_time")
-  
-  notes             String?          @db.Text
-  
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  authorizedBy     String @map("authorized_by")
+  authorizedByUser User   @relation("authorization_processor", fields: [authorizedBy], references: [id])
+
+  authorizationDate DateTime @map("authorization_date")
+  authorizationTime String   @map("authorization_time")
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("loan_authorizations")
 }
 
 model DepositAmountOption {
-  id          String   @id @default(uuid())
-  code        String   @unique // e.g., AMOUNT_200K
-  label       String   // e.g., Rp 200.000
-  amount      Decimal  @db.Decimal(15, 2)
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  code      String   @unique // e.g., AMOUNT_200K
+  label     String // e.g., Rp 200.000
+  amount    Decimal  @db.Decimal(15, 2)
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("deposit_amount_options")
 }
 
 model DepositTenorOption {
-  id          String   @id @default(uuid())
-  code        String   @unique // e.g., TENOR_3
-  label       String   // e.g., 3 Bulan
-  months      Int
-  isActive    Boolean  @default(true) @map("is_active")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  code      String   @unique // e.g., TENOR_3
+  label     String // e.g., 3 Bulan
+  months    Int
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("deposit_tenor_options")
 }
@@ -653,62 +661,54 @@ enum DepositChangeApprovalDecision {
 }
 
 model DepositChangeRequest {
-  id                      String                      @id @default(uuid())
-  changeNumber            String                      @unique @map("change_number")
-  
-  depositApplicationId    String                      @map("deposit_application_id")
-  depositApplication      DepositApplication          @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
-  
-  userId                  String                      @map("user_id")
-  user                    User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  changeType              DepositChangeType           @map("change_type")
-  
+  id           String @id @default(uuid())
+  changeNumber String @unique @map("change_number")
+
+  depositApplicationId String             @map("deposit_application_id")
+  depositApplication   DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  changeType DepositChangeType @map("change_type")
+
   // Current values (snapshot)
-  currentAmountCode       String                      @map("current_amount_code")
-  currentTenorCode        String                      @map("current_tenor_code")
-  currentAmountValue      Decimal                     @map("current_amount_value") @db.Decimal(15, 2)
-  currentTenorMonths      Int                         @map("current_tenor_months")
-  currentInterestRate     Decimal?                     @map("current_interest_rate") @db.Decimal(5, 2)
-  currentProjectedInterest Decimal?                   @map("current_projected_interest") @db.Decimal(15, 2)
-  currentTotalReturn      Decimal?                    @map("current_total_return") @db.Decimal(15, 2)
-  
+  currentAmountValue  Decimal  @map("current_amount_value") @db.Decimal(15, 2)
+  currentTenorMonths  Int      @map("current_tenor_months")
+  currentInterestRate Decimal? @map("current_interest_rate") @db.Decimal(5, 2)
+
   // New requested values
-  newAmountCode           String                      @map("new_amount_code")
-  newTenorCode            String                      @map("new_tenor_code")
-  newAmountValue          Decimal                     @map("new_amount_value") @db.Decimal(15, 2)
-  newTenorMonths          Int                         @map("new_tenor_months")
-  newInterestRate         Decimal?                    @map("new_interest_rate") @db.Decimal(5, 2)
-  newProjectedInterest    Decimal?                    @map("new_projected_interest") @db.Decimal(15, 2)
-  newTotalReturn          Decimal?                    @map("new_total_return") @db.Decimal(15, 2)
-  
+  newAmountValue  Decimal  @map("new_amount_value") @db.Decimal(15, 2)
+  newTenorMonths  Int      @map("new_tenor_months")
+  newInterestRate Decimal? @map("new_interest_rate") @db.Decimal(5, 2)
+
   // Admin fee
-  adminFee                Decimal                     @map("admin_fee") @db.Decimal(15, 2)
-  
+  adminFee Decimal @map("admin_fee") @db.Decimal(15, 2)
+
   // Agreement
-  agreedToTerms           Boolean                     @default(false) @map("agreed_to_terms")
-  agreedToAdminFee        Boolean                     @default(false) @map("agreed_to_admin_fee")
-  
+  agreedToTerms    Boolean @default(false) @map("agreed_to_terms")
+  agreedToAdminFee Boolean @default(false) @map("agreed_to_admin_fee")
+
   // Status tracking
-  status                  DepositChangeStatus         @default(DRAFT)
-  currentStep             DepositChangeApprovalStep?   @map("current_step")
-  
+  status      DepositChangeStatus        @default(DRAFT)
+  currentStep DepositChangeApprovalStep? @map("current_step")
+
   // Timestamps
-  submittedAt             DateTime?                    @map("submitted_at")
-  approvedAt              DateTime?                   @map("approved_at")
-  rejectedAt              DateTime?                   @map("rejected_at")
-  rejectionReason         String?                     @map("rejection_reason") @db.Text
-  
+  submittedAt     DateTime? @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason") @db.Text
+
   // Effective date (when change will take effect)
-  effectiveDate           DateTime?                    @map("effective_date")
-  
+  effectiveDate DateTime? @map("effective_date")
+
   // Relations
-  approvals               DepositChangeApproval[]
-  history                 DepositChangeHistory[]
-  
-  createdAt               DateTime                    @default(now()) @map("created_at")
-  updatedAt               DateTime                    @updatedAt @map("updated_at")
-  
+  approvals DepositChangeApproval[]
+  history   DepositChangeHistory[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@index([depositApplicationId])
   @@index([userId])
   @@index([status])
@@ -716,125 +716,182 @@ model DepositChangeRequest {
 }
 
 model DepositChangeApproval {
-  id                      String                          @id @default(uuid())
-  depositChangeRequestId  String                          @map("deposit_change_request_id")
-  depositChangeRequest    DepositChangeRequest            @relation(fields: [depositChangeRequestId], references: [id], onDelete: Cascade)
-  
-  step                    DepositChangeApprovalStep
-  decision                DepositChangeApprovalDecision? 
-  decidedAt               DateTime?                       @map("decided_at")
-  approverId              String?                          @map("approver_id")
-  approver                User?                           @relation("deposit_change_approver", fields: [approverId], references: [id])
-  notes                   String?                         @db.Text
-  
-  createdAt               DateTime                        @default(now()) @map("created_at")
-  
+  id                     String               @id @default(uuid())
+  depositChangeRequestId String               @map("deposit_change_request_id")
+  depositChangeRequest   DepositChangeRequest @relation(fields: [depositChangeRequestId], references: [id], onDelete: Cascade)
+
+  step       DepositChangeApprovalStep
+  decision   DepositChangeApprovalDecision?
+  decidedAt  DateTime?                      @map("decided_at")
+  approverId String?                        @map("approver_id")
+  approver   User?                          @relation("deposit_change_approver", fields: [approverId], references: [id])
+  notes      String?                        @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@index([depositChangeRequestId])
   @@map("deposit_change_approvals")
 }
 
 model DepositChangeHistory {
-  id                      String                    @id @default(uuid())
-  depositChangeRequestId  String                    @map("deposit_change_request_id")
-  depositChangeRequest    DepositChangeRequest      @relation(fields: [depositChangeRequestId], references: [id], onDelete: Cascade)
-  
-  status                  DepositChangeStatus
-  changeType              DepositChangeType
-  
-  currentAmountValue      Decimal                   @db.Decimal(15, 2)
-  currentTenorMonths      Int
-  newAmountValue          Decimal                   @db.Decimal(15, 2)
-  newTenorMonths          Int
-  adminFee                Decimal                   @db.Decimal(15, 2)
-  
-  action                  String
-  actionAt                DateTime                  @map("action_at")
-  actionBy                String?                    @map("action_by")
-  actionByUser            User?                     @relation("deposit_change_processor", fields: [actionBy], references: [id])
-  notes                   String?                   @db.Text
-  
-  createdAt               DateTime                  @default(now()) @map("created_at")
-  
+  id                     String               @id @default(uuid())
+  depositChangeRequestId String               @map("deposit_change_request_id")
+  depositChangeRequest   DepositChangeRequest @relation(fields: [depositChangeRequestId], references: [id], onDelete: Cascade)
+
+  status     DepositChangeStatus
+  changeType DepositChangeType
+
+  currentAmountValue Decimal @db.Decimal(15, 2)
+  currentTenorMonths Int
+  newAmountValue     Decimal @db.Decimal(15, 2)
+  newTenorMonths     Int
+  adminFee           Decimal @db.Decimal(15, 2)
+
+  action       String
+  actionAt     DateTime @map("action_at")
+  actionBy     String?  @map("action_by")
+  actionByUser User?    @relation("deposit_change_processor", fields: [actionBy], references: [id])
+  notes        String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@index([depositChangeRequestId])
   @@map("deposit_change_history")
 }
 
 model DepositApplication {
-  id                    String               @id @default(uuid())
-  depositNumber         String               @unique @map("deposit_number")
-  
-  userId                String               @map("user_id")
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  depositAmountCode     String               @map("deposit_amount_code")
-  depositTenorCode      String               @map("deposit_tenor_code")
-  amountValue           Decimal              @map("amount_value") @db.Decimal(15, 2)
-  tenorMonths           Int                  @map("tenor_months")
-  
-  interestRate          Decimal?             @map("interest_rate") @db.Decimal(5, 2)
-  projectedInterest     Decimal?             @map("projected_interest") @db.Decimal(15, 2)
-  totalReturn           Decimal?             @map("total_return") @db.Decimal(15, 2)
-  
-  agreedToTerms         Boolean              @default(false) @map("agreed_to_terms")
-  
-  status                DepositStatus        @default(DRAFT)
-  currentStep           DepositApprovalStep? @map("current_step")
-  
-  submittedAt           DateTime?            @map("submitted_at")
-  approvedAt            DateTime?            @map("approved_at")
-  activatedAt           DateTime?            @map("activated_at")
-  maturityDate          DateTime?            @map("maturity_date")
-  completedAt           DateTime?            @map("completed_at")
-  rejectedAt            DateTime?            @map("rejected_at")
-  rejectionReason       String?              @map("rejection_reason") @db.Text
-  
-  approvals             DepositApproval[]
-  history               DepositHistory[]
-  changeRequests          DepositChangeRequest[]
-  
-  createdAt             DateTime             @default(now()) @map("created_at")
-  updatedAt             DateTime             @updatedAt @map("updated_at")
+  id            String @id @default(uuid())
+  depositNumber String @unique @map("deposit_number")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  interestRate Decimal? @db.Decimal(5, 2)
+
+  amountValue Decimal @map("amount_value") @db.Decimal(15, 2)
+  tenorMonths Int     @map("tenor_months")
+
+  collectedAmount  Decimal @default(0) @map("collected_amount") @db.Decimal(15, 2) // Uang yang sudah masuk
+  installmentCount Int     @default(0) @map("installment_count") // Sudah berjalan berapa bulan (misal: 3 dari 12)
+
+  startMonth Int? @map("start_month") // e.g. 11 (November)
+  startYear  Int? @map("start_year") // e.g. 2025
+
+  agreedToTerms Boolean @default(false) @map("agreed_to_terms")
+
+  status      DepositStatus        @default(DRAFT)
+  currentStep DepositApprovalStep? @map("current_step")
+
+  submittedAt     DateTime? @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  activatedAt     DateTime? @map("activated_at")
+  maturityDate    DateTime? @map("maturity_date")
+  completedAt     DateTime? @map("completed_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason") @db.Text
+
+  approvals      DepositApproval[]
+  history        DepositHistory[]
+  changeRequests DepositChangeRequest[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("deposit_applications")
 }
 
 model DepositHistory {
-  id                    String             @id @default(uuid())
-  depositApplicationId  String             @map("deposit_application_id")
-  depositApplication    DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
-  
-  status                DepositStatus
-  depositAmountCode     String             @map("deposit_amount_code")
-  depositTenorCode      String             @map("deposit_tenor_code")
-  amountValue           Decimal            @db.Decimal(15, 2)
-  tenorMonths           Int
-  interestRate          Decimal?           @db.Decimal(5, 2)
-  projectedInterest     Decimal?           @db.Decimal(15, 2)
-  
-  action                String
-  actionAt              DateTime           @map("action_at")
-  actionBy              String?            @map("action_by")
-  actionByUser          User?              @relation("deposit_processor", fields: [actionBy], references: [id])
-  notes                 String?            @db.Text
-  
-  createdAt             DateTime           @default(now()) @map("created_at")
-  
+  id                   String             @id @default(uuid())
+  depositApplicationId String             @map("deposit_application_id")
+  depositApplication   DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
+
+  status       DepositStatus
+  amountValue  Decimal       @db.Decimal(15, 2)
+  tenorMonths  Int
+  interestRate Decimal?      @db.Decimal(5, 2)
+
+  action       String
+  actionAt     DateTime @map("action_at")
+  actionBy     String?  @map("action_by")
+  actionByUser User?    @relation("deposit_processor", fields: [actionBy], references: [id])
+  notes        String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@map("deposit_history")
 }
 
 model DepositApproval {
-  id                    String                   @id @default(uuid())
-  depositApplicationId  String                   @map("deposit_application_id")
-  depositApplication    DepositApplication       @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
-  
-  step                  DepositApprovalStep
-  decision              DepositApprovalDecision?
-  decidedAt             DateTime?                @map("decided_at")
-  approverId            String?                  @map("approver_id")
-  approver              User?                    @relation("deposit_approver", fields: [approverId], references: [id])
-  notes                 String?                  @db.Text
-  
-  createdAt             DateTime                 @default(now()) @map("created_at")
-  
+  id                   String             @id @default(uuid())
+  depositApplicationId String             @map("deposit_application_id")
+  depositApplication   DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
+
+  step       DepositApprovalStep
+  decision   DepositApprovalDecision?
+  decidedAt  DateTime?                @map("decided_at")
+  approverId String?                  @map("approver_id")
+  approver   User?                    @relation("deposit_approver", fields: [approverId], references: [id])
+  notes      String?                  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
   @@map("deposit_approvals")
+}
+
+model SavingsAccount {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  saldoPokok    Decimal @default(0) @map("saldo_pokok") // Dari MemberApplication
+  saldoWajib    Decimal @default(0) @map("saldo_wajib") // Iuran Bulanan rutin
+  saldoSukarela Decimal @default(0) @map("saldo_sukarela") // Bisa ditarik
+  bungaDeposito Decimal @default(0) @map("bunga_deposito") @db.Decimal(15, 2)
+
+  transactions SavingsTransaction[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("savings_accounts")
+}
+
+model SavingsTransaction {
+  id               String         @id @default(uuid())
+  savingsAccountId String         @map("savings_account_id")
+  account          SavingsAccount @relation(fields: [savingsAccountId], references: [id], onDelete: Cascade)
+
+  iuranPendaftaran Decimal @default(0) @map("iuran_pendaftaran") @db.Decimal(15, 2)
+  iuranBulanan     Decimal @default(0) @map("iuran_bulanan") @db.Decimal(15, 2)
+  tabunganDeposito Decimal @default(0) @map("tabungan_deposito") @db.Decimal(15, 2)
+  shu              Decimal @default(0) @db.Decimal(15, 2)
+  penarikan        Decimal @default(0) @db.Decimal(15, 2)
+  bunga            Decimal @default(0) @db.Decimal(15, 2)
+  jumlahBunga      Decimal @default(0) @map("jumlah_bunga") @db.Decimal(15, 2)
+
+  transactionDate DateTime       @default(now()) @map("transaction_date")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  createdBy       String?        @map("created_by")
+  payrollPeriod   PayrollPeriod? @relation(fields: [payrollPeriodId], references: [id])
+  payrollPeriodId String?
+
+  @@index([savingsAccountId])
+  @@index([transactionDate])
+  @@map("savings_transactions")
+}
+
+model PayrollPeriod {
+  id          String  @id @default(uuid())
+  month       Int // 1-12
+  year        Int // 2025
+  name        String // "Periode November 2025"
+  isProcessed Boolean @default(false) @map("is_processed")
+
+  processedAt DateTime? @map("processed_at")
+  totalAmount Decimal   @default(0) @map("total_amount") @db.Decimal(15, 2)
+
+  transactions SavingsTransaction[]
+
+  @@unique([month, year])
+  @@map("payroll_periods")
 }

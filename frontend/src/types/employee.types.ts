@@ -35,6 +35,7 @@ export interface Employee {
     email: string;
     memberVerified: boolean;
   }>;
+  permanentEmployeeDate?: Date;
 }
 
 export interface CreateEmployeeRequest {
@@ -43,6 +44,7 @@ export interface CreateEmployeeRequest {
   departmentId: string;
   golonganId: string;
   employeeType: EmployeeType;
+  permanentEmployeeDate?: Date;
 }
 
 export interface UpdateEmployeeRequest {
@@ -52,6 +54,7 @@ export interface UpdateEmployeeRequest {
   golonganId?: string;
   employeeType?: EmployeeType;
   isActive?: boolean;
+  permanentEmployeeDate?: Date;
 }
 
 export interface QueryEmployeeParams {

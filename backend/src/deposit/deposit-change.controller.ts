@@ -36,13 +36,13 @@ export class DepositChangeController {
   @HttpCode(HttpStatus.OK)
   async previewChange(
     @Query('depositId') depositId: string,
-    @Query('newAmountCode') newAmountCode: string,
-    @Query('newTenorCode') newTenorCode: string,
+    @Query('newAmountValue') newAmountValue: number,
+    @Query('newTenorValue') newTenorValue: number,
   ) {
     return this.depositChangeService.previewChangeCalculation(
       depositId,
-      newAmountCode,
-      newTenorCode,
+      newAmountValue,
+      newTenorValue,
     );
   }
 

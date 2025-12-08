@@ -143,16 +143,6 @@ export class DepositOptionService {
   async deleteAmountOption(id: string) {
     const option = await this.findAmountOptionById(id);
 
-    const usedCount = await this.prisma.depositApplication.count({
-      where: { depositAmountCode: option.code },
-    });
-
-    if (usedCount > 0) {
-      throw new BadRequestException(
-        `Tidak dapat menghapus.  Opsi ini digunakan di ${usedCount} pengajuan deposito. `,
-      );
-    }
-
     await this.prisma.depositAmountOption.delete({
       where: { id },
     });
@@ -286,16 +276,6 @@ export class DepositOptionService {
   async deleteTenorOption(id: string) {
     const option = await this.findTenorOptionById(id);
 
-    const usedCount = await this. prisma.depositApplication.count({
-      where: { depositTenorCode: option.code },
-    });
-
-    if (usedCount > 0) {
-      throw new BadRequestException(
-        `Tidak dapat menghapus. Opsi ini digunakan di ${usedCount} pengajuan deposito.`,
-      );
-    }
-
     await this. prisma.depositTenorOption.delete({
       where: { id },
     });
@@ -327,30 +307,6 @@ export class DepositOptionService {
 
   // CALCULATE DEPOSIT RETURN
   
-  /**
-   * Calculate deposit return for MONTHLY INSTALLMENT savings (Tabungan Berjangka)
-   * 
-   * Ini adalah TABUNGAN BERJANGKA dengan setoran bulanan, bukan deposito lump sum! 
-   * 
-   * Konsep:
-   * - User memilih jumlah setoran per bulan (misal 200rb, 500rb, 1jt, dst)
-   * - Tenor adalah berapa bulan user akan menabung (3, 6, 9, 12 bulan)
-   * - Setiap bulan dipotong dari gaji sesuai jumlah yang dipilih
-   * - Bunga dihitung dari akumulasi tabungan
-   * 
-   * Metode Perhitungan:
-   * 
-   * 1.  SIMPLE INTEREST (Bunga Sederhana):
-   *    - Bunga dihitung berdasarkan saldo rata-rata
-   *    - Saldo Rata-rata = (Setoran × Tenor × (Tenor + 1)) / (2 × Tenor)
-   *    - Bunga = Saldo Rata-rata × Rate × (Tenor/12)
-   * 
-   * 2.  COMPOUND INTEREST (Bunga Majemuk - Monthly Compounding):
-   *    - Setiap setoran bulanan mendapat bunga sejak bulan masuk
-   *    - Setoran bulan pertama dapat bunga selama (tenor) bulan
-   *    - Setoran bulan kedua dapat bunga selama (tenor-1) bulan, dst
-   *    - Menggunakan Future Value of Annuity formula
-   */
   calculateDepositReturn(
     monthlyDeposit: number,        // Setoran per bulan (amount yang dipilih user)
     tenorMonths: number,            // Berapa bulan menabung

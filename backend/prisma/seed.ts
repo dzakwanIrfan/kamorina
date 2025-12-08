@@ -91,7 +91,8 @@ async function main() {
       departmentId: mdpDept.id,
       golonganId: golongan3.id,
       employeeType: EmployeeType.TETAP,
-      isActive: true 
+      isActive: true,
+      permanentEmployeeDate: new Date('2021-01-01'), 
     },
     { 
       employeeNumber: '100000002', 
@@ -99,7 +100,8 @@ async function main() {
       departmentId: financeDept.id,
       golonganId: golongan3.id,
       employeeType: EmployeeType.TETAP, 
-      isActive: true 
+      isActive: true,
+      permanentEmployeeDate: new Date('2021-01-01'), 
     },
     { 
       employeeNumber: '100000003', 
@@ -107,7 +109,8 @@ async function main() {
       departmentId: hcgaDept.id,
       golonganId: golongan3.id,
       employeeType: EmployeeType.TETAP, 
-      isActive: true 
+      isActive: true,
+      permanentEmployeeDate: new Date('2021-01-01'), 
     },
     { 
       employeeNumber: '100000004', 
@@ -115,7 +118,8 @@ async function main() {
       departmentId: hcgaDept.id,
       golonganId: golongan2.id,
       employeeType: EmployeeType.TETAP, 
-      isActive: true 
+      isActive: true,
+      permanentEmployeeDate: new Date('2021-01-01'), 
     },
     {
       employeeNumber: '100000005',
@@ -123,7 +127,8 @@ async function main() {
       departmentId: financeDept.id,
       golonganId: golongan1.id,
       employeeType: EmployeeType.TETAP,
-      isActive: true
+      isActive: true,
+      permanentEmployeeDate: new Date('2021-01-01'),
     }
   ];
 
@@ -140,14 +145,20 @@ async function main() {
   for (let i = 6; i <= 24; i++) {
     const randomType = employeeTypes[Math.floor(Math.random() * employeeTypes.length)];
     
-    employees.push({
+    const employee: any = {
       employeeNumber: `100000${i.toString().padStart(3, '0')}`,
       fullName: testUserNames[i - 5] || `Test User ${i}`,
       departmentId: getRandomDept().id,
       golonganId: getRandomGolongan().id,
       employeeType: randomType as any,
       isActive: true,
-    });
+    };
+
+    if (randomType === EmployeeType.TETAP) {
+      employee.permanentEmployeeDate = new Date('2021-01-01');
+    }
+
+    employees.push(employee);
   }
 
   for (const emp of employees) {
@@ -194,7 +205,6 @@ async function main() {
       // NO departmentId here - it's in employee!
       dateOfBirth: new Date('1990-01-01'),
       birthPlace: 'Jakarta',
-      permanentEmployeeDate: new Date('2020-01-01'),
       installmentPlan: 1,
     },
   });
@@ -225,7 +235,6 @@ async function main() {
       employeeId: divisiEmployee!.id,
       dateOfBirth: new Date('1991-01-01'),
       birthPlace: 'Bandung',
-      permanentEmployeeDate: new Date('2020-02-01'),
       installmentPlan: 1,
     },
   });
@@ -256,7 +265,6 @@ async function main() {
       employeeId: pengawasEmployee!.id,
       dateOfBirth: new Date('1992-01-01'),
       birthPlace: 'Surabaya',
-      permanentEmployeeDate: new Date('2020-03-01'),
       installmentPlan: 1,
     },
   });
@@ -287,7 +295,6 @@ async function main() {
       employeeId: payrollEmployee!.id,
       dateOfBirth: new Date('1993-01-01'),
       birthPlace: 'Medan',
-      permanentEmployeeDate: new Date('2020-04-01'),
       installmentPlan: 1,
     },
   });
@@ -317,7 +324,6 @@ async function main() {
       employeeId: shopkeeperEmployee!.id,
       dateOfBirth: new Date('1994-01-01'),
       birthPlace: 'Yogyakarta',
-      permanentEmployeeDate: new Date('2020-05-01'),
       installmentPlan: 1,
     },
   });
@@ -372,7 +378,6 @@ async function main() {
         memberVerified: applicationData.status === ApplicationStatus.APPROVED,
         memberVerifiedAt: applicationData.status === ApplicationStatus.APPROVED ? applicationData.approvedAt : null,
         employeeId: employee.id,
-        permanentEmployeeDate: new Date('2021-06-01'),
         // NO departmentId!
       },
     });

@@ -72,61 +72,9 @@ export class DepositService {
   }
 
   /**
-   * Calculate deposit return using DepositOptionService
-   */
-  private async calculateDepositReturn(amount: number, tenorMonths: number) {
-    const settings = await this.getDepositSettings();
-    
-    const calculation = this.depositOptionService.calculateDepositReturn(
-      amount,
-      tenorMonths,
-      settings.interestRate,
-      settings.calculationMethod,
-    );
-
-    return {
-      interestRate: calculation.annualInterestRate,
-      effectiveRate: calculation.effectiveRate,
-      projectedInterest: calculation.projectedInterest,
-      totalReturn: calculation.totalReturn,
-      calculationMethod: calculation.calculationMethod,
-    };
-  }
-
-  /**
-   * Check if user is verified member
-   */
-  private async checkMemberStatus(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        employee: true,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User tidak ditemukan');
-    }
-
-    if (!user.employee) {
-      throw new ForbiddenException('Data karyawan tidak ditemukan');
-    }
-
-    if (!user.memberVerified) {
-      throw new ForbiddenException(
-        'Anda harus menjadi anggota terverifikasi untuk mengajukan deposito',
-      );
-    }
-
-    return user;
-  }
-
-  /**
    * Create draft deposit application
    */
   async createDraft(userId: string, dto: CreateDepositDto) {
-    const user = await this.checkMemberStatus(userId);
-
     if (!dto.agreedToTerms) {
       throw new BadRequestException('Anda harus menyetujui syarat dan ketentuan');
     }
@@ -146,21 +94,17 @@ export class DepositService {
     const amountValue = amountOption.amount.toNumber();
     const tenorMonths = tenorOption.months;
     const depositNumber = await this.generateDepositNumber();
-    const calculations = await this.calculateDepositReturn(amountValue, tenorMonths);
+    const interestRate = await this.getDepositSettings().then(s => s.interestRate);
 
     const deposit = await this.prisma.depositApplication.create({
       data: {
         depositNumber,
         userId,
-        depositAmountCode: dto.depositAmountCode,
-        depositTenorCode: dto.depositTenorCode,
         amountValue,
         tenorMonths,
         agreedToTerms: dto.agreedToTerms,
         status: DepositStatus.DRAFT,
-        interestRate: calculations.interestRate,
-        projectedInterest: calculations.projectedInterest,
-        totalReturn: calculations.totalReturn,
+        interestRate: interestRate,
       },
       include: {
         user: {
@@ -179,7 +123,6 @@ export class DepositService {
     return {
       message: 'Draft deposito berhasil dibuat',
       deposit,
-      calculation: calculations,
     };
   }
 
@@ -233,10 +176,7 @@ export class DepositService {
 
     // Recalculate if amount or tenor changed
     if (dto.depositAmountCode || dto.depositTenorCode) {
-      const calculations = await this.calculateDepositReturn(newAmountValue, newTenorMonths);
-      updateData.interestRate = calculations.interestRate;
-      updateData.projectedInterest = calculations.projectedInterest;
-      updateData.totalReturn = calculations.totalReturn;
+      updateData.interestRate = await this.getDepositSettings().then(s => s.interestRate);
     }
 
     const updated = await this.prisma.depositApplication.update({
@@ -313,12 +253,9 @@ export class DepositService {
         data: {
           depositApplicationId: depositId,
           status: DepositStatus.SUBMITTED,
-          depositAmountCode: updated.depositAmountCode,
-          depositTenorCode: updated.depositTenorCode,
           amountValue: updated.amountValue,
           tenorMonths: updated.tenorMonths,
           interestRate: updated.interestRate,
-          projectedInterest: updated.projectedInterest,
           action: 'SUBMITTED',
           actionAt: new Date(),
           actionBy: userId,
@@ -650,12 +587,9 @@ export class DepositService {
           data: {
             depositApplicationId: depositId,
             status: DepositStatus.REJECTED,
-            depositAmountCode: deposit.depositAmountCode,
-            depositTenorCode: deposit.depositTenorCode,
             amountValue: deposit.amountValue,
             tenorMonths: deposit.tenorMonths,
             interestRate: deposit.interestRate,
-            projectedInterest: deposit.projectedInterest,
             action: 'REJECTED',
             actionAt: new Date(),
             actionBy: approverId,
@@ -721,12 +655,9 @@ export class DepositService {
           data: {
             depositApplicationId: depositId,
             status: newStatus,
-            depositAmountCode: deposit.depositAmountCode,
-            depositTenorCode: deposit.depositTenorCode,
             amountValue: deposit.amountValue,
             tenorMonths: deposit.tenorMonths,
             interestRate: deposit.interestRate,
-            projectedInterest: deposit.projectedInterest,
             action: 'APPROVED',
             actionAt: new Date(),
             actionBy: approverId,

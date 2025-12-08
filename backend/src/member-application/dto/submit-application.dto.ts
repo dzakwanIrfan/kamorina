@@ -20,10 +20,6 @@ export class SubmitApplicationDto {
   @IsString()
   @IsNotEmpty({ message: 'Tempat lahir wajib diisi' })
   birthPlace: string;
-  
-  @IsDateString({}, { message: 'Format tanggal pegawai tetap tidak valid' })
-  @IsNotEmpty({ message: 'Tanggal pegawai tetap wajib diisi' })
-  permanentEmployeeDate: string;
 
   @IsInt({ message: 'Rencana cicilan harus berupa angka' })
   @Min(1, { message: 'Rencana cicilan harus 1 atau 2' })

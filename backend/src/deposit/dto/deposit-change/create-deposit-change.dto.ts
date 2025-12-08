@@ -7,12 +7,11 @@ export class CreateDepositChangeDto {
 
   @IsString()
   @IsNotEmpty({ message: 'Jumlah deposito baru harus dipilih' })
-  newAmountCode: string;
+  newAmountValue: number;
 
   @IsString()
   @IsNotEmpty({ message: 'Tenor deposito baru harus dipilih' })
-  newTenorCode: string;
-
+  newTenorMonths: number;
   @IsBoolean()
   @IsNotEmpty({ message: 'Anda harus menyetujui syarat dan ketentuan' })
   agreedToTerms: boolean;
