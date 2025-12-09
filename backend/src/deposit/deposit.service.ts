@@ -113,7 +113,7 @@ export class DepositService {
         tenorMonths,
         agreedToTerms: dto.agreedToTerms,
         status: DepositStatus.DRAFT,
-        interestRate
+        interestRate,
       },
       include: {
         user: {

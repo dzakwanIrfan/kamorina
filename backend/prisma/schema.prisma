@@ -772,9 +772,6 @@ model DepositApplication {
   collectedAmount  Decimal @default(0) @map("collected_amount") @db.Decimal(15, 2)
   installmentCount Int     @default(0) @map("installment_count") 
 
-  startMonth Int? @map("start_month") // e.g. 11 (November)
-  startYear  Int? @map("start_year") // e.g. 2025
-
   agreedToTerms Boolean @default(false) @map("agreed_to_terms")
 
   status      DepositStatus        @default(DRAFT)

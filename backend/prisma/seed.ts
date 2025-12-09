@@ -1095,6 +1095,18 @@ async function main() {
 
   console.log('✅ Deposit tenor options created');
 
+
+  console.log('🔄 Creating savings accounts for all users...');
+  const users = await prisma.user.findMany();
+  for (const user of users) {
+    await prisma.savingsAccount.create({
+      data: {
+        userId: user.id,
+      }
+    })
+  }
+  console.log('✅ Savings accounts created for all users');
+
   console.log('');
   console.log('🎉 Seeding completed successfully!');
 }
