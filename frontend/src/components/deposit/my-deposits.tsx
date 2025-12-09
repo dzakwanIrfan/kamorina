@@ -143,17 +143,6 @@ export function MyDeposits() {
         ),
       },
       {
-        accessorKey: 'totalReturn',
-        header: 'Total Return',
-        cell: ({ row }) => (
-          <span className="text-sm font-medium text-green-600 dark:text-green-400">
-            {row.original.totalReturn
-              ? formatCurrency(row. original.totalReturn)
-              : '-'}
-          </span>
-        ),
-      },
-      {
         accessorKey: 'status',
         header: 'Status',
         cell: ({ row }) => {
@@ -249,12 +238,8 @@ export function MyDeposits() {
 
   // Calculate total active deposits
   const totalActiveDeposits = data
-    .filter((d) => d.status === DepositStatus.ACTIVE || d.status === DepositStatus.APPROVED)
+    .filter((d) => d.status === DepositStatus.ACTIVE)
     .reduce((sum, d) => sum + Number(d.amountValue), 0);
-
-  const totalProjectedReturn = data
-    .filter((d) => d.status === DepositStatus.ACTIVE || d.status === DepositStatus.APPROVED)
-    .reduce((sum, d) => sum + Number(d.totalReturn || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -290,15 +275,15 @@ export function MyDeposits() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Proyeksi Return</CardTitle>
+            <CardTitle className="text-sm font-medium">Tabungan</CardTitle>
             <PiggyBank className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(totalProjectedReturn)}
+              {formatCurrency(0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total return saat jatuh tempo
+              Total tabungan yang bisa diambil
             </p>
           </CardContent>
         </Card>

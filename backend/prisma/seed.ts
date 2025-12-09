@@ -1,4 +1,12 @@
-import { PrismaClient, ApplicationStatus, ApprovalStep, ApprovalDecision, EmployeeType, SettingCategory, SettingType } from '@prisma/client';
+import {
+  PrismaClient,
+  ApplicationStatus,
+  ApprovalStep,
+  ApprovalDecision,
+  EmployeeType,
+  SettingCategory,
+  SettingType,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -71,55 +79,59 @@ async function main() {
   // Get all departments and golongan for employee creation
   const allDepartments = await prisma.department.findMany();
   const allGolongans = await prisma.golongan.findMany();
-  
-  const mdpDept = allDepartments.find(d => d.departmentName === 'MDP')!;
-  const hcgaDept = allDepartments.find(d => d.departmentName === 'HCGA')!;
-  const financeDept = allDepartments.find(d => d.departmentName === 'Finance')!;
-  const golongan3 = allGolongans.find(g => g.golonganName === 'III')!;
-  const golongan2 = allGolongans.find(g => g.golonganName === 'II')!;
-  const golongan1 = allGolongans.find(g => g.golonganName === 'I')!;
+
+  const mdpDept = allDepartments.find((d) => d.departmentName === 'MDP')!;
+  const hcgaDept = allDepartments.find((d) => d.departmentName === 'HCGA')!;
+  const financeDept = allDepartments.find(
+    (d) => d.departmentName === 'Finance',
+  )!;
+  const golongan3 = allGolongans.find((g) => g.golonganName === 'III')!;
+  const golongan2 = allGolongans.find((g) => g.golonganName === 'II')!;
+  const golongan1 = allGolongans.find((g) => g.golonganName === 'I')!;
 
   // Helper to get random department and golongan
-  const getRandomDept = () => allDepartments[Math.floor(Math.random() * allDepartments.length)];
-  const getRandomGolongan = () => allGolongans[Math.floor(Math.random() * allGolongans.length)];
+  const getRandomDept = () =>
+    allDepartments[Math.floor(Math.random() * allDepartments.length)];
+  const getRandomGolongan = () =>
+    allGolongans[Math.floor(Math.random() * allGolongans.length)];
 
   // Create Employees (Admin + Test Users) with department, golongan, and employeeType
   const employees = [
-    { 
-      employeeNumber: '100000001', 
-      fullName: 'Admin Koperasi', 
+    {
+      employeeNumber: '100000001',
+      fullName: 'Admin Koperasi',
       departmentId: mdpDept.id,
       golonganId: golongan3.id,
       employeeType: EmployeeType.TETAP,
       isActive: true,
-      permanentEmployeeDate: new Date('2021-01-01'), 
+      permanentEmployeeDate: new Date('2021-01-01'),
     },
-    { 
-      employeeNumber: '100000002', 
-      fullName: 'Divisi Simpan Pinjam', 
+    {
+      employeeNumber: '100000002',
+      fullName: 'Divisi Simpan Pinjam',
       departmentId: financeDept.id,
       golonganId: golongan3.id,
-      employeeType: EmployeeType.TETAP, 
+      employeeType: EmployeeType.TETAP,
       isActive: true,
-      permanentEmployeeDate: new Date('2021-01-01'), 
+      permanentEmployeeDate: new Date('2021-01-01'),
     },
-    { 
-      employeeNumber: '100000003', 
-      fullName: 'Pengawas Koperasi', 
+    {
+      employeeNumber: '100000003',
+      fullName: 'Pengawas Koperasi',
       departmentId: hcgaDept.id,
       golonganId: golongan3.id,
-      employeeType: EmployeeType.TETAP, 
+      employeeType: EmployeeType.TETAP,
       isActive: true,
-      permanentEmployeeDate: new Date('2021-01-01'), 
+      permanentEmployeeDate: new Date('2021-01-01'),
     },
-    { 
-      employeeNumber: '100000004', 
-      fullName: 'Payroll Staff', 
+    {
+      employeeNumber: '100000004',
+      fullName: 'Payroll Staff',
       departmentId: hcgaDept.id,
       golonganId: golongan2.id,
-      employeeType: EmployeeType.TETAP, 
+      employeeType: EmployeeType.TETAP,
       isActive: true,
-      permanentEmployeeDate: new Date('2021-01-01'), 
+      permanentEmployeeDate: new Date('2021-01-01'),
     },
     {
       employeeNumber: '100000005',
@@ -129,22 +141,38 @@ async function main() {
       employeeType: EmployeeType.TETAP,
       isActive: true,
       permanentEmployeeDate: new Date('2021-01-01'),
-    }
+    },
   ];
 
   // Test users - varying departments, golongan, and types
   const testUserNames = [
-    'Budi Santoso', 'Siti Nurhaliza', 'Ahmad Dahlan', 'Rina Wijaya', 'Joko Widodo',
-    'Dewi Sartika', 'Andi Setiawan', 'Sri Mulyani', 'Bambang Pamungkas',
-    'Mega Wati', 'Hendra Gunawan', 'Lestari Indah', 'Rizki Ramadhan', 'Fitri Handayani', 'Arief Budiman',
-    'Doni Pratama', 'Yuni Shara', 'Wawan Setiawan', 'Dzakwan Irfan Ramdhani'
+    'Budi Santoso',
+    'Siti Nurhaliza',
+    'Ahmad Dahlan',
+    'Rina Wijaya',
+    'Joko Widodo',
+    'Dewi Sartika',
+    'Andi Setiawan',
+    'Sri Mulyani',
+    'Bambang Pamungkas',
+    'Mega Wati',
+    'Hendra Gunawan',
+    'Lestari Indah',
+    'Rizki Ramadhan',
+    'Fitri Handayani',
+    'Arief Budiman',
+    'Doni Pratama',
+    'Yuni Shara',
+    'Wawan Setiawan',
+    'Dzakwan Irfan Ramdhani',
   ];
 
   const employeeTypes = [EmployeeType.TETAP, EmployeeType.KONTRAK];
 
-  for (let i = 6; i <= 24; i++) {
-    const randomType = employeeTypes[Math.floor(Math.random() * employeeTypes.length)];
-    
+  for (let i = 6; i <= 23; i++) {
+    const randomType =
+      employeeTypes[Math.floor(Math.random() * employeeTypes.length)];
+
     const employee: any = {
       employeeNumber: `100000${i.toString().padStart(3, '0')}`,
       fullName: testUserNames[i - 5] || `Test User ${i}`,
@@ -172,22 +200,39 @@ async function main() {
   console.log('✅ Employees created');
 
   // Get levels
-  const ketuaLevel = await prisma.level.findFirst({ where: { levelName: 'ketua' } });
-  const divisiSimpanPinjamLevel = await prisma.level.findFirst({ where: { levelName: 'divisi_simpan_pinjam' } });
-  const pengawasLevel = await prisma.level.findFirst({ where: { levelName: 'pengawas' } });
-  const payrollLevel = await prisma.level.findFirst({ where: { levelName: 'payroll' } });
-  const shopkeeperLevel = await prisma.level.findFirst({ where: { levelName: 'shopkeeper' } });
+  const ketuaLevel = await prisma.level.findFirst({
+    where: { levelName: 'ketua' },
+  });
+  const divisiSimpanPinjamLevel = await prisma.level.findFirst({
+    where: { levelName: 'divisi_simpan_pinjam' },
+  });
+  const pengawasLevel = await prisma.level.findFirst({
+    where: { levelName: 'pengawas' },
+  });
+  const payrollLevel = await prisma.level.findFirst({
+    where: { levelName: 'payroll' },
+  });
+  const shopkeeperLevel = await prisma.level.findFirst({
+    where: { levelName: 'shopkeeper' },
+  });
 
-  if (!ketuaLevel || !divisiSimpanPinjamLevel || !pengawasLevel || !payrollLevel) {
+  if (
+    !ketuaLevel ||
+    !divisiSimpanPinjamLevel ||
+    !pengawasLevel ||
+    !payrollLevel
+  ) {
     throw new Error('Required levels not found');
   }
 
   const hashedPassword = await bcrypt.hash('Admin123!', 12);
 
   // CREATE ADMIN USERS (NO departmentId in users!)
-  
+
   // 1. Admin User (Ketua)
-  const adminEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000001' } });
+  const adminEmployee = await prisma.employee.findUnique({
+    where: { employeeNumber: '100000001' },
+  });
   const adminUser = await prisma.user.upsert({
     where: { email: 'dzakwanbusiness7@gmail.com' },
     update: {},
@@ -218,7 +263,9 @@ async function main() {
   console.log('✅ Admin (Ketua) user created');
 
   // 2. Divisi Simpan Pinjam User
-  const divisiEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000002' } });
+  const divisiEmployee = await prisma.employee.findUnique({
+    where: { employeeNumber: '100000002' },
+  });
   const divisiUser = await prisma.user.upsert({
     where: { email: 'dzakwan.ramdhani@mhs.unsoed.ac.id' },
     update: {},
@@ -240,7 +287,12 @@ async function main() {
   });
 
   await prisma.userRole.upsert({
-    where: { userId_levelId: { userId: divisiUser.id, levelId: divisiSimpanPinjamLevel.id } },
+    where: {
+      userId_levelId: {
+        userId: divisiUser.id,
+        levelId: divisiSimpanPinjamLevel.id,
+      },
+    },
     update: {},
     create: { userId: divisiUser.id, levelId: divisiSimpanPinjamLevel.id },
   });
@@ -248,7 +300,9 @@ async function main() {
   console.log('✅ Divisi Simpan Pinjam user created');
 
   // 3. Pengawas User
-  const pengawasEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000003' } });
+  const pengawasEmployee = await prisma.employee.findUnique({
+    where: { employeeNumber: '100000003' },
+  });
   const pengawasUser = await prisma.user.upsert({
     where: { email: 'lexdani368@gmail.com' },
     update: {},
@@ -270,7 +324,9 @@ async function main() {
   });
 
   await prisma.userRole.upsert({
-    where: { userId_levelId: { userId: pengawasUser.id, levelId: pengawasLevel.id } },
+    where: {
+      userId_levelId: { userId: pengawasUser.id, levelId: pengawasLevel.id },
+    },
     update: {},
     create: { userId: pengawasUser.id, levelId: pengawasLevel.id },
   });
@@ -278,7 +334,9 @@ async function main() {
   console.log('✅ Pengawas user created');
 
   // 4. Payroll User
-  const payrollEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000004' } });
+  const payrollEmployee = await prisma.employee.findUnique({
+    where: { employeeNumber: '100000004' },
+  });
   const payrollUser = await prisma.user.upsert({
     where: { email: 'ulujamicomal66@gmail.com' },
     update: {},
@@ -300,14 +358,18 @@ async function main() {
   });
 
   await prisma.userRole.upsert({
-    where: { userId_levelId: { userId: payrollUser.id, levelId: payrollLevel.id } },
+    where: {
+      userId_levelId: { userId: payrollUser.id, levelId: payrollLevel.id },
+    },
     update: {},
     create: { userId: payrollUser.id, levelId: payrollLevel.id },
   });
 
   console.log('✅ Payroll user created');
 
-  const shopkeeperEmployee = await prisma.employee.findUnique({ where: { employeeNumber: '100000005' } });
+  const shopkeeperEmployee = await prisma.employee.findUnique({
+    where: { employeeNumber: '100000005' },
+  });
   const shopkeeperUser = await prisma.user.upsert({
     where: { email: 'kostproduction1@gmail.com' },
     update: {},
@@ -329,7 +391,12 @@ async function main() {
   });
 
   await prisma.userRole.upsert({
-    where: { userId_levelId: { userId: shopkeeperUser.id, levelId: shopkeeperLevel!.id } },
+    where: {
+      userId_levelId: {
+        userId: shopkeeperUser.id,
+        levelId: shopkeeperLevel!.id,
+      },
+    },
     update: {},
     create: { userId: shopkeeperUser.id, levelId: shopkeeperLevel!.id },
   });
@@ -364,9 +431,11 @@ async function main() {
         approverId?: string;
         notes?: string;
       }>;
-    }
+    },
   ) {
-    const employee = await prisma.employee.findUnique({ where: { employeeNumber } });
+    const employee = await prisma.employee.findUnique({
+      where: { employeeNumber },
+    });
     if (!employee) throw new Error(`Employee ${employeeNumber} not found`);
 
     const user = await prisma.user.create({
@@ -376,9 +445,11 @@ async function main() {
         emailVerified: true,
         emailVerifiedAt: new Date(),
         memberVerified: applicationData.status === ApplicationStatus.APPROVED,
-        memberVerifiedAt: applicationData.status === ApplicationStatus.APPROVED ? applicationData.approvedAt : null,
+        memberVerifiedAt:
+          applicationData.status === ApplicationStatus.APPROVED
+            ? applicationData.approvedAt
+            : null,
         employeeId: employee.id,
-        // NO departmentId!
       },
     });
 
@@ -414,11 +485,34 @@ async function main() {
 
   // 1. UNDER_REVIEW - Waiting DSP Approval (5 users)
   const waitingDSPUsers = [
-    { empNum: '100000006', name: 'Budi Santoso', email: 'budi.santoso@test.com', nik: '3201011990010001', npwp: '1234567890123461' },
-    { empNum: '100000007', name: 'Siti Nurhaliza', email: 'siti.nur@test.com', nik: '3201011991020002', npwp: '1234567890123462' },
-    { empNum: '100000008', name: 'Ahmad Dahlan', email: 'ahmad.dahlan@test.com', nik: '3201011992030003', npwp: '1234567890123463' },
-    { empNum: '100000009', name: 'Rina Wijaya', email: 'rina.wijaya@test.com', nik: '3201011993040004', npwp: '1234567890123464' },
-    { empNum: '100000010', name: 'Joko Widodo', email: 'joko.widodo@test.com', nik: '3201011994050005', npwp: '1234567890123465' },
+    {
+      empNum: '100000006',
+      name: 'Siti Nurhaliza',
+      email: 'siti.nur@test.com',
+      nik: '3201011991020002',
+      npwp: '1234567890123462',
+    },
+    {
+      empNum: '100000007',
+      name: 'Ahmad Dahlan',
+      email: 'ahmad.dahlan@test.com',
+      nik: '3201011992030003',
+      npwp: '1234567890123463',
+    },
+    {
+      empNum: '100000008',
+      name: 'Rina Wijaya',
+      email: 'rina.wijaya@test.com',
+      nik: '3201011993040004',
+      npwp: '1234567890123464',
+    },
+    {
+      empNum: '100000009',
+      name: 'Joko Widodo',
+      email: 'joko.widodo@test.com',
+      nik: '3201011994050005',
+      npwp: '1234567890123465',
+    },
   ];
 
   for (const testUser of waitingDSPUsers) {
@@ -436,12 +530,14 @@ async function main() {
       {
         status: ApplicationStatus.UNDER_REVIEW,
         currentStep: ApprovalStep.DIVISI_SIMPAN_PINJAM,
-        submittedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+        submittedAt: new Date(
+          Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+        ),
         approvals: [
           { step: ApprovalStep.DIVISI_SIMPAN_PINJAM },
           { step: ApprovalStep.KETUA },
         ],
-      }
+      },
     );
   }
 
@@ -449,15 +545,43 @@ async function main() {
 
   // 2. UNDER_REVIEW - Waiting Ketua Approval (4 users)
   const waitingKetuaUsers = [
-    { empNum: '100000011', name: 'Dewi Sartika', email: 'dewi.sartika@test.com', nik: '3201011995060006', npwp: '1234567890123466' },
-    { empNum: '100000012', name: 'Andi Setiawan', email: 'andi.setiawan@test.com', nik: '3201011996070007', npwp: '1234567890123467' },
-    { empNum: '100000013', name: 'Sri Mulyani', email: 'sri.mulyani@test.com', nik: '3201011997080008', npwp: '1234567890123468' },
-    { empNum: '100000014', name: 'Bambang Pamungkas', email: 'bambang.p@test.com', nik: '3201011998090009', npwp: '1234567890123469' },
+    {
+      empNum: '100000010',
+      name: 'Dewi Sartika',
+      email: 'dewi.sartika@test.com',
+      nik: '3201011995060006',
+      npwp: '1234567890123466',
+    },
+    {
+      empNum: '100000011',
+      name: 'Andi Setiawan',
+      email: 'andi.setiawan@test.com',
+      nik: '3201011996070007',
+      npwp: '1234567890123467',
+    },
+    {
+      empNum: '100000012',
+      name: 'Sri Mulyani',
+      email: 'sri.mulyani@test.com',
+      nik: '3201011997080008',
+      npwp: '1234567890123468',
+    },
+    {
+      empNum: '100000013',
+      name: 'Bambang Pamungkas',
+      email: 'bambang.p@test.com',
+      nik: '3201011998090009',
+      npwp: '1234567890123469',
+    },
   ];
 
   for (const testUser of waitingKetuaUsers) {
-    const submittedDate = new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000);
-    const dspApprovedDate = new Date(submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const submittedDate = new Date(
+      Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000,
+    );
+    const dspApprovedDate = new Date(
+      submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000,
+    );
 
     await createUserWithApplication(
       testUser.empNum,
@@ -484,7 +608,7 @@ async function main() {
           },
           { step: ApprovalStep.KETUA },
         ],
-      }
+      },
     );
   }
 
@@ -492,18 +616,60 @@ async function main() {
 
   // 3. APPROVED (6 users)
   const approvedUsers = [
-    { empNum: '100000015', name: 'Mega Wati', email: 'mega.wati@test.com', nik: '3201011999100010', npwp: '1234567890123470' },
-    { empNum: '100000016', name: 'Hendra Gunawan', email: 'hendra.g@test.com', nik: '3201012000110011', npwp: '1234567890123471' },
-    { empNum: '100000017', name: 'Lestari Indah', email: 'lestari.indah@test.com', nik: '3201012001120012', npwp: '1234567890123472' },
-    { empNum: '100000018', name: 'Rizki Ramadhan', email: 'rizki.r@test.com', nik: '3201012002130013', npwp: '1234567890123473' },
-    { empNum: '100000019', name: 'Fitri Handayani', email: 'fitri.h@test.com', nik: '3201012003140014', npwp: '1234567890123474' },
-    { empNum: '100000020', name: 'Arief Budiman', email: 'arief.b@test.com', nik: '3201012004150015', npwp: '1234567890123475' },
+    {
+      empNum: '100000014',
+      name: 'Mega Wati',
+      email: 'mega.wati@test.com',
+      nik: '3201011999100010',
+      npwp: '1234567890123470',
+    },
+    {
+      empNum: '100000015',
+      name: 'Hendra Gunawan',
+      email: 'hendra.g@test.com',
+      nik: '3201012000110011',
+      npwp: '1234567890123471',
+    },
+    {
+      empNum: '100000016',
+      name: 'Lestari Indah',
+      email: 'lestari.indah@test.com',
+      nik: '3201012001120012',
+      npwp: '1234567890123472',
+    },
+    {
+      empNum: '100000017',
+      name: 'Rizki Ramadhan',
+      email: 'rizki.r@test.com',
+      nik: '3201012002130013',
+      npwp: '1234567890123473',
+    },
+    {
+      empNum: '100000018',
+      name: 'Fitri Handayani',
+      email: 'fitri.h@test.com',
+      nik: '3201012003140014',
+      npwp: '1234567890123474',
+    },
+    {
+      empNum: '100000019',
+      name: 'Arief Budiman',
+      email: 'arief.b@test.com',
+      nik: '3201012004150015',
+      npwp: '1234567890123475',
+    },
   ];
 
   for (const testUser of approvedUsers) {
-    const submittedDate = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000);
-    const dspApprovedDate = new Date(submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000);
-    const ketuaApprovedDate = new Date(dspApprovedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const submittedDate = new Date(
+      Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+    );
+    const dspApprovedDate = new Date(
+      submittedDate.getTime() + 2 * 24 * 60 * 60 * 1000,
+    );
+    const ketuaApprovedDate = new Date(
+      dspApprovedDate.getTime() + 3 * 24 * 60 * 60 * 1000,
+    );
 
     await createUserWithApplication(
       testUser.empNum,
@@ -537,7 +703,7 @@ async function main() {
             notes: 'Disetujui oleh Ketua',
           },
         ],
-      }
+      },
     );
   }
 
@@ -545,14 +711,39 @@ async function main() {
 
   // 4. REJECTED (3 users)
   const rejectedUsers = [
-    { empNum: '100000021', name: 'Doni Pratama', email: 'doni.p@test.com', nik: '3201012005160016', npwp: '1234567890123476', reason: 'Data tidak lengkap' },
-    { empNum: '100000022', name: 'Yuni Shara', email: 'yuni.shara@test.com', nik: '3201012006170017', npwp: '1234567890123477', reason: 'NIK tidak valid' },
-    { empNum: '100000023', name: 'Wawan Setiawan', email: 'wawan.s@test.com', nik: '3201012007180018', npwp: '1234567890123478', reason: 'Belum memenuhi syarat masa kerja' },
+    {
+      empNum: '100000020',
+      name: 'Doni Pratama',
+      email: 'doni.p@test.com',
+      nik: '3201012005160016',
+      npwp: '1234567890123476',
+      reason: 'Data tidak lengkap',
+    },
+    {
+      empNum: '100000021',
+      name: 'Yuni Shara',
+      email: 'yuni.shara@test.com',
+      nik: '3201012006170017',
+      npwp: '1234567890123477',
+      reason: 'NIK tidak valid',
+    },
+    {
+      empNum: '100000022',
+      name: 'Wawan Setiawan',
+      email: 'wawan.s@test.com',
+      nik: '3201012007180018',
+      npwp: '1234567890123478',
+      reason: 'Belum memenuhi syarat masa kerja',
+    },
   ];
 
   for (const testUser of rejectedUsers) {
-    const submittedDate = new Date(Date.now() - Math.random() * 20 * 24 * 60 * 60 * 1000);
-    const rejectedDate = new Date(submittedDate.getTime() + 1 * 24 * 60 * 60 * 1000);
+    const submittedDate = new Date(
+      Date.now() - Math.random() * 20 * 24 * 60 * 60 * 1000,
+    );
+    const rejectedDate = new Date(
+      submittedDate.getTime() + 1 * 24 * 60 * 60 * 1000,
+    );
 
     await createUserWithApplication(
       testUser.empNum,
@@ -581,7 +772,7 @@ async function main() {
           },
           { step: ApprovalStep.KETUA },
         ],
-      }
+      },
     );
   }
 
@@ -609,15 +800,15 @@ async function main() {
       unit: 'Rupiah',
       validation: { min: 0, required: true },
     },
-    
+
     // SAVINGS
     {
-      key: 'savings_interest_rate',
-      value: '2.5',
+      key: 'deposit_interest_rate',
+      value: '4',
       type: SettingType.NUMBER,
       category: SettingCategory.SAVINGS,
-      label: 'Bunga Simpanan',
-      description: 'Persentase bunga simpanan per tahun',
+      label: 'Bunga Deposito',
+      description: 'Persentase bunga deposito per tahun',
       unit: 'Persen',
       validation: { min: 0, max: 100, required: true },
     },
@@ -627,11 +818,12 @@ async function main() {
       type: SettingType.NUMBER,
       category: SettingCategory.SAVINGS,
       label: 'Biaya Admin Perubahan Deposito',
-      description: 'Biaya administrasi untuk setiap perubahan tabungan deposito',
+      description:
+        'Biaya administrasi untuk setiap perubahan tabungan deposito',
       unit: 'Rupiah',
       validation: { min: 0, required: true },
     },
-    
+
     // LOAN
     {
       key: 'max_goods_loan_amount',
@@ -663,7 +855,7 @@ async function main() {
       unit: 'Bulan',
       validation: { min: 1, max: 120, required: true },
     },
-    
+
     // INTEREST
     {
       key: 'loan_interest_rate',
@@ -695,7 +887,7 @@ async function main() {
       unit: null,
       validation: { required: true, enum: ['FLAT', 'EFFECTIVE'] },
     },
-    
+
     // PENALTY
     {
       key: 'late_payment_penalty_rate',
@@ -713,11 +905,12 @@ async function main() {
       type: SettingType.NUMBER,
       category: SettingCategory.PENALTY,
       label: 'Maksimal Hari Keterlambatan',
-      description: 'Batas maksimal hari keterlambatan sebelum tindakan lebih lanjut',
+      description:
+        'Batas maksimal hari keterlambatan sebelum tindakan lebih lanjut',
       unit: 'Hari',
       validation: { min: 1, required: true },
     },
-    
+
     // GENERAL
     {
       key: 'cooperative_name',
@@ -730,14 +923,24 @@ async function main() {
       validation: { required: true },
     },
     {
-      key: 'allow_multiple_loans',
-      value: 'false',
-      type: SettingType.BOOLEAN,
+      key: 'cooperative_cutoff_date',
+      value: '15',
+      type: SettingType.NUMBER,
       category: SettingCategory.GENERAL,
-      label: 'Izinkan Multiple Pinjaman',
-      description: 'Apakah anggota boleh memiliki lebih dari 1 pinjaman aktif',
-      unit: null,
-      validation: { required: true },
+      label: 'Tanggal Cutoff Koperasi',
+      description: 'Tanggal cutoff untuk perhitungan simpanan dan pinjaman',
+      unit: 'Tanggal',
+      validation: { min: 1, max: 31, required: true },
+    },
+    {
+      key: 'cooperative_payroll_date',
+      value: '27',
+      type: SettingType.NUMBER,
+      category: SettingCategory.GENERAL,
+      label: 'Tanggal Gajian Koperasi',
+      description: 'Tanggal gajian untuk potongan koperasi',
+      unit: 'Tanggal',
+      validation: { min: 1, max: 31, required: true },
     },
   ];
 
@@ -763,7 +966,7 @@ async function main() {
 
   // Define loan limits based on the image
   const loanLimitsData = {
-    'I': [
+    I: [
       { min: 0, max: 1, amount: 0 },
       { min: 1, max: 2, amount: 4800000 },
       { min: 2, max: 3, amount: 8400000 },
@@ -771,7 +974,7 @@ async function main() {
       { min: 6, max: 9, amount: 18000000 },
       { min: 9, max: null, amount: 24000000 },
     ],
-    'II': [
+    II: [
       { min: 0, max: 1, amount: 0 },
       { min: 1, max: 2, amount: 4800000 },
       { min: 2, max: 3, amount: 8400000 },
@@ -779,7 +982,7 @@ async function main() {
       { min: 6, max: 9, amount: 18000000 },
       { min: 9, max: null, amount: 24000000 },
     ],
-    'III': [
+    III: [
       { min: 0, max: 1, amount: 0 },
       { min: 1, max: 2, amount: 7200000 },
       { min: 2, max: 3, amount: 10800000 },
@@ -787,7 +990,7 @@ async function main() {
       { min: 6, max: 9, amount: 24000000 },
       { min: 9, max: null, amount: 31200000 },
     ],
-    'IV': [
+    IV: [
       { min: 0, max: 1, amount: 0 },
       { min: 1, max: 2, amount: 12000000 },
       { min: 2, max: 3, amount: 18000000 },
@@ -798,10 +1001,13 @@ async function main() {
   };
 
   for (const golongan of golongans2) {
-    const limitsForGolongan = loanLimitsData[golongan.golonganName as keyof typeof loanLimitsData];
-    
+    const limitsForGolongan =
+      loanLimitsData[golongan.golonganName as keyof typeof loanLimitsData];
+
     if (!limitsForGolongan) {
-      console.log(`⏭️  Skipping ${golongan.golonganName} (no predefined limits)`);
+      console.log(
+        `⏭️  Skipping ${golongan.golonganName} (no predefined limits)`,
+      );
       continue;
     }
 
@@ -822,7 +1028,9 @@ async function main() {
       });
     }
 
-    console.log(`✅ Created ${limitsForGolongan.length} loan limits for ${golongan.golonganName}`);
+    console.log(
+      `✅ Created ${limitsForGolongan.length} loan limits for ${golongan.golonganName}`,
+    );
   }
 
   console.log('✨ Loan Limit Matrix seeding completed!');
@@ -833,10 +1041,30 @@ async function main() {
   const depositAmounts = [
     { code: 'AMOUNT_200K', label: 'Rp 200.000', amount: 200000, sortOrder: 1 },
     { code: 'AMOUNT_500K', label: 'Rp 500.000', amount: 500000, sortOrder: 2 },
-    { code: 'AMOUNT_1000K', label: 'Rp 1.000.000', amount: 1000000, sortOrder: 3 },
-    { code: 'AMOUNT_1500K', label: 'Rp 1.500.000', amount: 1500000, sortOrder: 4 },
-    { code: 'AMOUNT_2000K', label: 'Rp 2.000.000', amount: 2000000, sortOrder: 5 },
-    { code: 'AMOUNT_3000K', label: 'Rp 3.000.000', amount: 3000000, sortOrder: 6 },
+    {
+      code: 'AMOUNT_1000K',
+      label: 'Rp 1.000.000',
+      amount: 1000000,
+      sortOrder: 3,
+    },
+    {
+      code: 'AMOUNT_1500K',
+      label: 'Rp 1.500.000',
+      amount: 1500000,
+      sortOrder: 4,
+    },
+    {
+      code: 'AMOUNT_2000K',
+      label: 'Rp 2.000.000',
+      amount: 2000000,
+      sortOrder: 5,
+    },
+    {
+      code: 'AMOUNT_3000K',
+      label: 'Rp 3.000.000',
+      amount: 3000000,
+      sortOrder: 6,
+    },
   ];
 
   for (const item of depositAmounts) {
@@ -866,24 +1094,6 @@ async function main() {
   }
 
   console.log('✅ Deposit tenor options created');
-
-  // Add deposit interest rate to settings if not exists
-  await prisma.cooperativeSetting.upsert({
-    where: { key: 'deposit_interest_rate' },
-    update: {},
-    create: {
-      key: 'deposit_interest_rate',
-      value: '6',
-      type: SettingType.NUMBER,
-      category: SettingCategory.SAVINGS,
-      label: 'Bunga Deposito',
-      description: 'Persentase bunga deposito per tahun',
-      unit: 'Persen',
-      validation: { min: 0, max: 100, required: true },
-    },
-  });
-
-  console.log('✅ Deposit interest rate setting created');
 
   console.log('');
   console.log('🎉 Seeding completed successfully!');

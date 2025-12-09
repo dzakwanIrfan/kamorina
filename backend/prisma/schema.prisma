@@ -675,12 +675,10 @@ model DepositChangeRequest {
   // Current values (snapshot)
   currentAmountValue  Decimal  @map("current_amount_value") @db.Decimal(15, 2)
   currentTenorMonths  Int      @map("current_tenor_months")
-  currentInterestRate Decimal? @map("current_interest_rate") @db.Decimal(5, 2)
 
   // New requested values
   newAmountValue  Decimal  @map("new_amount_value") @db.Decimal(15, 2)
   newTenorMonths  Int      @map("new_tenor_months")
-  newInterestRate Decimal? @map("new_interest_rate") @db.Decimal(5, 2)
 
   // Admin fee
   adminFee Decimal @map("admin_fee") @db.Decimal(15, 2)
@@ -766,13 +764,13 @@ model DepositApplication {
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  interestRate Decimal? @db.Decimal(5, 2)
+  interestRate Decimal @db.Decimal(5, 2)
 
   amountValue Decimal @map("amount_value") @db.Decimal(15, 2)
   tenorMonths Int     @map("tenor_months")
 
-  collectedAmount  Decimal @default(0) @map("collected_amount") @db.Decimal(15, 2) // Uang yang sudah masuk
-  installmentCount Int     @default(0) @map("installment_count") // Sudah berjalan berapa bulan (misal: 3 dari 12)
+  collectedAmount  Decimal @default(0) @map("collected_amount") @db.Decimal(15, 2)
+  installmentCount Int     @default(0) @map("installment_count") 
 
   startMonth Int? @map("start_month") // e.g. 11 (November)
   startYear  Int? @map("start_year") // e.g. 2025
@@ -808,7 +806,6 @@ model DepositHistory {
   status       DepositStatus
   amountValue  Decimal       @db.Decimal(15, 2)
   tenorMonths  Int
-  interestRate Decimal?      @db.Decimal(5, 2)
 
   action       String
   actionAt     DateTime @map("action_at")
@@ -860,6 +857,7 @@ model SavingsTransaction {
   id               String         @id @default(uuid())
   savingsAccountId String         @map("savings_account_id")
   account          SavingsAccount @relation(fields: [savingsAccountId], references: [id], onDelete: Cascade)
+  interestRate     Decimal        @map("interest_rate") @db.Decimal(5, 2)
 
   iuranPendaftaran Decimal @default(0) @map("iuran_pendaftaran") @db.Decimal(15, 2)
   iuranBulanan     Decimal @default(0) @map("iuran_bulanan") @db.Decimal(15, 2)

@@ -30,23 +30,6 @@ export class DepositChangeController {
   // MEMBER ENDPOINTS
 
   /**
-   * Preview change calculation before creating draft
-   */
-  @Get('preview')
-  @HttpCode(HttpStatus.OK)
-  async previewChange(
-    @Query('depositId') depositId: string,
-    @Query('newAmountValue') newAmountValue: number,
-    @Query('newTenorValue') newTenorValue: number,
-  ) {
-    return this.depositChangeService.previewChangeCalculation(
-      depositId,
-      newAmountValue,
-      newTenorValue,
-    );
-  }
-
-  /**
    * Create draft change request
    */
   @Post('draft')

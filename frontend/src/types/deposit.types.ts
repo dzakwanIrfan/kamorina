@@ -63,8 +63,6 @@ export interface DepositApplication {
   amountValue: number;
   tenorMonths: number;
   interestRate: number | null;
-  projectedInterest: number | null;
-  totalReturn: number | null;
   agreedToTerms: boolean;
   status: DepositStatus;
   currentStep: DepositApprovalStep | null;

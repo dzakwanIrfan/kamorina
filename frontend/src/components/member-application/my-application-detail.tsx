@@ -273,8 +273,8 @@ export function MyApplicationDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">Tanggal Pegawai Tetap</p>
                       <p className="font-medium">
-                        {application.user?.permanentEmployeeDate 
-                          ? format(new Date(application.user.permanentEmployeeDate), 'dd MMMM yyyy', { locale: id })
+                        {application.user?.employee.permanentEmployeeDate 
+                          ? format(new Date(application.user.employee.permanentEmployeeDate), 'dd MMMM yyyy', { locale: id })
                           : '-'
                         }
                       </p>

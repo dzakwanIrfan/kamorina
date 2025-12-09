@@ -27,7 +27,6 @@ export class DepositChangeService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
-    private depositOptionService: DepositOptionService,
   ) {}
 
   /**
@@ -69,20 +68,12 @@ export class DepositChangeService {
    * Get deposit settings (interest rate and calculation method)
    */
   private async getDepositSettings() {
-    const [interestSetting, calculationMethodSetting] = await Promise.all([
-      this.prisma.cooperativeSetting.findUnique({
+    const interestSetting = await this.prisma.cooperativeSetting.findUnique({
         where: { key: 'deposit_interest_rate' },
-      }),
-      this.prisma.cooperativeSetting.findUnique({
-        where: { key: 'deposit_calculation_method' },
-      }),
-    ]);
+    });
 
     return {
-      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
-      calculationMethod: (calculationMethodSetting?.value || 'SIMPLE') as
-        | 'SIMPLE'
-        | 'COMPOUND',
+      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6
     };
   }
 
@@ -216,12 +207,10 @@ export class DepositChangeService {
         // Current values (snapshot)
         currentAmountValue: deposit.amountValue,
         currentTenorMonths: deposit.tenorMonths,
-        currentInterestRate: deposit.interestRate,
 
         // New values
         newAmountValue,
         newTenorMonths,
-        newInterestRate,
 
         adminFee,
         agreedToTerms: dto.agreedToTerms,
@@ -250,7 +239,6 @@ export class DepositChangeService {
         current: {
           amountValue: deposit.amountValue.toNumber(),
           tenorMonths: deposit.tenorMonths,
-          interestRate: deposit.interestRate?.toNumber(),
         },
         new: {
           amountValue: newAmountValue,
@@ -295,18 +283,15 @@ export class DepositChangeService {
     const updateData: Prisma.DepositChangeRequestUpdateInput = {};
     let newAmountValue = changeRequest.newAmountValue.toNumber();
     let newTenorMonths = changeRequest.newTenorMonths;
-    let needsRecalculation = false;
 
     if (dto.newAmountValue !== undefined) {
       updateData.newAmountValue = dto.newAmountValue;
       newAmountValue = dto.newAmountValue;
-      needsRecalculation = true;
     }
 
     if (dto.newTenorMonths !== undefined) {
       updateData.newTenorMonths = dto.newTenorMonths;
       newTenorMonths = dto.newTenorMonths;
-      needsRecalculation = true;
     }
 
     // Validate there's an actual change
@@ -324,12 +309,6 @@ export class DepositChangeService {
 
     if (dto.agreedToAdminFee !== undefined) {
       updateData.agreedToAdminFee = dto.agreedToAdminFee;
-    }
-
-    // Recalculate if needed
-    if (needsRecalculation) {
-      const settings = await this.getDepositSettings();
-      updateData.newInterestRate = settings.interestRate;
     }
 
     const updated = await this.prisma.depositChangeRequest.update({
@@ -600,12 +579,10 @@ export class DepositChangeService {
         current: {
           amountValue: changeRequest.currentAmountValue.toNumber(),
           tenorMonths: changeRequest.currentTenorMonths,
-          interestRate: changeRequest.currentInterestRate?.toNumber(),
         },
         new: {
           amountValue: changeRequest.newAmountValue.toNumber(),
           tenorMonths: changeRequest.newTenorMonths,
-          interestRate: changeRequest.newInterestRate?.toNumber(),
         },
         difference: {
           amount:
@@ -1039,61 +1016,6 @@ export class DepositChangeService {
     });
 
     return { message: 'Pengajuan perubahan deposito berhasil dibatalkan' };
-  }
-
-  /**
-   * Preview change calculation
-   */
-  async previewChangeCalculation(
-    depositId: string,
-    newAmountValue: number,
-    newTenorMonths: number,
-  ) {
-    const deposit = await this.prisma.depositApplication.findUnique({
-      where: { id: depositId },
-    });
-
-    if (!deposit) {
-      throw new NotFoundException('Deposito tidak ditemukan');
-    }
-
-    const [settings, adminFee] = await Promise.all([
-      this.getDepositSettings(),
-      this.getAdminFee(),
-    ]);
-
-    // Determine change type
-    let changeType: DepositChangeType | null = null;
-    const amountChanged = deposit.amountValue.toNumber() !== newAmountValue;
-    const tenorChanged = deposit.tenorMonths !== newTenorMonths;
-
-    if (amountChanged && tenorChanged) {
-      changeType = DepositChangeType.BOTH;
-    } else if (amountChanged) {
-      changeType = DepositChangeType.AMOUNT_CHANGE;
-    } else if (tenorChanged) {
-      changeType = DepositChangeType.TENOR_CHANGE;
-    }
-
-    return {
-      current: {
-        amountValue: deposit.amountValue.toNumber(),
-        tenorMonths: deposit.tenorMonths,
-        interestRate: deposit.interestRate?.toNumber(),
-      },
-      new: {
-        amountValue: newAmountValue,
-        tenorMonths: newTenorMonths,
-        interestRate: settings.interestRate,
-      },
-      difference: {
-        amount: newAmountValue - deposit.amountValue.toNumber(),
-        tenor: newTenorMonths - deposit.tenorMonths,
-      },
-      adminFee,
-      changeType,
-      hasChanges: changeType !== null,
-    };
   }
 
   // NOTIFICATION HELPERS

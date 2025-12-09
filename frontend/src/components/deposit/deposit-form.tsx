@@ -24,21 +24,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { depositService } from '@/services/deposit.service';
 import { depositOptionService } from '@/services/deposit-option.service';
 import { handleApiError } from '@/lib/axios';
@@ -53,8 +38,6 @@ interface DepositFormProps {
 export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [calculation, setCalculation] = useState<DepositCalculation | null>(null);
-  const [showBreakdown, setShowBreakdown] = useState(false);
   const { data: config, isLoading: isLoadingConfig } = useDepositConfig();
 
   const formSchema = z.object({
@@ -84,36 +67,6 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
       maximumFractionDigits: 0,
     }).format(amount);
   };
-
-  // Watch form values
-  const depositAmountCode = form.watch('depositAmountCode');
-  const depositTenorCode = form. watch('depositTenorCode');
-
-  // Fetch calculation when both amount and tenor are selected
-  useEffect(() => {
-    const fetchCalculation = async () => {
-      if (!depositAmountCode || !depositTenorCode) {
-        setCalculation(null);
-        return;
-      }
-
-      try {
-        setIsCalculating(true);
-        const result = await depositOptionService.previewCalculation(
-          depositAmountCode,
-          depositTenorCode
-        );
-        setCalculation(result);
-      } catch (error) {
-        console.error('Failed to fetch calculation:', error);
-        setCalculation(null);
-      } finally {
-        setIsCalculating(false);
-      }
-    };
-
-    fetchCalculation();
-  }, [depositAmountCode, depositTenorCode]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -181,11 +134,6 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
       </Card>
     );
   }
-
-  const selectedTenor = config.tenors.find((t) => t.code === depositTenorCode);
-  const maturityDate = selectedTenor
-    ? new Date(new Date().setMonth(new Date().getMonth() + selectedTenor.months))
-    : null;
 
   return (
     <Card className="w-full max-w-5xl mx-auto">
@@ -280,215 +228,6 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                 </FormItem>
               )}
             />
-
-            {/* Calculation Preview */}
-            {isCalculating && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin mr-2" />
-                <span className="text-sm sm:text-base text-muted-foreground">Menghitung proyeksi... </span>
-              </div>
-            )}
-
-            {calculation && ! isCalculating && (
-              <div className="space-y-4">
-                <Alert className="bg-primary/5 dark:bg-primary/10 border-primary/20">
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
-                    Proyeksi Tabungan Deposito
-                  </AlertTitle>
-                  <AlertDescription>
-                    {/* Mobile: Stacked Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
-                      {/* Setoran Bulanan */}
-                      <div className="bg-background dark:bg-card rounded-lg p-3 sm:p-4 border shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
-                          <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Setoran per Bulan</p>
-                        </div>
-                        <p className="text-lg sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {formatCurrency(calculation.monthlyDeposit)}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                          Dipotong dari gaji setiap bulan
-                        </p>
-                      </div>
-
-                      {/* Total Setoran */}
-                      <div className="bg-background dark:bg-card rounded-lg p-3 sm:p-4 border shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FaRupiahSign className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                          <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">
-                            Total Setoran ({calculation.tenorMonths} bulan)
-                          </p>
-                        </div>
-                        <p className="text-lg sm:text-2xl font-bold">
-                          {formatCurrency(calculation.totalPrincipal)}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                          {formatCurrency(calculation.monthlyDeposit)} × {calculation.tenorMonths} bulan
-                        </p>
-                      </div>
-
-                      {/* Proyeksi Bunga */}
-                      <div className="bg-background dark:bg-card rounded-lg p-3 sm:p-4 border shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
-                          <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">
-                            Proyeksi Bunga ({calculation.annualInterestRate}% p.a.)
-                          </p>
-                        </div>
-                        <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
-                          +{formatCurrency(calculation.projectedInterest)}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                          {((calculation.projectedInterest / calculation.totalPrincipal) * 100).toFixed(2)}% dari total setoran
-                        </p>
-                      </div>
-
-                      {/* Total Penerimaan */}
-                      <div className="bg-linear-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 rounded-lg p-3 sm:p-4 border-2 border-primary/30 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                          <p className="text-[10px] sm:text-xs text-muted-foreground font-semibold">
-                            Total yang Diterima
-                          </p>
-                        </div>
-                        <p className="text-xl sm:text-3xl font-bold text-primary">
-                          {formatCurrency(calculation.totalReturn)}
-                        </p>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                          Saat jatuh tempo:{' '}
-                          <span className="font-medium">
-                            {maturityDate?. toLocaleDateString('id-ID', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Monthly Breakdown Collapsible */}
-                    <Collapsible open={showBreakdown} onOpenChange={setShowBreakdown} className="mt-4">
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="w-full text-xs sm:text-sm">
-                          {showBreakdown ? (
-                            <>
-                              <ChevronUp className="mr-2 h-4 w-4" />
-                              Sembunyikan
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="mr-2 h-4 w-4" />
-                              Lihat
-                            </>
-                          )}{' '}
-                          Rincian Akumulasi per Bulan
-                        </Button>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-2">
-                        <div className="rounded-md border overflow-hidden">
-                          {/* Desktop: Table */}
-                          <div className="hidden sm:block">
-                            <ScrollArea className="h-[400px]">
-                              <Table>
-                                <TableHeader className="sticky top-0 bg-background dark:bg-card z-10">
-                                  <TableRow>
-                                    <TableHead className="w-16">Bulan</TableHead>
-                                    <TableHead className="text-right">Setor</TableHead>
-                                    <TableHead className="text-right">Akum. Setoran</TableHead>
-                                    <TableHead className="text-right">Akum. Bunga</TableHead>
-                                    <TableHead className="text-right font-semibold">Total Saldo</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {calculation.monthlyInterestBreakdown.map((row) => (
-                                    <TableRow key={row.month}>
-                                      <TableCell className="font-medium">{row.month}</TableCell>
-                                      <TableCell className="text-right text-blue-600 dark:text-blue-400 text-sm">
-                                        {formatCurrency(row.monthlyDeposit)}
-                                      </TableCell>
-                                      <TableCell className="text-right text-sm">
-                                        {formatCurrency(row.depositAccumulation)}
-                                      </TableCell>
-                                      <TableCell className="text-right text-green-600 dark:text-green-400 text-sm">
-                                        +{formatCurrency(row.interestAccumulation)}
-                                      </TableCell>
-                                      <TableCell className="text-right font-semibold text-sm">
-                                        {formatCurrency(row.totalBalance)}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </ScrollArea>
-                          </div>
-
-                          {/* Mobile: Cards */}
-                          <ScrollArea className="h-[400px] sm:hidden">
-                            <div className="p-3 space-y-3">
-                              {calculation.monthlyInterestBreakdown.map((row) => (
-                                <div
-                                  key={row.month}
-                                  className="bg-card dark:bg-background p-3 rounded-lg border space-y-2"
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="text-xs font-semibold text-muted-foreground">
-                                      Bulan {row.month}
-                                    </span>
-                                    <Badge variant="outline" className="text-[10px]">
-                                      {formatCurrency(row.totalBalance)}
-                                    </Badge>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-2 text-xs">
-                                    <div>
-                                      <p className="text-[10px] text-muted-foreground mb-1">Setor</p>
-                                      <p className="font-medium text-blue-600 dark:text-blue-400">
-                                        {formatCurrency(row.monthlyDeposit)}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] text-muted-foreground mb-1">Akum.  Setoran</p>
-                                      <p className="font-medium">{formatCurrency(row.depositAccumulation)}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] text-muted-foreground mb-1">Akum. Bunga</p>
-                                      <p className="font-medium text-green-600 dark:text-green-400">
-                                        +{formatCurrency(row.interestAccumulation)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
-                        </div>
-                        <div className="mt-3 p-3 bg-muted/50 dark:bg-muted/20 rounded-lg">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2">
-                            Cara Baca Tabel:
-                          </p>
-                          <ul className="text-[10px] sm:text-xs text-muted-foreground space-y-1 ml-4 list-disc">
-                            <li>
-                              <strong>Setor:</strong> Jumlah yang dipotong dari gaji di bulan tersebut
-                            </li>
-                            <li>
-                              <strong>Akum.  Setoran:</strong> Total uang yang sudah disetor dari bulan 1 sampai bulan ini
-                            </li>
-                            <li>
-                              <strong>Akum. Bunga:</strong> Total bunga yang sudah dihitung sampai bulan ini
-                            </li>
-                            <li>
-                              <strong>Total Saldo:</strong> Akumulasi Setoran + Akumulasi Bunga
-                            </li>
-                          </ul>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
 
             <Separator />
 

@@ -16,14 +16,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   CheckCircle2,
   XCircle,
   Clock,
@@ -31,7 +23,6 @@ import {
   FileText,
   History,
   Calendar,
-  TrendingUp,
 } from 'lucide-react';
 import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
@@ -125,8 +116,6 @@ export function DepositDetailDialog({
     }
   };
 
-  const calculationBreakdown = deposit.calculationBreakdown;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -135,18 +124,14 @@ export function DepositDetailDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details">
               <FileText className="h-4 w-4 mr-2" />
               Detail
             </TabsTrigger>
             <TabsTrigger value="timeline">
               <History className="h-4 w-4 mr-2" />
-              Timeline
-            </TabsTrigger>
-            <TabsTrigger value="calculation">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Perhitungan
+              Timeline Approval
             </TabsTrigger>
           </TabsList>
 
@@ -220,20 +205,6 @@ export function DepositDetailDialog({
                 <div>
                   <p className="text-muted-foreground">Suku Bunga</p>
                   <p className="font-medium">{deposit.interestRate}% per tahun</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Proyeksi Bunga</p>
-                  <p className="text-lg font-bold text-green-600">
-                    {deposit.projectedInterest
-                      ? formatCurrency(deposit.projectedInterest)
-                      : '-'}
-                  </p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-muted-foreground">Total Return</p>
-                  <p className="text-xl font-bold text-blue-600">
-                    {deposit.totalReturn ? formatCurrency(deposit.totalReturn) : '-'}
-                  </p>
                 </div>
               </div>
             </div>
@@ -377,151 +348,6 @@ export function DepositDetailDialog({
                   </div>
                 );
               })}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="calculation" className="space-y-4 mt-6">
-            <div className="rounded-lg border p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg">Rincian Perhitungan Deposito</h3>
-              </div>
-              <Separator />
-
-              {/* Summary */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Pokok Deposito</p>
-                  <p className="text-lg font-bold">{formatCurrency(deposit.amountValue)}</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Jangka Waktu</p>
-                  <p className="text-lg font-bold">{deposit.tenorMonths} Bulan</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Suku Bunga</p>
-                  <p className="text-lg font-bold">{deposit.interestRate}% p.a.</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Proyeksi Bunga</p>
-                  <p className="text-lg font-bold">{formatCurrency(deposit.projectedInterest || 0)}</p>
-                </div>
-              </div>
-
-              {/* Result Summary */}
-              <div className="bg-primary/5 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Pokok Deposito</span>
-                  <span className="font-medium">{formatCurrency(deposit.amountValue)} × {deposit.tenorMonths}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Proyeksi Bunga</span>
-                  <span className="font-medium text-green-600">
-                    +{formatCurrency(deposit.projectedInterest || 0)}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-primary">Total Return</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {formatCurrency(deposit.totalReturn || 0)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Monthly Breakdown Table */}
-              {calculationBreakdown?.monthlyInterestBreakdown && (
-                <div className="space-y-3">
-                  <h4 className="font-medium">Rincian Bunga Per Bulan</h4>
-                  <div className="rounded-md border overflow-hidden max-h-64 overflow-y-auto">
-                    <Table>
-                      <TableHeader className="sticky top-0 bg-background">
-                        <TableRow>
-                          <TableHead className="w-16">Bulan</TableHead>
-                          <TableHead className="text-right">Saldo Awal</TableHead>
-                          <TableHead className="text-right">Bunga</TableHead>
-                          <TableHead className="text-right">Saldo Akhir</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {calculationBreakdown.monthlyInterestBreakdown.map((row) => (
-                          <TableRow key={row.month}>
-                            <TableCell className="font-medium">Ke-{row.month}</TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(row.monthlyDeposit)}
-                            </TableCell>
-                            <TableCell className="text-right text-green-600">
-                              +{formatCurrency(row.interestAccumulation)}
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(row.depositAccumulation + row.interestAccumulation)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-
-              {/* Formula Explanation */}
-              <div className="mt-6 p-4 bg-muted/50 rounded-lg space-y-2">
-                <h4 className="font-medium text-sm">Rumus Perhitungan:</h4>
-                {calculationBreakdown?.calculationMethod === 'COMPOUND' ? (
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>
-                      <strong>Bunga Majemuk (Compound Interest):</strong>
-                    </p>
-                    <p className="font-mono bg-background p-2 rounded text-xs">
-                      Total = Pokok × (1 + Bunga/12)^Tenor
-                    </p>
-                    <p className="mt-2">
-                      = {formatCurrency(deposit.amountValue)} × (1 + {deposit.interestRate}%/12)^
-                      {deposit.tenorMonths}
-                    </p>
-                    <p>= {formatCurrency(deposit.totalReturn || 0)}</p>
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>
-                      <strong>Bunga Sederhana (Simple Interest):</strong>
-                    </p>
-                    <p className="font-mono bg-background p-2 rounded text-xs">
-                      Bunga = Pokok × (Suku Bunga / 100) × (Tenor / 12)
-                    </p>
-                    <p className="mt-2">
-                      = {formatCurrency(deposit.amountValue)} × ({deposit.interestRate}% / 100) × (
-                      {deposit.tenorMonths} / 12)
-                    </p>
-                    <p>= {formatCurrency(deposit.projectedInterest || 0)}</p>
-                    <p className="mt-2">
-                      <strong>Total Return</strong> = Pokok + Bunga
-                    </p>
-                    <p>
-                      = {formatCurrency(deposit.amountValue)} +{' '}
-                      {formatCurrency(deposit.projectedInterest || 0)}
-                    </p>
-                    <p>= {formatCurrency(deposit.totalReturn || 0)}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Maturity Info */}
-              <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm">
-                  <strong>Catatan:</strong> Deposito akan dipotong dari gaji bulanan sebesar{' '}
-                  <strong>{formatCurrency(deposit.amountValue)}</strong>. Dana beserta bunga sebesar{' '}
-                  <strong className="text-green-600">
-                    {formatCurrency(deposit.totalReturn || 0)}
-                  </strong>{' '}
-                  dapat dicairkan setelah jatuh tempo pada{' '}
-                  <strong>
-                    {deposit.maturityDate
-                      ? format(new Date(deposit.maturityDate), 'dd MMMM yyyy', { locale: id })
-                      : '-'}
-                  </strong>
-                  .
-                </p>
-              </div>
             </div>
           </TabsContent>
         </Tabs>

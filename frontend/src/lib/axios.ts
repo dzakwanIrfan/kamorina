@@ -27,13 +27,24 @@ export const handleUnauthorized = (redirectToLogin = true) => {
 
   clearAuthData();
 
-  if (
-    redirectToLogin &&
-    typeof window !== "undefined" &&
-    !window.location.pathname.startsWith("/auth/login")
-  ) {
-    isRedirecting = true;
-    window.location.replace("/auth/login?session=expired");
+  const publicPages = ['/auth/verify-email', '/auth/reset-password'];
+
+  if (typeof window !== "undefined") {
+    const isPublicPage = publicPages.some(page =>
+      window.location.pathname.startsWith(page)
+    );
+
+    if (isPublicPage) {
+      return;
+    }
+
+    if (
+      redirectToLogin &&
+      !window.location.pathname.startsWith("/auth/login")
+    ) {
+      isRedirecting = true;
+      window.location.replace("/auth/login?session=expired");
+    }
   }
 };
 
@@ -50,7 +61,6 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ApiErrorResponse>) => {
     // Network error
     if (!error.response) {
-      console.error("Network Error:", error.message);
       return Promise.reject({
         message:
           "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.",
@@ -77,7 +87,6 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized - but NOT for auth endpoints
     if (status === 401 && !isAuthEndpoint) {
-      console.warn("Unauthorized access - clearing session");
       handleUnauthorized(true);
       return Promise.reject({
         ...error,

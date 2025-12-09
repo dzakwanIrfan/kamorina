@@ -241,7 +241,6 @@ export function DepositList({ defaultStatus, defaultStep }: DepositListProps) {
         'Jangka Waktu (Bulan)': deposit.tenorMonths,
         'Bunga (%)': deposit.interestRate || 0,
         'Proyeksi Bunga': deposit.projectedInterest || 0,
-        'Total Return': deposit.totalReturn || 0,
         'Status': statusMap[deposit.status]?.label || deposit.status,
         'Step Saat Ini': deposit.currentStep ? stepMap[deposit.currentStep] : '-',
         'Tanggal Submit': deposit.submittedAt 
@@ -312,17 +311,6 @@ export function DepositList({ defaultStatus, defaultStep }: DepositListProps) {
         cell: ({ row }) => (
           <span className="text-sm">
             {row.original.tenorMonths} Bulan
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'totalReturn',
-        header: 'Total Return',
-        cell: ({ row }) => (
-          <span className="text-sm font-medium text-green-600 dark:text-green-400">
-            {row.original.totalReturn 
-              ? formatCurrency(row.original.totalReturn)
-              : '-'}
           </span>
         ),
       },

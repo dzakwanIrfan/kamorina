@@ -86,8 +86,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         authError: null,
       });
     } catch (error: any) {
-      console.error('Session validation failed:', error);
-      
       // Clear any stale data
       clearAuthData();
       
@@ -113,8 +111,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       
       return;
     } catch (error: any) {
-      console.error('Failed to refresh user session:', error);
-      
       // Only clear auth if it's a 401 error
       if (error?.response?.status === 401 || error?.isAuthError) {
         clearAuthData();

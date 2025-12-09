@@ -16,6 +16,7 @@ import {
   DepositStatus,
   DepositApprovalStep,
   DepositApprovalDecision,
+  SettingCategory,
 } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
@@ -67,7 +68,9 @@ export class DepositService {
 
     return {
       interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
-      calculationMethod: (calculationMethodSetting?.value || 'SIMPLE') as 'SIMPLE' | 'COMPOUND',
+      calculationMethod: (calculationMethodSetting?.value || 'SIMPLE') as
+        | 'SIMPLE'
+        | 'COMPOUND',
     };
   }
 
@@ -76,17 +79,23 @@ export class DepositService {
    */
   async createDraft(userId: string, dto: CreateDepositDto) {
     if (!dto.agreedToTerms) {
-      throw new BadRequestException('Anda harus menyetujui syarat dan ketentuan');
+      throw new BadRequestException(
+        'Anda harus menyetujui syarat dan ketentuan',
+      );
     }
 
     // Validate and get amount option
-    const amountOption = await this.depositOptionService.findAmountOptionByCode(dto.depositAmountCode);
+    const amountOption = await this.depositOptionService.findAmountOptionByCode(
+      dto.depositAmountCode,
+    );
     if (!amountOption.isActive) {
       throw new BadRequestException('Opsi jumlah deposito tidak aktif');
     }
 
     // Validate and get tenor option
-    const tenorOption = await this.depositOptionService.findTenorOptionByCode(dto.depositTenorCode);
+    const tenorOption = await this.depositOptionService.findTenorOptionByCode(
+      dto.depositTenorCode,
+    );
     if (!tenorOption.isActive) {
       throw new BadRequestException('Opsi tenor deposito tidak aktif');
     }
@@ -94,7 +103,7 @@ export class DepositService {
     const amountValue = amountOption.amount.toNumber();
     const tenorMonths = tenorOption.months;
     const depositNumber = await this.generateDepositNumber();
-    const interestRate = await this.getDepositSettings().then(s => s.interestRate);
+    const { interestRate } = await this.getDepositSettings();
 
     const deposit = await this.prisma.depositApplication.create({
       data: {
@@ -104,7 +113,7 @@ export class DepositService {
         tenorMonths,
         agreedToTerms: dto.agreedToTerms,
         status: DepositStatus.DRAFT,
-        interestRate: interestRate,
+        interestRate
       },
       include: {
         user: {
@@ -151,7 +160,10 @@ export class DepositService {
     let newTenorMonths = deposit.tenorMonths;
 
     if (dto.depositAmountCode) {
-      const amountOption = await this.depositOptionService.findAmountOptionByCode(dto.depositAmountCode);
+      const amountOption =
+        await this.depositOptionService.findAmountOptionByCode(
+          dto.depositAmountCode,
+        );
       if (!amountOption.isActive) {
         throw new BadRequestException('Opsi jumlah deposito tidak aktif');
       }
@@ -161,7 +173,9 @@ export class DepositService {
     }
 
     if (dto.depositTenorCode) {
-      const tenorOption = await this.depositOptionService.findTenorOptionByCode(dto.depositTenorCode);
+      const tenorOption = await this.depositOptionService.findTenorOptionByCode(
+        dto.depositTenorCode,
+      );
       if (!tenorOption.isActive) {
         throw new BadRequestException('Opsi tenor deposito tidak aktif');
       }
@@ -176,7 +190,9 @@ export class DepositService {
 
     // Recalculate if amount or tenor changed
     if (dto.depositAmountCode || dto.depositTenorCode) {
-      updateData.interestRate = await this.getDepositSettings().then(s => s.interestRate);
+      updateData.interestRate = await this.getDepositSettings().then(
+        (s) => s.interestRate,
+      );
     }
 
     const updated = await this.prisma.depositApplication.update({
@@ -226,7 +242,9 @@ export class DepositService {
     }
 
     if (!deposit.agreedToTerms) {
-      throw new BadRequestException('Anda harus menyetujui syarat dan ketentuan');
+      throw new BadRequestException(
+        'Anda harus menyetujui syarat dan ketentuan',
+      );
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -243,7 +261,10 @@ export class DepositService {
       // Create approval records
       await tx.depositApproval.createMany({
         data: [
-          { depositApplicationId: depositId, step: DepositApprovalStep.DIVISI_SIMPAN_PINJAM },
+          {
+            depositApplicationId: depositId,
+            step: DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
+          },
           { depositApplicationId: depositId, step: DepositApprovalStep.KETUA },
         ],
       });
@@ -255,7 +276,6 @@ export class DepositService {
           status: DepositStatus.SUBMITTED,
           amountValue: updated.amountValue,
           tenorMonths: updated.tenorMonths,
-          interestRate: updated.interestRate,
           action: 'SUBMITTED',
           actionAt: new Date(),
           actionBy: userId,
@@ -286,7 +306,10 @@ export class DepositService {
   /**
    * Get my deposit applications
    */
-  async getMyDeposits(userId: string, query: QueryDepositDto): Promise<PaginatedResult<any>> {
+  async getMyDeposits(
+    userId: string,
+    query: QueryDepositDto,
+  ): Promise<PaginatedResult<any>> {
     const {
       page = 1,
       limit = 10,
@@ -405,18 +428,8 @@ export class DepositService {
       throw new ForbiddenException('Anda tidak memiliki akses ke deposito ini');
     }
 
-    // Add calculation breakdown
-    const settings = await this.getDepositSettings();
-    const calculationBreakdown = this.depositOptionService.calculateDepositReturn(
-      deposit.amountValue.toNumber(),
-      deposit.tenorMonths,
-      deposit.interestRate?.toNumber() || settings.interestRate,
-      settings.calculationMethod,
-    );
-
     return {
-      ...deposit,
-      calculationBreakdown,
+      ...deposit
     };
   }
 
@@ -450,7 +463,11 @@ export class DepositService {
         { user: { name: { contains: search, mode: 'insensitive' } } },
         { user: { email: { contains: search, mode: 'insensitive' } } },
         {
-          user: { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } },
+          user: {
+            employee: {
+              employeeNumber: { contains: search, mode: 'insensitive' },
+            },
+          },
         },
       ];
     }
@@ -511,7 +528,6 @@ export class DepositService {
       },
     };
   }
-
   /**
    * Process approval (DSP, Ketua)
    */
@@ -521,6 +537,7 @@ export class DepositService {
     approverRoles: string[],
     dto: ApproveDepositDto,
   ) {
+    // 1. Ambil data deposito
     const deposit = await this.prisma.depositApplication.findUnique({
       where: { id: depositId },
       include: {
@@ -537,7 +554,7 @@ export class DepositService {
       throw new BadRequestException('Deposito tidak dalam status review');
     }
 
-    // Map role to step
+    // 2. Validasi Role Approver
     const roleStepMap: { [key: string]: DepositApprovalStep } = {
       divisi_simpan_pinjam: DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
       ketua: DepositApprovalStep.KETUA,
@@ -548,10 +565,15 @@ export class DepositService {
       .find((step) => step === deposit.currentStep);
 
     if (!approverStep) {
-      throw new ForbiddenException('Anda tidak memiliki akses untuk approve di step ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses untuk approve di step ini',
+      );
     }
 
-    const approvalRecord = deposit.approvals.find((a) => a.step === deposit.currentStep);
+    const approvalRecord = deposit.approvals.find(
+      (a) => a.step === deposit.currentStep,
+    );
+
     if (!approvalRecord) {
       throw new BadRequestException('Record approval tidak ditemukan');
     }
@@ -560,9 +582,10 @@ export class DepositService {
       throw new BadRequestException('Step ini sudah diproses sebelumnya');
     }
 
+    // LOGIC REJECT
     if (dto.decision === DepositApprovalDecision.REJECTED) {
-      // REJECT
       await this.prisma.$transaction(async (tx) => {
+        // Update Approval Step jadi REJECTED
         await tx.depositApproval.update({
           where: { id: approvalRecord.id },
           data: {
@@ -573,23 +596,24 @@ export class DepositService {
           },
         });
 
+        // Update Aplikasi Utama jadi REJECTED
         await tx.depositApplication.update({
           where: { id: depositId },
           data: {
             status: DepositStatus.REJECTED,
             rejectedAt: new Date(),
             rejectionReason: dto.notes,
-            currentStep: null,
+            currentStep: null, // Flow berhenti
           },
         });
 
+        // Catat History
         await tx.depositHistory.create({
           data: {
             depositApplicationId: depositId,
             status: DepositStatus.REJECTED,
             amountValue: deposit.amountValue,
             tenorMonths: deposit.tenorMonths,
-            interestRate: deposit.interestRate,
             action: 'REJECTED',
             actionAt: new Date(),
             actionBy: approverId,
@@ -598,7 +622,7 @@ export class DepositService {
         });
       });
 
-      // Notify applicant
+      // Notify User
       try {
         await this.mailService.sendDepositRejected(
           deposit.user.email,
@@ -611,21 +635,71 @@ export class DepositService {
       }
 
       return { message: 'Deposito berhasil ditolak' };
-    } else {
-      // APPROVE
-      const stepOrder = [DepositApprovalStep.DIVISI_SIMPAN_PINJAM, DepositApprovalStep.KETUA];
+    }
+
+    // LOGIC APPROVE
+    else {
+      const stepOrder = [
+        DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
+        DepositApprovalStep.KETUA,
+      ];
 
       const currentIndex = stepOrder.indexOf(deposit.currentStep);
       const isLastStep = currentIndex === stepOrder.length - 1;
       const nextStep = isLastStep ? null : stepOrder[currentIndex + 1];
 
-      const maturityDate = isLastStep
-        ? new Date(
-            new Date().setMonth(new Date().getMonth() + deposit.tenorMonths),
-          )
-        : null;
+      let activationDate: Date | null = null;
+      let maturityDate: Date | null = null;
+
+      // LOGIC TANGGAL CUTOFF & GAJIAN (Hanya dijalankan di Step Terakhir/Ketua)
+      if (isLastStep) {
+        // Ambil Setting dari Database
+        const settings = await this.prisma.cooperativeSetting.findMany({
+          where: {
+            category: SettingCategory.GENERAL,
+            key: {
+              in: ['cooperative_cutoff_date', 'cooperative_payroll_date'],
+            },
+          },
+        });
+
+        const cutoffSetting = settings.find(
+          (s) => s.key === 'cooperative_cutoff_date',
+        );
+        const payrollSetting = settings.find(
+          (s) => s.key === 'cooperative_payroll_date',
+        );
+
+        const cutoffDay = Number(cutoffSetting?.value) || 15; // Default 15
+        const payrollDay = Number(payrollSetting?.value) || 27; // Default 27
+
+        // Hitung Tanggal Aktivasi (Start)
+        const now = new Date();
+        const currentDay = now.getDate();
+
+        // Mulai kalkulasi dari hari ini
+        const startDate = new Date(now);
+        // Set ke tanggal gajian
+        startDate.setDate(payrollDay);
+
+        if (currentDay > cutoffDay) {
+          // Jika hari ini > tanggal cutoff (15), maka ikut gajian bulan depan
+          startDate.setMonth(startDate.getMonth() + 1);
+        }
+        // Jika hari ini <= 15, maka tetap di bulan ini (tgl 27 bulan ini)
+
+        // Reset jam ke 00:00:00
+        startDate.setHours(0, 0, 0, 0);
+        activationDate = startDate;
+
+        // Hitung Maturity Date (Start Date + Tenor Bulan)
+        const maturity = new Date(startDate);
+        maturity.setMonth(startDate.getMonth() + deposit.tenorMonths);
+        maturityDate = maturity;
+      }
 
       await this.prisma.$transaction(async (tx) => {
+        // Update Approval Record saat ini
         await tx.depositApproval.update({
           where: { id: approvalRecord.id },
           data: {
@@ -636,28 +710,30 @@ export class DepositService {
           },
         });
 
+        // Tentukan Status Baru
         const newStatus = isLastStep ? DepositStatus.APPROVED : deposit.status;
 
+        // Update Aplikasi Utama
         await tx.depositApplication.update({
           where: { id: depositId },
           data: {
             status: newStatus,
             currentStep: nextStep,
             ...(isLastStep && {
-              approvedAt: new Date(),
-              activatedAt: new Date(),
-              maturityDate,
+              approvedAt: new Date(), // Waktu tombol diklik
+              activatedAt: activationDate, // Waktu uang masuk (Tgl 27)
+              maturityDate: maturityDate, // Waktu jatuh tempo
             }),
           },
         });
 
+        // Catat History
         await tx.depositHistory.create({
           data: {
             depositApplicationId: depositId,
             status: newStatus,
             amountValue: deposit.amountValue,
             tenorMonths: deposit.tenorMonths,
-            interestRate: deposit.interestRate,
             action: 'APPROVED',
             actionAt: new Date(),
             actionBy: approverId,
@@ -667,7 +743,7 @@ export class DepositService {
       });
 
       if (isLastStep) {
-        // Notify payroll and applicant
+        // Notifikasi Terakhir (Ke Payroll / User)
         try {
           await this.notifyDepositApproved(depositId);
         } catch (error) {
@@ -675,10 +751,12 @@ export class DepositService {
         }
 
         return {
-          message: 'Deposito berhasil disetujui dan diaktifkan.',
+          message: 'Deposito berhasil disetujui dan dijadwalkan aktif.',
+          activationDate,
+          maturityDate,
         };
       } else {
-        // Notify next approver
+        // Notifikasi ke Approver Selanjutnya
         try {
           await this.notifyApprovers(depositId, nextStep!, 'APPROVAL_REQUEST');
         } catch (error) {
@@ -686,7 +764,8 @@ export class DepositService {
         }
 
         return {
-          message: 'Deposito berhasil disetujui. Menunggu approval dari Ketua.',
+          message:
+            'Deposito berhasil disetujui. Menunggu approval tahap selanjutnya.',
         };
       }
     }
@@ -801,7 +880,10 @@ export class DepositService {
           roleName,
         );
       } catch (error) {
-        console.error(`Failed to send approval request to ${approver.email}:`, error);
+        console.error(
+          `Failed to send approval request to ${approver.email}:`,
+          error,
+        );
       }
     }
   }
@@ -852,7 +934,10 @@ export class DepositService {
           deposit.amountValue.toNumber(),
         );
       } catch (error) {
-        console.error(`Failed to send payroll notification to ${payroll.email}:`, error);
+        console.error(
+          `Failed to send payroll notification to ${payroll.email}:`,
+          error,
+        );
       }
     }
   }
