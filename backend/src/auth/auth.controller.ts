@@ -22,7 +22,7 @@ import { EnvironmentVariables } from '../config/env.config';
 
 interface RequestWithUser extends Request {
   user: {
-    userId: string;
+    id: string;
     email: string;
     roles: string[];
     memberVerified: boolean;
@@ -107,6 +107,6 @@ export class AuthController {
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getMe(@Req() req: RequestWithUser) {
-    return this.authService.getUserProfile(req.user.userId);
+    return this.authService.getUserProfile(req.user.id);
   }
 }

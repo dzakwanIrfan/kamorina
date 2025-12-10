@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
@@ -20,7 +20,8 @@ import {
   Wallet,
   Clock,
   Edit,
-} from 'lucide-react';
+  BookOpen,
+} from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 
 import {
@@ -35,137 +36,155 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from '@/components/ui/sidebar';
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuthStore } from '@/store/auth.store';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuthStore } from "@/store/auth.store";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const menuItems = [
   {
-    title: 'Dashboard',
+    title: "Dashboard",
     icon: LayoutDashboard,
-    href: '/dashboard',
+    href: "/dashboard",
     requiresMemberVerified: false,
   },
   {
-    title: 'Pinjaman Saya',
-    icon: FaRupiahSign,
-    href: '/dashboard/loans',
+    title: "Buku Tabungan",
+    icon: BookOpen,
+    href: "/dashboard/buku-tabungan",
     requiresMemberVerified: true,
   },
   {
-    title: 'Deposito Saya',
+    title: "Deposito Saya",
     icon: PiggyBank,
-    href: '/dashboard/deposits',
+    href: "/dashboard/deposits",
     requiresMemberVerified: true,
   },
   {
-    title: 'Perubahan Deposito',
+    title: "Perubahan Deposito",
     icon: Edit,
-    href: '/dashboard/deposit-changes',
+    href: "/dashboard/deposit-changes",
+    requiresMemberVerified: true,
+  },
+  {
+    title: "Pinjaman Saya",
+    icon: FaRupiahSign,
+    href: "/dashboard/loans",
     requiresMemberVerified: true,
   },
 ];
 
 const managementItems = [
   {
-    title: 'Member Applications',
+    title: "Member Applications",
     icon: FileText,
-    href: '/dashboard/member-application',
-    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll'],
+    href: "/dashboard/member-application",
+    roles: ["ketua", "divisi_simpan_pinjam", "pengawas", "payroll"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Deposit Approvals',
+    title: "Deposit Approvals",
     icon: PiggyBank,
-    href: '/dashboard/deposits/approvals',
-    roles: ['ketua', 'divisi_simpan_pinjam'],
+    href: "/dashboard/deposits/approvals",
+    roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Perubahan Deposito',
+    title: "Perubahan Deposito",
     icon: Edit,
-    href: '/dashboard/deposit-changes/approvals',
-    roles: ['ketua', 'divisi_simpan_pinjam'],
+    href: "/dashboard/deposit-changes/approvals",
+    roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Opsi Jumlah Deposito',
+    title: "Opsi Jumlah Deposito",
     icon: Wallet,
-    href: '/dashboard/deposit-options/amounts',
-    roles: ['ketua', 'divisi_simpan_pinjam'],
+    href: "/dashboard/deposit-options/amounts",
+    roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Opsi Tenor Deposito',
+    title: "Opsi Tenor Deposito",
     icon: Clock,
-    href: '/dashboard/deposit-options/tenors',
-    roles: ['ketua', 'divisi_simpan_pinjam'],
+    href: "/dashboard/deposit-options/tenors",
+    roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Loan Approvals',
+    title: "Loan Approvals",
     icon: CheckCircle2,
-    href: '/dashboard/loans/approvals',
-    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
+    href: "/dashboard/loans/approvals",
+    roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Loan Disbursement',
+    title: "Loan Disbursement",
     icon: Banknote,
-    href: '/dashboard/loans/disbursement',
-    roles: ['shopkeeper'],
+    href: "/dashboard/loans/disbursement",
+    roles: ["shopkeeper"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Loan Authorization',
+    title: "Loan Authorization",
     icon: Shield,
-    href: '/dashboard/loans/authorization',
-    roles: ['ketua'],
+    href: "/dashboard/loans/authorization",
+    roles: ["ketua"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Employees',
+    title: "Employees",
     icon: Users,
-    href: '/dashboard/employees',
-    roles: ['ketua', 'divisi_simpan_pinjam'],
+    href: "/dashboard/employees",
+    roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Departments',
+    title: "Departments",
     icon: Building2,
-    href: '/dashboard/departments',
-    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
+    href: "/dashboard/departments",
+    roles: [
+      "ketua",
+      "divisi_simpan_pinjam",
+      "pengawas",
+      "bendahara",
+      "payroll",
+    ],
     requiresMemberVerified: true,
   },
   {
-    title: 'Levels',
+    title: "Levels",
     icon: Shield,
-    href: '/dashboard/levels',
-    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas'],
+    href: "/dashboard/levels",
+    roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
     requiresMemberVerified: true,
   },
   {
-    title: 'Golongan',
+    title: "Golongan",
     icon: AlignVerticalJustifyEnd,
-    href: '/dashboard/golongan',
-    roles: ['ketua', 'divisi_simpan_pinjam', 'pengawas', 'bendahara', 'payroll'],
+    href: "/dashboard/golongan",
+    roles: [
+      "ketua",
+      "divisi_simpan_pinjam",
+      "pengawas",
+      "bendahara",
+      "payroll",
+    ],
     requiresMemberVerified: true,
   },
   {
-    title: 'Settings',
+    title: "Settings",
     icon: Settings,
-    href: '/dashboard/settings',
-    roles: ['ketua', 'divisi_simpan_pinjam'],
+    href: "/dashboard/settings",
+    roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
 ];
@@ -177,14 +196,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const handleLogout = () => {
     logout();
-    router.push('/auth/login');
+    router.push("/auth/login");
   };
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -195,7 +214,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   };
 
   const isMemberVerified = user?.memberVerified || false;
-  const isAdmin = user?.roles.find((role) => role === 'ketua' || role === 'divisi_simpan_pinjam' || role === 'pengawas' || role === 'bendahara' || role === 'payroll' || role === 'shopkeeper');
+  const isAdmin = user?.roles.find(
+    (role) =>
+      role === "ketua" ||
+      role === "divisi_simpan_pinjam" ||
+      role === "pengawas" ||
+      role === "bendahara" ||
+      role === "payroll" ||
+      role === "shopkeeper"
+  );
 
   return (
     <Sidebar {...props}>
@@ -204,10 +231,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <Image src="/assets/logo.svg" alt="Logo" width={32} height={32} />
+                <Image
+                  src="/assets/logo.svg"
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">Koperasi</span>
-                  <span className="text-xs text-muted-foreground">Surya Niaga Kamorina</span>
+                  <span className="text-xs text-muted-foreground">
+                    Surya Niaga Kamorina
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -234,7 +268,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {menuItems.map((item) => {
                 const isActive = pathname === item.href;
-                const isDisabled = item.requiresMemberVerified && !isMemberVerified;
+                const isDisabled =
+                  item.requiresMemberVerified && !isMemberVerified;
 
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -242,7 +277,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       asChild={!isDisabled}
                       isActive={isActive}
                       disabled={isDisabled}
-                      className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                      className={
+                        isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                      }
                     >
                       {isDisabled ? (
                         <div className="flex items-center gap-3">
@@ -300,9 +337,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user?.avatar || ''} alt={user?.name} className="object-cover object-center" />
+                    <AvatarImage
+                      src={user?.avatar || ""}
+                      alt={user?.name}
+                      className="object-cover object-center"
+                    />
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-                      {user ? getInitials(user.name) : 'U'}
+                      {user ? getInitials(user.name) : "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">

@@ -21,11 +21,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { ICurrentUser } from 'src/auth/interfaces/current-user.interface';
 
 @Controller('deposits')
 @UseGuards(JwtAuthGuard)
 export class DepositController {
-  constructor(private readonly depositService: DepositService) {}
+  constructor(private readonly depositService: DepositService) { }
 
   /**
    * MEMBER ENDPOINTS
@@ -37,10 +38,11 @@ export class DepositController {
   @Post('draft')
   @HttpCode(HttpStatus.CREATED)
   async createDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() createDepositDto: CreateDepositDto,
   ) {
-    return this.depositService.createDraft(user.userId, createDepositDto);
+    console.log('Creating draft deposit for user:', user.id, 'with data:', createDepositDto);
+    return this.depositService.createDraft(user.id, createDepositDto);
   }
 
   /**
@@ -49,11 +51,11 @@ export class DepositController {
   @Put('draft/:id')
   @HttpCode(HttpStatus.OK)
   async updateDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
     @Body() updateDepositDto: UpdateDepositDto,
   ) {
-    return this.depositService.updateDraft(user.userId, id, updateDepositDto);
+    return this.depositService.updateDraft(user.id, id, updateDepositDto);
   }
 
   /**
@@ -61,8 +63,8 @@ export class DepositController {
    */
   @Post(':id/submit')
   @HttpCode(HttpStatus.OK)
-  async submitDeposit(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.depositService.submitDeposit(user.userId, id);
+  async submitDeposit(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
+    return this.depositService.submitDeposit(user.id, id);
   }
 
   /**
@@ -70,8 +72,8 @@ export class DepositController {
    */
   @Delete('draft/:id')
   @HttpCode(HttpStatus.OK)
-  async deleteDraft(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.depositService.deleteDraft(user.userId, id);
+  async deleteDraft(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
+    return this.depositService.deleteDraft(user.id, id);
   }
 
   /**
@@ -80,10 +82,10 @@ export class DepositController {
   @Get('my-deposits')
   @HttpCode(HttpStatus.OK)
   async getMyDeposits(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Query() query: QueryDepositDto,
   ) {
-    return this.depositService.getMyDeposits(user.userId, query);
+    return this.depositService.getMyDeposits(user.id, query);
   }
 
   /**
@@ -91,8 +93,8 @@ export class DepositController {
    */
   @Get('my-deposits/:id')
   @HttpCode(HttpStatus.OK)
-  async getMyDepositById(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.depositService.getDepositById(id, user.userId);
+  async getMyDepositById(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
+    return this.depositService.getDepositById(id, user.id);
   }
 
   /**
@@ -130,10 +132,10 @@ export class DepositController {
   @HttpCode(HttpStatus.OK)
   async processApproval(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: ApproveDepositDto,
   ) {
-    return this.depositService.processApproval(id, user.userId, user.roles, dto);
+    return this.depositService.processApproval(id, user.id, user.roles, dto);
   }
 
   /**
@@ -144,9 +146,9 @@ export class DepositController {
   @Roles('ketua', 'divisi_simpan_pinjam')
   @HttpCode(HttpStatus.OK)
   async bulkProcessApproval(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: BulkApproveDepositDto,
   ) {
-    return this.depositService.bulkProcessApproval(user.userId, user.roles, dto);
+    return this.depositService.bulkProcessApproval(user.id, user.roles, dto);
   }
 }

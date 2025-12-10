@@ -21,11 +21,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { ICurrentUser } from 'src/auth/interfaces/current-user.interface';
 
 @Controller('deposit-changes')
 @UseGuards(JwtAuthGuard)
 export class DepositChangeController {
-  constructor(private readonly depositChangeService: DepositChangeService) {}
+  constructor(private readonly depositChangeService: DepositChangeService) { }
 
   // MEMBER ENDPOINTS
 
@@ -35,10 +36,10 @@ export class DepositChangeController {
   @Post('draft')
   @HttpCode(HttpStatus.CREATED)
   async createDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: CreateDepositChangeDto,
   ) {
-    return this. depositChangeService.createDraft(user.userId, dto);
+    return this.depositChangeService.createDraft(user.id, dto);
   }
 
   /**
@@ -47,11 +48,11 @@ export class DepositChangeController {
   @Put('draft/:id')
   @HttpCode(HttpStatus.OK)
   async updateDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
     @Body() dto: UpdateDepositChangeDto,
   ) {
-    return this.depositChangeService. updateDraft(user.userId, id, dto);
+    return this.depositChangeService.updateDraft(user.id, id, dto);
   }
 
   /**
@@ -60,10 +61,10 @@ export class DepositChangeController {
   @Post(':id/submit')
   @HttpCode(HttpStatus.OK)
   async submitChangeRequest(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.depositChangeService.submitChangeRequest(user.userId, id);
+    return this.depositChangeService.submitChangeRequest(user.id, id);
   }
 
   /**
@@ -72,10 +73,10 @@ export class DepositChangeController {
   @Delete('draft/:id')
   @HttpCode(HttpStatus.OK)
   async cancelChangeRequest(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.depositChangeService.cancelChangeRequest(user.userId, id);
+    return this.depositChangeService.cancelChangeRequest(user.id, id);
   }
 
   /**
@@ -84,10 +85,10 @@ export class DepositChangeController {
   @Get('my-requests')
   @HttpCode(HttpStatus.OK)
   async getMyChangeRequests(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Query() query: QueryDepositChangeDto,
   ) {
-    return this.depositChangeService.getMyChangeRequests(user.userId, query);
+    return this.depositChangeService.getMyChangeRequests(user.id, query);
   }
 
   /**
@@ -96,10 +97,10 @@ export class DepositChangeController {
   @Get('my-requests/:id')
   @HttpCode(HttpStatus.OK)
   async getMyChangeRequestById(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.depositChangeService.getChangeRequestById(id, user.userId);
+    return this.depositChangeService.getChangeRequestById(id, user.id);
   }
 
   // APPROVER ENDPOINTS
@@ -112,7 +113,7 @@ export class DepositChangeController {
   @Roles('ketua', 'divisi_simpan_pinjam')
   @HttpCode(HttpStatus.OK)
   async getAllChangeRequests(@Query() query: QueryDepositChangeDto) {
-    return this. depositChangeService.getAllChangeRequests(query);
+    return this.depositChangeService.getAllChangeRequests(query);
   }
 
   /**
@@ -135,12 +136,12 @@ export class DepositChangeController {
   @HttpCode(HttpStatus.OK)
   async processApproval(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: ApproveDepositChangeDto,
   ) {
     return this.depositChangeService.processApproval(
       id,
-      user.userId,
+      user.id,
       user.roles,
       dto,
     );
@@ -154,11 +155,11 @@ export class DepositChangeController {
   @Roles('ketua', 'divisi_simpan_pinjam')
   @HttpCode(HttpStatus.OK)
   async bulkProcessApproval(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: BulkApproveDepositChangeDto,
   ) {
     return this.depositChangeService.bulkProcessApproval(
-      user.userId,
+      user.id,
       user.roles,
       dto,
     );

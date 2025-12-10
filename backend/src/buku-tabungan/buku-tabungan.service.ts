@@ -26,7 +26,7 @@ export class BukuTabunganService {
     query?: QueryBukuTabunganDto,
   ): Promise<BukuTabunganResponse> {
     const account = await this.prisma.savingsAccount.findUnique({
-      where: { userId },
+      where: { userId: userId },
       include: DEFAULT_INCLUDE_ACCOUNT,
     });
 

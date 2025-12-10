@@ -1,15 +1,15 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import type { User } from '@prisma/client';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { BukuTabunganService } from './buku-tabungan.service';
 import { QueryBukuTabunganDto } from './dto/query-buku-tabungan.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
+import type { ICurrentUser } from 'src/auth/interfaces/current-user.interface';
 
 @Controller('buku-tabungan')
 @UseGuards(JwtAuthGuard)
 export class BukuTabunganController {
-  constructor(private readonly bukuTabunganService: BukuTabunganService) {}
+  constructor(private readonly bukuTabunganService: BukuTabunganService) { }
 
   /**
    * GET /buku-tabungan
@@ -17,9 +17,10 @@ export class BukuTabunganController {
    */
   @Get()
   async getMyTabungan(
-    @CurrentUser() user: User,
+    @CurrentUser() user: ICurrentUser,
     @Query() query: QueryBukuTabunganDto,
   ) {
+    console.log(user);
     return this.bukuTabunganService.getTabunganByUserId(user.id, query);
   }
 
@@ -29,7 +30,7 @@ export class BukuTabunganController {
    */
   @Get('transactions')
   async getMyTransactions(
-    @CurrentUser() user: User,
+    @CurrentUser() user: ICurrentUser,
     @Query() query: QueryTransactionDto,
   ) {
     return this.bukuTabunganService.getTransactionsByUserId(user.id, query);
@@ -41,7 +42,7 @@ export class BukuTabunganController {
    */
   @Get('transactions/:id')
   async getTransactionById(
-    @CurrentUser() user: User,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') transactionId: string,
   ) {
     return this.bukuTabunganService.getTransactionById(user.id, transactionId);
@@ -53,7 +54,7 @@ export class BukuTabunganController {
    */
   @Get('summary/:month/:year')
   async getTransactionSummaryByPeriod(
-    @CurrentUser() user: User,
+    @CurrentUser() user: ICurrentUser,
     @Param('month') month: string,
     @Param('year') year: string,
   ) {

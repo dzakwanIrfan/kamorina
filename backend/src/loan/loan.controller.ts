@@ -29,6 +29,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
+import type { ICurrentUser } from '../auth/interfaces/current-user.interface';
 import { LoanType } from '@prisma/client';
 import type { UpdateLoanDto } from './dto/update-loan.dto';
 
@@ -38,7 +39,7 @@ export class LoanController {
   constructor(
     private readonly loanService: LoanService,
     private readonly uploadService: UploadService,
-  ) {}
+  ) { }
 
   /**
    * MEMBER ENDPOINTS
@@ -50,10 +51,11 @@ export class LoanController {
   @Get('eligibility/:loanType')
   @HttpCode(HttpStatus.OK)
   async checkEligibility(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('loanType') loanType: LoanType,
   ) {
-    return this.loanService.getLoanEligibility(user.userId, loanType);
+    console.log('Checking loan eligibility for user:', user.id, 'and loan type:', loanType);
+    return this.loanService.getLoanEligibility(user.id, loanType);
   }
 
   /**
@@ -62,10 +64,10 @@ export class LoanController {
   @Post('draft')
   @HttpCode(HttpStatus.CREATED)
   async createDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() createLoanDto: CreateLoanDto,
   ) {
-    return this.loanService.createDraft(user.userId, createLoanDto);
+    return this.loanService.createDraft(user.id, createLoanDto);
   }
 
   /**
@@ -74,11 +76,11 @@ export class LoanController {
   @Put('draft/:id')
   @HttpCode(HttpStatus.OK)
   async updateDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
     @Body() updateLoanDto: UpdateLoanDto,
   ) {
-    return this.loanService.updateDraft(user.userId, id, updateLoanDto);
+    return this.loanService.updateDraft(user.id, id, updateLoanDto);
   }
 
   /**
@@ -87,10 +89,10 @@ export class LoanController {
   @Post(':id/submit')
   @HttpCode(HttpStatus.OK)
   async submitLoan(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.loanService.submitLoan(user.userId, id);
+    return this.loanService.submitLoan(user.id, id);
   }
 
   /**
@@ -99,10 +101,10 @@ export class LoanController {
   @Delete('draft/:id')
   @HttpCode(HttpStatus.OK)
   async deleteDraft(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.loanService.deleteDraft(user.userId, id);
+    return this.loanService.deleteDraft(user.id, id);
   }
 
   /**
@@ -111,10 +113,10 @@ export class LoanController {
   @Get('my-loans')
   @HttpCode(HttpStatus.OK)
   async getMyLoans(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Query() query: QueryLoanDto,
   ) {
-    return this.loanService.getMyLoans(user.userId, query);
+    return this.loanService.getMyLoans(user.id, query);
   }
 
   /**
@@ -123,10 +125,10 @@ export class LoanController {
   @Get('my-loans/:id')
   @HttpCode(HttpStatus.OK)
   async getMyLoanById(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.loanService.getLoanById(id, user.userId);
+    return this.loanService.getLoanById(id, user.id);
   }
 
   /**
@@ -209,10 +211,10 @@ export class LoanController {
   @HttpCode(HttpStatus.OK)
   async reviseLoan(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: ReviseLoanDto,
   ) {
-    return this.loanService.reviseLoan(id, user.userId, dto);
+    return this.loanService.reviseLoan(id, user.id, dto);
   }
 
   /**
@@ -224,12 +226,12 @@ export class LoanController {
   @HttpCode(HttpStatus.OK)
   async processApproval(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: ApproveLoanDto,
   ) {
     return this.loanService.processApproval(
       id,
-      user.userId,
+      user.id,
       user.roles,
       dto,
     );
@@ -243,11 +245,11 @@ export class LoanController {
   @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
   @HttpCode(HttpStatus.OK)
   async bulkProcessApproval(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: BulkApproveLoanDto,
   ) {
     return this.loanService.bulkProcessApproval(
-      user.userId,
+      user.id,
       user.roles,
       dto,
     );
@@ -280,10 +282,10 @@ export class LoanController {
   @HttpCode(HttpStatus.OK)
   async processDisbursement(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: ProcessDisbursementDto,
   ) {
-    return this.loanService.processDisbursement(id, user.userId, dto);
+    return this.loanService.processDisbursement(id, user.id, dto);
   }
 
   /**
@@ -294,10 +296,10 @@ export class LoanController {
   @Roles('shopkeeper')
   @HttpCode(HttpStatus.OK)
   async bulkProcessDisbursement(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: BulkProcessDisbursementDto,
   ) {
-    return this.loanService.bulkProcessDisbursement(user.userId, dto);
+    return this.loanService.bulkProcessDisbursement(user.id, dto);
   }
 
   /**
@@ -327,10 +329,10 @@ export class LoanController {
   @HttpCode(HttpStatus.OK)
   async processAuthorization(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: ProcessAuthorizationDto,
   ) {
-    return this.loanService.processAuthorization(id, user.userId, dto);
+    return this.loanService.processAuthorization(id, user.id, dto);
   }
 
   /**
@@ -341,9 +343,9 @@ export class LoanController {
   @Roles('ketua')
   @HttpCode(HttpStatus.OK)
   async bulkProcessAuthorization(
-    @CurrentUser() user: any,
+    @CurrentUser() user: ICurrentUser,
     @Body() dto: BulkProcessAuthorizationDto,
   ) {
-    return this.loanService.bulkProcessAuthorization(user.userId, dto);
+    return this.loanService.bulkProcessAuthorization(user.id, dto);
   }
 }
