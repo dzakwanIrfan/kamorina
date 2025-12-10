@@ -11,7 +11,11 @@ import { SubmitApplicationDto } from './dto/submit-application.dto';
 import { ApproveRejectDto } from './dto/approve-reject.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
 import { BulkApproveRejectDto } from './dto/bulk-approve-reject.dto';
-import { ApplicationStatus, ApprovalStep, ApprovalDecision } from '@prisma/client';
+import {
+  ApplicationStatus,
+  ApprovalStep,
+  ApprovalDecision,
+} from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 import { Prisma } from 'generated/prisma/browser';
 
@@ -26,7 +30,7 @@ export class MemberApplicationService {
     // Check if user exists
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { 
+      include: {
         employee: {
           include: {
             department: true,
@@ -79,7 +83,9 @@ export class MemberApplicationService {
 
     if (existingApplication) {
       if (existingApplication.status === ApplicationStatus.UNDER_REVIEW) {
-        throw new BadRequestException('Anda sudah memiliki pengajuan yang sedang diproses');
+        throw new BadRequestException(
+          'Anda sudah memiliki pengajuan yang sedang diproses',
+        );
       }
       if (existingApplication.status === ApplicationStatus.APPROVED) {
         throw new BadRequestException('Pengajuan Anda sudah disetujui');
@@ -87,17 +93,22 @@ export class MemberApplicationService {
     }
 
     const entranceFee = await this.prisma.cooperativeSetting.findFirst({
-      where: { key: 'initial_membership_fee'}
+      where: { key: 'initial_membership_fee' },
     });
 
     if (!entranceFee) {
-      throw new NotFoundException('Pengaturan biaya masuk member tidak ditemukan');
+      throw new NotFoundException(
+        'Pengaturan biaya masuk member tidak ditemukan',
+      );
     }
 
     try {
       const result = await this.prisma.$transaction(async (tx) => {
         // SAVE HISTORY sebelum update (jika re-submit)
-        if (existingApplication && existingApplication.status === ApplicationStatus.REJECTED) {
+        if (
+          existingApplication &&
+          existingApplication.status === ApplicationStatus.REJECTED
+        ) {
           await tx.applicationHistory.create({
             data: {
               applicationId: existingApplication.id,
@@ -188,15 +199,19 @@ export class MemberApplicationService {
 
       // Send notification to DIVISI_SIMPAN_PINJAM
       try {
-        await this.notifyNextApprover(result.application.id, ApprovalStep.DIVISI_SIMPAN_PINJAM);
+        await this.notifyNextApprover(
+          result.application.id,
+          ApprovalStep.DIVISI_SIMPAN_PINJAM,
+        );
       } catch (emailError) {
         console.error('Failed to send notification:', emailError);
         // Don't fail the transaction if email fails
       }
 
-      const message = result.application.submissionCount > 1 
-        ? `Pengajuan member berhasil disubmit kembali (Pengajuan ke-${result.application.submissionCount}). Menunggu approval dari Divisi Simpan Pinjam.`
-        : 'Pengajuan member berhasil disubmit. Menunggu approval dari Divisi Simpan Pinjam.';
+      const message =
+        result.application.submissionCount > 1
+          ? `Pengajuan member berhasil disubmit kembali (Pengajuan ke-${result.application.submissionCount}). Menunggu approval dari Divisi Simpan Pinjam.`
+          : 'Pengajuan member berhasil disubmit. Menunggu approval dari Divisi Simpan Pinjam.';
 
       return {
         message,
@@ -295,14 +310,16 @@ export class MemberApplicationService {
     };
   }
 
-  async getApplications(query: QueryApplicationDto): Promise<PaginatedResult<any>> {
-    const { 
-      page = 1, 
-      limit = 10, 
-      status, 
-      userId, 
-      search, 
-      sortBy = 'createdAt', 
+  async getApplications(
+    query: QueryApplicationDto,
+  ): Promise<PaginatedResult<any>> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      userId,
+      search,
+      sortBy = 'createdAt',
       sortOrder = 'desc',
       startDate,
       endDate,
@@ -331,7 +348,11 @@ export class MemberApplicationService {
           { name: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
           { nik: { contains: search, mode: 'insensitive' } },
-          { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } },
+          {
+            employee: {
+              employeeNumber: { contains: search, mode: 'insensitive' },
+            },
+          },
           { employee: { fullName: { contains: search, mode: 'insensitive' } } },
         ],
       };
@@ -488,11 +509,15 @@ export class MemberApplicationService {
       .find((step) => step === currentStep);
 
     if (!approverStep) {
-      throw new ForbiddenException('Anda tidak memiliki akses untuk approve di step ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses untuk approve di step ini',
+      );
     }
 
     // Find the approval record
-    const approvalRecord = application.approvals.find((a) => a.step === currentStep);
+    const approvalRecord = application.approvals.find(
+      (a) => a.step === currentStep,
+    );
 
     if (!approvalRecord) {
       throw new BadRequestException('Record approval tidak ditemukan');
@@ -612,6 +637,12 @@ export class MemberApplicationService {
                 submissionNumber: application.submissionCount,
               },
             });
+
+            await tx.savingsAccount.create({
+              data: {
+                userId: application.userId,
+              },
+            });
           } else {
             // Move to next step
             const nextStep = ApprovalStep.KETUA;
@@ -627,13 +658,17 @@ export class MemberApplicationService {
         if (isLastStep) {
           // Send final approval emails
           try {
-            await this.sendFinalApprovalNotifications(application.user.email, application.user.name);
+            await this.sendFinalApprovalNotifications(
+              application.user.email,
+              application.user.name,
+            );
           } catch (emailError) {
             console.error('Failed to send final approval emails:', emailError);
           }
 
           return {
-            message: 'Pengajuan berhasil disetujui. User sekarang adalah member terverifikasi.',
+            message:
+              'Pengajuan berhasil disetujui. User sekarang adalah member terverifikasi.',
           };
         } else {
           // Notify next approver
@@ -644,7 +679,8 @@ export class MemberApplicationService {
           }
 
           return {
-            message: 'Pengajuan berhasil disetujui. Menunggu approval dari Ketua.',
+            message:
+              'Pengajuan berhasil disetujui. Menunggu approval dari Ketua.',
           };
         }
       }
@@ -658,7 +694,9 @@ export class MemberApplicationService {
       }
 
       console.error('Process approval error:', error);
-      throw new BadRequestException('Terjadi kesalahan saat memproses approval');
+      throw new BadRequestException(
+        'Terjadi kesalahan saat memproses approval',
+      );
     }
   }
 
@@ -714,7 +752,10 @@ export class MemberApplicationService {
     if (!application) return;
 
     // Get users with the required role
-    const roleName = step === ApprovalStep.DIVISI_SIMPAN_PINJAM ? 'divisi_simpan_pinjam' : 'ketua';
+    const roleName =
+      step === ApprovalStep.DIVISI_SIMPAN_PINJAM
+        ? 'divisi_simpan_pinjam'
+        : 'ketua';
 
     const approvers = await this.prisma.user.findMany({
       where: {
@@ -739,12 +780,18 @@ export class MemberApplicationService {
           roleName,
         );
       } catch (error) {
-        console.error(`Failed to send approval request to ${approver.email}:`, error);
+        console.error(
+          `Failed to send approval request to ${approver.email}:`,
+          error,
+        );
       }
     }
   }
 
-  private async sendFinalApprovalNotifications(userEmail: string, userName: string) {
+  private async sendFinalApprovalNotifications(
+    userEmail: string,
+    userName: string,
+  ) {
     // Notify the member
     await this.mailService.sendMembershipApproved(userEmail, userName);
 
@@ -766,7 +813,12 @@ export class MemberApplicationService {
 
       for (const user of users) {
         try {
-          await this.mailService.sendNewMemberNotification(user.email, user.name, userName, userEmail);
+          await this.mailService.sendNewMemberNotification(
+            user.email,
+            user.name,
+            userName,
+            userEmail,
+          );
         } catch (error) {
           console.error(`Failed to send notification to ${user.email}:`, error);
         }
