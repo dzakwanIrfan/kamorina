@@ -1,365 +1,380 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
-import {
-  ApplicationStatus,
-  DepositStatus,
-  Prisma,
-  SettingCategory,
-} from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma, SettingCategory } from '@prisma/client';
 import dayjs from 'dayjs';
 import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  PayrollContext,
+  PayrollSettings,
+  PayrollSummary,
+  ProcessorResult,
+} from './interfaces/payroll.interface';
+import {
+  PAYROLL_SETTINGS_KEYS,
+  DEFAULT_VALUES,
+} from './constants/payroll.constants';
+import { MembershipFeeProcessor } from './services/membership-fee.processor';
+import { MandatorySavingsProcessor } from './services/mandatory-savings.processor';
+import { DepositSavingsProcessor } from './services/deposit-savings.processor';
+import { LoanInstallmentProcessor } from './services/loan-installment.processor';
+import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
+import { ManualPayrollDto } from './dto/payroll.dto';
 
 @Injectable()
 export class PayrollService {
   private readonly logger = new Logger(PayrollService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private membershipFeeProcessor: MembershipFeeProcessor,
+    private mandatorySavingsProcessor: MandatorySavingsProcessor,
+    private depositSavingsProcessor: DepositSavingsProcessor,
+    private loanInstallmentProcessor: LoanInstallmentProcessor,
+    private interestCalculatorProcessor: InterestCalculatorProcessor,
+  ) {}
 
-  // Cron berjalan setiap tanggal 27 jam 00:01 (Sesuai tanggal gajian default)
-  @Cron('0 1 * * *')
-  async handleMonthlyPayroll() {
-    this.logger.log('Running Payroll Check...');
+  /**
+   * Cron job berjalan setiap hari jam 00:01
+   * Akan cek apakah hari ini tanggal gajian
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_1AM)
+  async handleScheduledPayroll(): Promise<void> {
+    this.logger.log('=== Scheduled Payroll Check Started ===');
 
-    // Ambil Setting Tanggal
-    const settings = await this.prisma.cooperativeSetting.findMany({
-      where: {
-        category: SettingCategory.GENERAL,
-        key: {
-          in: [
-            'cooperative_cutoff_date',
-            'cooperative_payroll_date',
-            'monthly_membership_fee',
-            'deposit_interest_rate',
-          ],
-        },
-      },
+    try {
+      const settings = await this.getPayrollSettings();
+      const today = dayjs();
+
+      // Cek apakah hari ini tanggal gajian
+      if (today.date() !== settings.payrollDate) {
+        this.logger.log(
+          `Today is ${today.date()}, payroll date is ${settings.payrollDate}.  Skipping. `,
+        );
+        return;
+      }
+
+      await this.processPayroll(today.month() + 1, today.year());
+    } catch (error) {
+      this.logger.error('Scheduled payroll failed', error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Manual trigger untuk payroll (untuk admin/testing)
+   */
+  async triggerManualPayroll(dto: ManualPayrollDto): Promise<PayrollSummary> {
+    const today = dayjs();
+    const month = dto.month || today.month() + 1;
+    const year = dto.year || today.year();
+
+    this.logger.log(`=== Manual Payroll Triggered for ${month}/${year} ===`);
+
+    // Cek apakah sudah diproses
+    const existingPeriod = await this.prisma.payrollPeriod.findUnique({
+      where: { month_year: { month, year } },
     });
 
-    const cutoffDateSetting = parseInt(
-      settings.find((s) => s.key === 'cooperative_cutoff_date')?.value || '15',
-    );
-    const payrollDateSetting = parseInt(
-      settings.find((s) => s.key === 'cooperative_payroll_date')?.value || '27',
-    );
-    const simpananWajibAmount = new Prisma.Decimal(
-      settings.find((s) => s.key === 'monthly_membership_fee')?.value ||
-        '50000',
-    );
-    const bungaSimpananDeposito = parseFloat(
-      settings.find((s) => s.key === 'deposit_interest_rate')?.value || '4',
-    );
-
-    const today = dayjs();
-
-    // Cek apakah hari ini tanggal gajian?
-    if (today.date() !== payrollDateSetting) {
-      this.logger.log(
-        `Hari ini tanggal ${today.date()}, bukan tanggal gajian (${payrollDateSetting}). Skip.`,
+    if (existingPeriod?.isProcessed && !dto.force) {
+      throw new Error(
+        `Payroll for ${month}/${year} already processed.  Use force=true to reprocess.`,
       );
-      return;
     }
 
-    // Tentukan Periode Cutoff (16 Bulan Lalu s/d 15 Bulan Ini)
-    // Contoh: Run 27 Feb. Cutoff Start: 16 Jan, Cutoff End: 15 Feb.
-    const cutoffEnd = today.set('date', cutoffDateSetting).startOf('day'); // 15 Feb
+    return this.processPayroll(month, year, dto.force);
+  }
+
+  /**
+   * Main payroll processing logic
+   */
+  async processPayroll(
+    month: number,
+    year: number,
+    force = false,
+  ): Promise<PayrollSummary> {
+    this.logger.log(`Processing payroll for ${month}/${year}...`);
+
+    const settings = await this.getPayrollSettings();
+    const processDate = dayjs()
+      .set('month', month - 1)
+      .set('year', year);
+
+    // Setup cutoff dates
+    const cutoffEnd = processDate
+      .set('date', settings.cutoffDate)
+      .startOf('day');
     const cutoffStart = cutoffEnd
       .subtract(1, 'month')
       .add(1, 'day')
-      .startOf('day'); // 16 Jan
+      .startOf('day');
 
-    const payrollMonth = today.month() + 1;
-    const payrollYear = today.year();
-
-    // Cek/Buat PayrollPeriod untuk mencegah double run
+    // Create or get payroll period
     let payrollPeriod = await this.prisma.payrollPeriod.findUnique({
-      where: { month_year: { month: payrollMonth, year: payrollYear } },
+      where: { month_year: { month, year } },
     });
 
-    if (payrollPeriod && payrollPeriod.isProcessed) {
-      this.logger.warn(
-        `Payroll periode ${payrollMonth}-${payrollYear} sudah diproses. Stop.`,
-      );
-      return;
+    if (payrollPeriod?.isProcessed && !force) {
+      throw new Error(`Payroll period ${month}/${year} already processed`);
     }
 
     if (!payrollPeriod) {
       payrollPeriod = await this.prisma.payrollPeriod.create({
         data: {
-          month: payrollMonth,
-          year: payrollYear,
-          name: `Periode ${today.format('MMMM YYYY')}`,
+          month,
+          year,
+          name: `Periode ${processDate.format('MMMM YYYY')}`,
           isProcessed: false,
         },
       });
+    } else if (force) {
+      // Reset if force reprocess
+      await this.prisma.payrollPeriod.update({
+        where: { id: payrollPeriod.id },
+        data: { isProcessed: false, processedAt: null, totalAmount: 0 },
+      });
     }
 
+    const context: PayrollContext = {
+      settings,
+      payrollPeriodId: payrollPeriod.id,
+      cutoffStart,
+      cutoffEnd,
+      processDate,
+    };
+
     this.logger.log(
-      `Processing Payroll: ${cutoffStart.format('DD/MM/YYYY')} - ${cutoffEnd.format('DD/MM/YYYY')}`,
+      `Cutoff period: ${cutoffStart.format('DD/MM/YYYY')} - ${cutoffEnd.format('DD/MM/YYYY')}`,
     );
 
-    // MULAI TRANSAKSI DATABASE (Agar data konsisten)
-    await this.prisma.$transaction(async (tx) => {
-      let totalProcessedAmount = new Prisma.Decimal(0);
+    // Initialize results
+    let membershipResult: ProcessorResult = this.emptyResult();
+    let mandatorySavingsResult: ProcessorResult = this.emptyResult();
+    let depositSavingsResult: ProcessorResult = this.emptyResult();
+    let loanInstallmentResult: ProcessorResult = this.emptyResult();
+    let interestResult: ProcessorResult = this.emptyResult();
 
-      // PROSES MEMBER BARU (SIMPANAN POKOK)
-      const newMembers = await tx.memberApplication.findMany({
-        where: {
-          status: ApplicationStatus.APPROVED,
-          isPaidOff: false,
-          approvedAt: { lte: cutoffEnd.toDate() }, // Hanya yang diapprove sebelum cutoff
+    // Process dalam transaction
+    await this.prisma.$transaction(
+      async (tx) => {
+        // 1. Process membership fees (Simpanan Pokok)
+        membershipResult = await this.membershipFeeProcessor.process(
+          tx,
+          context,
+        );
+
+        // 2. Process mandatory savings (Simpanan Wajib)
+        mandatorySavingsResult = await this.mandatorySavingsProcessor.process(
+          tx,
+          context,
+        );
+
+        // 3. Process deposit savings (Tabungan Deposito)
+        depositSavingsResult = await this.depositSavingsProcessor.process(
+          tx,
+          context,
+        );
+
+        // 4. Process loan installments (Angsuran Pinjaman)
+        loanInstallmentResult = await this.loanInstallmentProcessor.process(
+          tx,
+          context,
+        );
+
+        // 5. Calculate interest (Bunga Simpanan)
+        interestResult = await this.interestCalculatorProcessor.process(
+          tx,
+          context,
+        );
+
+        // Calculate grand total
+        const grandTotal = membershipResult.totalAmount
+          .add(mandatorySavingsResult.totalAmount)
+          .add(depositSavingsResult.totalAmount)
+          .add(loanInstallmentResult.totalAmount);
+
+        // Finalize payroll period
+        await tx.payrollPeriod.update({
+          where: { id: payrollPeriod.id },
+          data: {
+            isProcessed: true,
+            processedAt: new Date(),
+            totalAmount: grandTotal,
+          },
+        });
+      },
+      {
+        timeout: 60000, // 60 seconds timeout
+        maxWait: 10000,
+      },
+    );
+
+    const grandTotal = membershipResult.totalAmount
+      .add(mandatorySavingsResult.totalAmount)
+      .add(depositSavingsResult.totalAmount)
+      .add(loanInstallmentResult.totalAmount);
+
+    const summary: PayrollSummary = {
+      periodId: payrollPeriod.id,
+      periodName: payrollPeriod.name,
+      processedAt: new Date(),
+      membership: membershipResult,
+      mandatorySavings: mandatorySavingsResult,
+      depositSavings: depositSavingsResult,
+      loanInstallments: loanInstallmentResult,
+      interest: interestResult,
+      grandTotal,
+    };
+
+    this.logger.log('=== Payroll Processing Complete ===');
+    this.logger.log(`Grand Total: ${grandTotal}`);
+
+    return summary;
+  }
+
+  /**
+   * Get payroll status for a period
+   */
+  async getPayrollStatus(month: number, year: number) {
+    const period = await this.prisma.payrollPeriod.findUnique({
+      where: { month_year: { month, year } },
+      include: {
+        transactions: {
+          select: {
+            id: true,
+          },
         },
-        include: { user: { include: { savingsAccount: true } } },
-      });
+      },
+    });
 
-      for (const app of newMembers) {
-        if (!app.user.savingsAccount) {
-          throw new Error(
-            `User ID ${app.userId} tidak memiliki Savings Account.`,
-          );
-        }
-        let deduction = new Prisma.Decimal(0);
+    if (!period) {
+      return null;
+    }
 
-        // Cek Logic Cicilan
-        if (app.installmentPlan === 1) {
-          // Lunas Langsung
-          deduction = app.remainingAmount;
-        } else if (app.installmentPlan === 2) {
-          // Cicil 2x
-          if (app.paidAmount.equals(0)) {
-            // Cicilan Pertama (50% dari Entrance Fee)
-            deduction = app.entranceFee.div(2);
-          } else {
-            // Cicilan Kedua (Sisanya)
-            deduction = app.remainingAmount;
-          }
-        }
+    return {
+      periodId: period.id,
+      periodName: period.name,
+      month: period.month,
+      year: period.year,
+      isProcessed: period.isProcessed,
+      processedAt: period.processedAt,
+      totalAmount: period.totalAmount.toString(),
+      transactionCount: period.transactions.length,
+    };
+  }
 
-        if (deduction.gt(0)) {
-          // Insert Transaction
-          await tx.savingsTransaction.upsert({
-            where: {
-              savingsAccountId_payrollPeriodId: {
-                savingsAccountId: app.user.savingsAccount.id,
-                payrollPeriodId: payrollPeriod.id,
+  /**
+   * Get payroll history
+   */
+  async getPayrollHistory(limit = 12) {
+    const periods = await this.prisma.payrollPeriod.findMany({
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+      take: limit,
+      include: {
+        _count: {
+          select: { transactions: true },
+        },
+      },
+    });
+
+    return periods.map((p) => ({
+      periodId: p.id,
+      periodName: p.name,
+      month: p.month,
+      year: p.year,
+      isProcessed: p.isProcessed,
+      processedAt: p.processedAt,
+      totalAmount: p.totalAmount.toString(),
+      transactionCount: p._count.transactions,
+    }));
+  }
+
+  /**
+   * Get detailed transactions for a period
+   */
+  async getPeriodTransactions(periodId: string) {
+    return this.prisma.savingsTransaction.findMany({
+      where: { payrollPeriodId: periodId },
+      include: {
+        account: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                employee: {
+                  select: {
+                    employeeNumber: true,
+                    fullName: true,
+                    department: true,
+                  },
+                },
               },
             },
-            update: {
-              interestRate: bungaSimpananDeposito,
-              iuranPendaftaran: deduction,
-            },
-            create: {
-              savingsAccountId: app.user.savingsAccount.id,
-              payrollPeriodId: payrollPeriod.id,
-              interestRate: bungaSimpananDeposito,
-              iuranPendaftaran: deduction,
-            },
-          });
-
-          // Update Member Application
-          const newPaid = app.paidAmount.add(deduction);
-          const newRemaining = app.remainingAmount.sub(deduction);
-          const isLunas = newRemaining.lte(0);
-
-          await tx.memberApplication.update({
-            where: { id: app.id },
-            data: {
-              paidAmount: newPaid,
-              remainingAmount: newRemaining,
-              isPaidOff: isLunas,
-            },
-          });
-
-          // Update Savings Account (Saldo Pokok)
-          await tx.savingsAccount.update({
-            where: { id: app.user.savingsAccount.id },
-            data: {
-              saldoPokok: { increment: deduction },
-            },
-          });
-
-          totalProcessedAmount = totalProcessedAmount.add(deduction);
-        }
-      }
-
-      // PROSES SIMPANAN WAJIB (RUTIN)
-      // Ambil semua user aktif yang sudah jadi member (punya savings account)
-      const activeUsers = await tx.user.findMany({
-        where: {
-          memberVerified: true,
-          savingsAccount: { isNot: null },
+          },
         },
-        include: { savingsAccount: true },
-      });
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 
-      for (const user of activeUsers) {
-        const savingsAccountId = user.savingsAccount?.id;
-        if (!savingsAccountId) {
-          throw new Error(`User ID ${user.id} tidak memiliki Savings Account.`);
-        }
-        // Insert Transaction
-        await tx.savingsTransaction.upsert({
-          where: {
-            savingsAccountId_payrollPeriodId: {
-              savingsAccountId: savingsAccountId,
-              payrollPeriodId: payrollPeriod.id,
-            },
-          },
-          update: {
-            iuranBulanan: simpananWajibAmount,
-          },
-          create: {
-            savingsAccountId: savingsAccountId,
-            payrollPeriodId: payrollPeriod.id,
-            interestRate: bungaSimpananDeposito,
-            iuranBulanan: simpananWajibAmount,
-          },
-        });
-
-        // Update Savings Account (Saldo Wajib)
-        await tx.savingsAccount.update({
-          where: { id: savingsAccountId },
-          data: {
-            saldoWajib: { increment: simpananWajibAmount },
-          },
-        });
-
-        totalProcessedAmount = totalProcessedAmount.add(simpananWajibAmount);
-      }
-
-      // PROSES TABUNGAN DEPOSITO (LOOPING LOGIC)
-      const deposits = await tx.depositApplication.findMany({
-        where: {
-          OR: [
-            { status: DepositStatus.APPROVED },
-            { status: DepositStatus.ACTIVE },
-          ],
-          approvedAt: { lte: cutoffEnd.toDate() },
+  /**
+   * Fetch and parse payroll settings
+   */
+  private async getPayrollSettings(): Promise<PayrollSettings> {
+    const settings = await this.prisma.cooperativeSetting.findMany({
+      where: {
+        key: {
+          in: Object.values(PAYROLL_SETTINGS_KEYS),
         },
-        include: { user: { include: { savingsAccount: true } } },
-      });
+      },
+    });
 
-      for (const deposit of deposits) {
-        const savingsAccountId = deposit.user.savingsAccount?.id;
-        if (!savingsAccountId) {
-          throw new Error(
-            `User ID ${deposit.user.id} tidak memiliki Savings Account.`,
-          );
-        }
-        // Cek Logic Installment Count
-        if (deposit.installmentCount < deposit.tenorMonths) {
-          // Logic: Jika status APPROVED, ubah jadi ACTIVE dulu
-          let currentStatus = deposit.status;
+    const getValue = (key: string, defaultValue: number) => {
+      const setting = settings.find((s) => s.key === key);
+      return setting ? parseFloat(setting.value) : defaultValue;
+    };
 
-          if (deposit.status === DepositStatus.APPROVED) {
-            currentStatus = DepositStatus.ACTIVE;
-          }
+    return {
+      cutoffDate: getValue(
+        PAYROLL_SETTINGS_KEYS.CUTOFF_DATE,
+        DEFAULT_VALUES.CUTOFF_DATE,
+      ),
+      payrollDate: getValue(
+        PAYROLL_SETTINGS_KEYS.PAYROLL_DATE,
+        DEFAULT_VALUES.PAYROLL_DATE,
+      ),
+      monthlyMembershipFee: new Prisma.Decimal(
+        getValue(
+          PAYROLL_SETTINGS_KEYS.MONTHLY_MEMBERSHIP_FEE,
+          DEFAULT_VALUES.MONTHLY_MEMBERSHIP_FEE,
+        ),
+      ),
+      depositInterestRate: getValue(
+        PAYROLL_SETTINGS_KEYS.DEPOSIT_INTEREST_RATE,
+        DEFAULT_VALUES.DEPOSIT_INTEREST_RATE,
+      ),
+      loanInterestRate: getValue(
+        PAYROLL_SETTINGS_KEYS.LOAN_INTEREST_RATE,
+        DEFAULT_VALUES.LOAN_INTEREST_RATE,
+      ),
+      initialMembershipFee: new Prisma.Decimal(
+        getValue(
+          PAYROLL_SETTINGS_KEYS.INITIAL_MEMBERSHIP_FEE,
+          DEFAULT_VALUES.INITIAL_MEMBERSHIP_FEE,
+        ),
+      ),
+    };
+  }
 
-          const deduction = deposit.amountValue;
-
-          // Insert Transaction
-          await tx.savingsTransaction.upsert({
-            where: {
-              savingsAccountId_payrollPeriodId: {
-                savingsAccountId: savingsAccountId,
-                payrollPeriodId: payrollPeriod.id,
-              },
-            },
-            update: {
-              interestRate: bungaSimpananDeposito,
-              tabunganDeposito: deduction,
-            },
-            create: {
-              savingsAccountId: savingsAccountId,
-              payrollPeriodId: payrollPeriod.id,
-              interestRate: bungaSimpananDeposito,
-              tabunganDeposito: deduction,
-            },
-          });
-
-          // Update Deposit Application
-          const newCollected = deposit.collectedAmount.add(deduction);
-          const newCount = deposit.installmentCount + 1;
-
-          // Cek Selesai
-          let finalStatus = currentStatus;
-          let completedAt: Date | null = null;
-
-          if (newCount >= deposit.tenorMonths) {
-            finalStatus = DepositStatus.COMPLETED;
-            completedAt = today.toDate();
-          }
-
-          await tx.depositApplication.update({
-            where: { id: deposit.id },
-            data: {
-              status: finalStatus,
-              collectedAmount: newCollected,
-              installmentCount: newCount,
-              completedAt: completedAt,
-            },
-          });
-
-          await tx.savingsAccount.update({
-            where: { id: savingsAccountId },
-            data: {
-              saldoSukarela: { increment: deduction },
-            },
-          });
-
-          totalProcessedAmount = totalProcessedAmount.add(deduction);
-        }
-      }
-
-      // PERHITUNGAN BUNGA TABUNGAN DEPOSITO PER SAVINGS TRANSACTION
-      for (const user of activeUsers) {
-        const savingsAccountId = user.savingsAccount?.id;
-        if (!savingsAccountId) {
-          throw new Error(`User ID ${user.id} tidak memiliki Savings Account.`);
-        }
-
-        const jumlahTabungan =
-          Number(user.savingsAccount?.saldoPokok) +
-          Number(user.savingsAccount?.saldoWajib) +
-          Number(user.savingsAccount?.saldoSukarela);
-        const bunga = new Prisma.Decimal(jumlahTabungan)
-          .mul(bungaSimpananDeposito)
-          .div(100)
-          .div(12);
-
-        await tx.savingsTransaction.update({
-          where: {
-            savingsAccountId_payrollPeriodId: {
-              savingsAccountId: savingsAccountId,
-              payrollPeriodId: payrollPeriod.id,
-            },
-          },
-          data: {
-            bunga: bunga,
-            jumlahBunga: {
-              increment: bunga,
-            },
-          },
-        });
-
-        await tx.savingsAccount.update({
-          where: { id: savingsAccountId },
-          data: {
-            bungaDeposito: { increment: bunga },
-          },
-        });
-      }
-
-      // FINALISASI PAYROLL PERIOD
-      await tx.payrollPeriod.update({
-        where: { id: payrollPeriod.id },
-        data: {
-          isProcessed: true,
-          processedAt: new Date(),
-          totalAmount: totalProcessedAmount,
-        },
-      });
-    }); // End Transaction
-
-    this.logger.log('Payroll Process Completed Successfully.');
+  private emptyResult(): ProcessorResult {
+    return {
+      processedCount: 0,
+      totalAmount: new Prisma.Decimal(0),
+      errors: [],
+      details: [],
+    };
   }
 }
