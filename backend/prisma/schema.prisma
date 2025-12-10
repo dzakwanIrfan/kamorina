@@ -673,12 +673,12 @@ model DepositChangeRequest {
   changeType DepositChangeType @map("change_type")
 
   // Current values (snapshot)
-  currentAmountValue  Decimal  @map("current_amount_value") @db.Decimal(15, 2)
-  currentTenorMonths  Int      @map("current_tenor_months")
+  currentAmountValue Decimal @map("current_amount_value") @db.Decimal(15, 2)
+  currentTenorMonths Int     @map("current_tenor_months")
 
   // New requested values
-  newAmountValue  Decimal  @map("new_amount_value") @db.Decimal(15, 2)
-  newTenorMonths  Int      @map("new_tenor_months")
+  newAmountValue Decimal @map("new_amount_value") @db.Decimal(15, 2)
+  newTenorMonths Int     @map("new_tenor_months")
 
   // Admin fee
   adminFee Decimal @map("admin_fee") @db.Decimal(15, 2)
@@ -770,7 +770,7 @@ model DepositApplication {
   tenorMonths Int     @map("tenor_months")
 
   collectedAmount  Decimal @default(0) @map("collected_amount") @db.Decimal(15, 2)
-  installmentCount Int     @default(0) @map("installment_count") 
+  installmentCount Int     @default(0) @map("installment_count")
 
   agreedToTerms Boolean @default(false) @map("agreed_to_terms")
 
@@ -800,9 +800,9 @@ model DepositHistory {
   depositApplicationId String             @map("deposit_application_id")
   depositApplication   DepositApplication @relation(fields: [depositApplicationId], references: [id], onDelete: Cascade)
 
-  status       DepositStatus
-  amountValue  Decimal       @db.Decimal(15, 2)
-  tenorMonths  Int
+  status      DepositStatus
+  amountValue Decimal       @db.Decimal(15, 2)
+  tenorMonths Int
 
   action       String
   actionAt     DateTime @map("action_at")
@@ -870,6 +870,7 @@ model SavingsTransaction {
   payrollPeriod   PayrollPeriod? @relation(fields: [payrollPeriodId], references: [id])
   payrollPeriodId String?
 
+  @@unique([savingsAccountId, payrollPeriodId])
   @@index([savingsAccountId])
   @@index([transactionDate])
   @@map("savings_transactions")
