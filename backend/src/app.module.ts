@@ -16,6 +16,7 @@ import { join } from 'path';
 import { LoanModule } from './loan/loan.module';
 import { DepositModule } from './deposit/deposit.module';
 import { PayrollModule } from './payroll/payroll.module';
+import { BukuTabunganModule } from './buku-tabungan/buku-tabungan.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { PayrollModule } from './payroll/payroll.module';
     LoanModule,
     DepositModule,
     PayrollModule,
+    BukuTabunganModule,
   ],
 })
 export class AppModule {}
