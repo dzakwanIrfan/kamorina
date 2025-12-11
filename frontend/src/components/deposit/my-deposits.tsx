@@ -24,6 +24,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { depositService } from '@/services/deposit.service';
 import { DepositApplication, DepositStatus } from '@/types/deposit.types';
 import { DataTableConfig } from '@/types/data-table.types';
+import { useBukuTabungan } from '@/hooks/use-buku-tabungan';
 
 const statusMap = {
   [DepositStatus.DRAFT]: { label: 'Draft', variant: 'secondary' as const, icon: Clock },
@@ -241,6 +242,10 @@ export function MyDeposits() {
     .filter((d) => d.status === DepositStatus.ACTIVE)
     .reduce((sum, d) => sum + Number(d.amountValue), 0);
 
+  const { tabungan } = useBukuTabungan({
+    includeTransactionSummary: true,
+  });
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -280,10 +285,10 @@ export function MyDeposits() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(0)}
+              {formatCurrency(Number(tabungan?.summary.saldoSukarela))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total tabungan yang bisa diambil
+              Total saldo yang bisa diambil
             </p>
           </CardContent>
         </Card>
