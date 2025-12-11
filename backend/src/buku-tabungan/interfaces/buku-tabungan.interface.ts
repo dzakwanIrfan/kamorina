@@ -52,3 +52,37 @@ export interface TransactionFilters {
   month?: number;
   year?: number;
 }
+
+/**
+ * Item response for list all savings accounts
+ */
+export interface BukuTabunganListItem {
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    employee: {
+      employeeNumber: string;
+      fullName: string;
+      employeeType: string;
+      department: {
+        id: string;
+        departmentName: string;
+      };
+      golongan: {
+        id: string;
+        golonganName: string;
+      };
+    };
+  };
+  saldoPokok: Decimal;
+  saldoWajib: Decimal;
+  saldoSukarela: Decimal;
+  bungaDeposito: Decimal;
+  totalSaldo: Decimal;
+  createdAt: Date;
+  updatedAt: Date;
+}
+

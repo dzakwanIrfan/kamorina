@@ -141,6 +141,13 @@ const managementItems = [
     requiresMemberVerified: true,
   },
   {
+    title: "Semua Buku Tabungan",
+    icon: BookOpen,
+    href: "/dashboard/buku-tabungan/all",
+    roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
+    requiresMemberVerified: true,
+  },
+  {
     title: "Employees",
     icon: Users,
     href: "/dashboard/employees",

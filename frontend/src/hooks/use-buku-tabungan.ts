@@ -6,8 +6,10 @@ import { bukuTabunganService } from "@/services/buku-tabungan.service";
 import {
   BukuTabunganResponse,
   SavingsTransaction,
+  SavingsAccountListItem,
   TransactionSummary,
   QueryTransactionParams,
+  QueryAllAccountsParams,
 } from "@/types/buku-tabungan.types";
 import { PaginationMeta } from "@/types/pagination.types";
 import axios from "axios";
@@ -236,3 +238,106 @@ export function useTransactionSummary(
     refetch: fetchSummary,
   };
 }
+
+/**
+ * Hook for admin to view all savings accounts
+ */
+interface UseAllAccountsReturn {
+  accounts: SavingsAccountListItem[];
+  meta: PaginationMeta;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  setPage: (page: number) => void;
+  setLimit: (limit: number) => void;
+  setFilters: (filters: Partial<QueryAllAccountsParams>) => void;
+  resetFilters: () => void;
+  params: QueryAllAccountsParams;
+}
+
+export function useAllAccounts(
+  initialParams?: QueryAllAccountsParams
+): UseAllAccountsReturn {
+  const [accounts, setAccounts] = useState<SavingsAccountListItem[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta>(defaultMeta);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [params, setParams] = useState<QueryAllAccountsParams>({
+    page: 1,
+    limit: 10,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    ...initialParams,
+  });
+
+  const fetchAccounts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await bukuTabunganService.getAllAccounts(params);
+      setAccounts(response.data);
+      setMeta(response.meta);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        const message =
+          err.response?.data?.message || "Gagal memuat data tabungan";
+
+        if (status === 403) {
+          setError("Anda tidak memiliki akses ke halaman ini");
+          toast.error("Anda tidak memiliki akses ke halaman ini");
+        } else {
+          setError(message);
+          toast.error(message);
+        }
+        setAccounts([]);
+        setMeta(defaultMeta);
+      } else {
+        setError("Terjadi kesalahan");
+        toast.error("Terjadi kesalahan");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
+
+  const setPage = (page: number) => {
+    setParams((prev) => ({ ...prev, page }));
+  };
+
+  const setLimit = (limit: number) => {
+    setParams((prev) => ({ ...prev, limit, page: 1 }));
+  };
+
+  const setFilters = (filters: Partial<QueryAllAccountsParams>) => {
+    setParams((prev) => ({ ...prev, ...filters, page: 1 }));
+  };
+
+  const resetFilters = () => {
+    setParams({
+      page: 1,
+      limit: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    });
+  };
+
+  return {
+    accounts,
+    meta,
+    isLoading,
+    error,
+    refetch: fetchAccounts,
+    setPage,
+    setLimit,
+    setFilters,
+    resetFilters,
+    params,
+  };
+}
+

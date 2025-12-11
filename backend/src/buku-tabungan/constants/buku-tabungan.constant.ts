@@ -46,3 +46,33 @@ export const DEFAULT_INCLUDE_TRANSACTION = {
     },
   },
 } as const;
+
+export const DEFAULT_INCLUDE_ACCOUNT_LIST = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      employee: {
+        select: {
+          employeeNumber: true,
+          fullName: true,
+          employeeType: true,
+          department: {
+            select: {
+              id: true,
+              departmentName: true,
+            },
+          },
+          golongan: {
+            select: {
+              id: true,
+              golonganName: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+

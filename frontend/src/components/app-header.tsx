@@ -20,7 +20,10 @@ export function AppHeader() {
   // Generate breadcrumb from pathname
   const generateBreadcrumbs = () => {
     const paths = pathname.split('/').filter(Boolean);
-    
+
+    // Regex to detect UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
     // Map untuk label yang lebih readable
     const labelMap: Record<string, string> = {
       dashboard: 'Dashboard',
@@ -30,12 +33,32 @@ export function AppHeader() {
       departments: 'Departemen',
       settings: 'Pengaturan',
       profile: 'Profil',
+      'buku-tabungan': 'Buku Tabungan',
+      all: 'Semua',
+      loans: 'Pinjaman',
+      deposits: 'Deposito',
+      approvals: 'Persetujuan',
+      employees: 'Karyawan',
+      levels: 'Level',
+      golongan: 'Golongan',
+      'member-application': 'Aplikasi Anggota',
+      'deposit-changes': 'Perubahan Deposito',
+      'deposit-options': 'Opsi Deposito',
+      amounts: 'Jumlah',
+      tenors: 'Tenor',
+      disbursement: 'Pencairan',
+      authorization: 'Otorisasi',
     };
 
-    return paths.map((path, index) => {
-      const href = `/${paths.slice(0, index + 1).join('/')}`;
-      const label = labelMap[path] || path.charAt(0).toUpperCase() + path.slice(1);
-      const isLast = index === paths.length - 1;
+    // Filter out UUID segments
+    const filteredPaths = paths.filter(path => !uuidRegex.test(path));
+
+    return filteredPaths.map((path, index) => {
+      // Build href from original paths up to this point
+      const originalIndex = paths.indexOf(path);
+      const href = `/${paths.slice(0, originalIndex + 1).join('/')}`;
+      const label = labelMap[path] || path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
+      const isLast = index === filteredPaths.length - 1;
 
       return {
         href,
@@ -44,6 +67,7 @@ export function AppHeader() {
       };
     });
   };
+
 
   const breadcrumbs = generateBreadcrumbs();
 

@@ -2,21 +2,122 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PaginatedResult } from 'src/common/interfaces/pagination.interface';
 import { QueryBukuTabunganDto } from './dto/query-buku-tabungan.dto';
+import { QueryAllBukuTabunganDto } from './dto/query-all-buku-tabungan.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
 import {
   BukuTabunganResponse,
+  BukuTabunganListItem,
   SaldoSummary,
   TransactionSummary,
 } from './interfaces/buku-tabungan.interface';
 import {
   DEFAULT_INCLUDE_ACCOUNT,
   DEFAULT_INCLUDE_TRANSACTION,
+  DEFAULT_INCLUDE_ACCOUNT_LIST,
 } from './constants/buku-tabungan.constant';
 import { Prisma, SavingsTransaction } from '@prisma/client';
 
 @Injectable()
 export class BukuTabunganService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Get all savings accounts with pagination (for admin roles)
+   */
+  async findAll(
+    query: QueryAllBukuTabunganDto,
+  ): Promise<PaginatedResult<BukuTabunganListItem>> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      departmentId,
+      employeeType,
+    } = query;
+
+    const skip = (page - 1) * limit;
+
+    // Build employee filter
+    const employeeFilter: Prisma.EmployeeWhereInput = {};
+    if (departmentId) {
+      employeeFilter.departmentId = departmentId;
+    }
+    if (employeeType) {
+      employeeFilter.employeeType = employeeType;
+    }
+
+    const where: Prisma.SavingsAccountWhereInput = {};
+
+    // Search by user name or employee number
+    if (search) {
+      where.user = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { employee: { fullName: { contains: search, mode: 'insensitive' } } },
+          { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
+    }
+
+    // Apply employee filters (department, employeeType)
+    if (Object.keys(employeeFilter).length > 0) {
+      if (where.user) {
+        where.user = {
+          AND: [where.user, { employee: employeeFilter }],
+        };
+      } else {
+        where.user = { employee: employeeFilter };
+      }
+    }
+
+
+    const orderBy: Prisma.SavingsAccountOrderByWithRelationInput = {
+      [sortBy]: sortOrder,
+    };
+
+    const [data, total] = await Promise.all([
+      this.prisma.savingsAccount.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: DEFAULT_INCLUDE_ACCOUNT_LIST,
+      }),
+      this.prisma.savingsAccount.count({ where }),
+    ]);
+
+    // Transform data with totalSaldo calculation
+    const transformedData: BukuTabunganListItem[] = data.map((account) => {
+      const totalSaldo = new Prisma.Decimal(0)
+        .add(account.saldoPokok)
+        .add(account.saldoWajib)
+        .add(account.saldoSukarela)
+        .add(account.bungaDeposito);
+
+      return {
+        ...account,
+        totalSaldo,
+      } as BukuTabunganListItem;
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: transformedData,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+
 
   /**
    * Get savings account by user ID with optional transaction summary

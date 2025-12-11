@@ -1,8 +1,11 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { BukuTabunganService } from './buku-tabungan.service';
 import { QueryBukuTabunganDto } from './dto/query-buku-tabungan.dto';
+import { QueryAllBukuTabunganDto } from './dto/query-all-buku-tabungan.dto';
 import { QueryTransactionDto } from './dto/query-transaction.dto';
 import type { ICurrentUser } from 'src/auth/interfaces/current-user.interface';
 
@@ -10,6 +13,50 @@ import type { ICurrentUser } from 'src/auth/interfaces/current-user.interface';
 @UseGuards(JwtAuthGuard)
 export class BukuTabunganController {
   constructor(private readonly bukuTabunganService: BukuTabunganService) { }
+
+  /**
+   * GET /buku-tabungan/all
+   * Get all savings accounts with pagination (for admin roles)
+   * Accessible by: KETUA, DIVISI_SIMPAN_PINJAM, PENGAWAS
+   */
+  @Get('all')
+  @UseGuards(RolesGuard)
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  async findAll(@Query() query: QueryAllBukuTabunganDto) {
+    return this.bukuTabunganService.findAll(query);
+  }
+
+  /**
+   * GET /buku-tabungan/user/:userId
+   * Get specific user's savings account (for admin roles)
+   * Accessible by: KETUA, DIVISI_SIMPAN_PINJAM, PENGAWAS
+   */
+  @Get('user/:userId')
+  @UseGuards(RolesGuard)
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  async getTabunganByUserIdAdmin(
+    @Param('userId') userId: string,
+    @Query() query: QueryBukuTabunganDto,
+  ) {
+    return this.bukuTabunganService.getTabunganByUserId(userId, query);
+  }
+
+  /**
+   * GET /buku-tabungan/user/:userId/transactions
+   * Get specific user's transactions (for admin roles)
+   * Accessible by: KETUA, DIVISI_SIMPAN_PINJAM, PENGAWAS
+   */
+  @Get('user/:userId/transactions')
+  @UseGuards(RolesGuard)
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  async getTransactionsByUserIdAdmin(
+    @Param('userId') userId: string,
+    @Query() query: QueryTransactionDto,
+  ) {
+    return this.bukuTabunganService.getTransactionsByUserId(userId, query);
+  }
+
+
 
   /**
    * GET /buku-tabungan
@@ -20,9 +67,9 @@ export class BukuTabunganController {
     @CurrentUser() user: ICurrentUser,
     @Query() query: QueryBukuTabunganDto,
   ) {
-    console.log(user);
     return this.bukuTabunganService.getTabunganByUserId(user.id, query);
   }
+
 
   /**
    * GET /buku-tabungan/transactions
