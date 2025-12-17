@@ -62,7 +62,7 @@ export interface DepositApplication {
   depositTenorCode: string;
   amountValue: number;
   tenorMonths: number;
-  collectedMonths: number;
+  collectedAmount: number;
   installmentCount: number;
   interestRate: number | null;
   agreedToTerms: boolean;

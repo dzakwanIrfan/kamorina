@@ -21,6 +21,7 @@ import {
   Clock,
   Edit,
   BookOpen,
+  TrendingDown,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 
@@ -76,6 +77,12 @@ const menuItems = [
     requiresMemberVerified: true,
   },
   {
+    title: "Penarikan Deposito",
+    icon: TrendingDown,
+    href: "/dashboard/deposit-withdrawals",
+    requiresMemberVerified: true,
+  },
+  {
     title: "Pinjaman Saya",
     icon: FaRupiahSign,
     href: "/dashboard/loans",
@@ -85,14 +92,14 @@ const menuItems = [
 
 const managementItems = [
   {
-    title: "Member Applications",
+    title: "Pengajuan Anggota",
     icon: FileText,
     href: "/dashboard/member-application",
     roles: ["ketua", "divisi_simpan_pinjam", "pengawas", "payroll"],
     requiresMemberVerified: true,
   },
   {
-    title: "Deposit Approvals",
+    title: "Approval Deposito",
     icon: PiggyBank,
     href: "/dashboard/deposits/approvals",
     roles: ["ketua", "divisi_simpan_pinjam"],
@@ -103,6 +110,27 @@ const managementItems = [
     icon: Edit,
     href: "/dashboard/deposit-changes/approvals",
     roles: ["ketua", "divisi_simpan_pinjam"],
+    requiresMemberVerified: true,
+  },
+  {
+    title: "Approval Penarikan",
+    icon: TrendingDown,
+    href: "/dashboard/deposit-withdrawals/approvals",
+    roles: ["ketua", "divisi_simpan_pinjam"],
+    requiresMemberVerified: true,
+  },
+  {
+    title: "Pencairan Dana",
+    icon: Banknote,
+    href: "/dashboard/deposit-withdrawals/disbursement",
+    roles: ["shopkeeper"],
+    requiresMemberVerified: true,
+  },
+  {
+    title: "Otorisasi Penarikan",
+    icon: Shield,
+    href: "/dashboard/deposit-withdrawals/authorization",
+    roles: ["ketua"],
     requiresMemberVerified: true,
   },
   {
@@ -120,21 +148,21 @@ const managementItems = [
     requiresMemberVerified: true,
   },
   {
-    title: "Loan Approvals",
+    title: "Approval Pinjaman",
     icon: CheckCircle2,
     href: "/dashboard/loans/approvals",
     roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
     requiresMemberVerified: true,
   },
   {
-    title: "Loan Disbursement",
+    title: "Pencairan Pinjaman",
     icon: Banknote,
     href: "/dashboard/loans/disbursement",
     roles: ["shopkeeper"],
     requiresMemberVerified: true,
   },
   {
-    title: "Loan Authorization",
+    title: "Otorisasi Pinjaman",
     icon: Shield,
     href: "/dashboard/loans/authorization",
     roles: ["ketua"],
@@ -148,14 +176,14 @@ const managementItems = [
     requiresMemberVerified: true,
   },
   {
-    title: "Employees",
+    title: "Karyawan",
     icon: Users,
     href: "/dashboard/employees",
     roles: ["ketua", "divisi_simpan_pinjam"],
     requiresMemberVerified: true,
   },
   {
-    title: "Departments",
+    title: "Departemen",
     icon: Building2,
     href: "/dashboard/departments",
     roles: [
@@ -168,7 +196,7 @@ const managementItems = [
     requiresMemberVerified: true,
   },
   {
-    title: "Levels",
+    title: "Jabatan",
     icon: Shield,
     href: "/dashboard/levels",
     roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
@@ -188,7 +216,7 @@ const managementItems = [
     requiresMemberVerified: true,
   },
   {
-    title: "Settings",
+    title: "Pengaturan",
     icon: Settings,
     href: "/dashboard/settings",
     roles: ["ketua", "divisi_simpan_pinjam"],
