@@ -115,24 +115,14 @@ const DEFAULT_SETTINGS = [
 
     // PENALTY
     {
-        key: 'late_payment_penalty_rate',
-        value: '0.5',
+        key: 'deposit_early_withdrawal_penalty_rate',
+        value: '3',
         type: SettingType.NUMBER,
         category: SettingCategory.PENALTY,
-        label: 'Denda Keterlambatan',
-        description: 'Persentase denda per hari keterlambatan pembayaran',
+        label: 'Penalty Penarikan Deposito Awal',
+        description: 'Persentase penalty untuk penarikan deposito sebelum jatuh tempo',
         unit: 'Persen',
-        validation: { min: 0, max: 10, required: true },
-    },
-    {
-        key: 'max_late_payment_days',
-        value: '90',
-        type: SettingType.NUMBER,
-        category: SettingCategory.PENALTY,
-        label: 'Maksimal Hari Keterlambatan',
-        description: 'Batas maksimal hari keterlambatan sebelum tindakan lebih lanjut',
-        unit: 'Hari',
-        validation: { min: 1, required: true },
+        validation: { min: 0, max: 100, required: true },
     },
 
     // GENERAL
