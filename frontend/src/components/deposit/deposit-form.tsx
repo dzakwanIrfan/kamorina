@@ -25,10 +25,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { depositService } from '@/services/deposit.service';
-import { depositOptionService } from '@/services/deposit-option.service';
 import { handleApiError } from '@/lib/axios';
 import { useDepositConfig } from '@/hooks/use-deposit-config';
-import { DepositCalculation } from '@/types/deposit-option.types';
 
 interface DepositFormProps {
   onSuccess: () => void;
@@ -37,7 +35,6 @@ interface DepositFormProps {
 
 export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const { data: config, isLoading: isLoadingConfig } = useDepositConfig();
 
   const formSchema = z.object({
@@ -59,15 +56,6 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
     },
   });
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
@@ -80,7 +68,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
       });
 
       // Then submit
-      await depositService.submitDeposit(draftResult.deposit. id);
+      await depositService.submitDeposit(draftResult.deposit.id);
 
       toast.success('Pengajuan tabungan deposito berhasil disubmit! ');
       onSuccess();
@@ -110,7 +98,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
           <div>
             <Skeleton className="h-4 w-32 mb-3" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              {[1, 2, 3, 4]. map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="h-20 sm:h-24 w-full" />
               ))}
             </div>
@@ -120,7 +108,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
     );
   }
 
-  if (! config) {
+  if (!config) {
     return (
       <Card className="w-full max-w-5xl mx-auto">
         <CardContent className="py-10 px-4 sm:px-6">
@@ -172,7 +160,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                             className="peer sr-only"
                           />
                           <label
-                            htmlFor={option. code}
+                            htmlFor={option.code}
                             className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-card hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 dark:peer-data-[state=checked]:bg-primary/10 cursor-pointer transition-all p-3 sm:p-4 h-20 sm:h-24"
                           >
                             <FaRupiahSign className="mb-1 sm:mb-2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground peer-data-[state=checked]:text-primary" />
@@ -206,11 +194,11 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                       value={field.value}
                       className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4"
                     >
-                      {config.tenors. map((option) => (
+                      {config.tenors.map((option) => (
                         <div key={option.code}>
                           <RadioGroupItem
                             value={option.code}
-                            id={option. code}
+                            id={option.code}
                             className="peer sr-only"
                           />
                           <label
@@ -233,12 +221,12 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
 
             {/* Terms and Conditions */}
             <FormField
-              control={form. control}
+              control={form.control}
               name="agreedToTerms"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 sm:p-4">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field. onChange} />
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <div className="space-y-1 leading-none flex-1">
                     <FormLabel className="text-xs sm:text-sm font-semibold">
@@ -293,9 +281,9 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                   Batal
                 </Button>
               )}
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || isCalculating} 
+              <Button
+                type="submit"
+                disabled={isSubmitting}
                 className="w-full sm:flex-1 text-sm sm:text-base"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

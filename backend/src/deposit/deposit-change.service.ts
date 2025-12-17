@@ -27,7 +27,8 @@ export class DepositChangeService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
-  ) {}
+    private depositOptionService: DepositOptionService,
+  ) { }
 
   /**
    * Generate change request number: CHG-YYYYMMDD-XXXX
@@ -69,7 +70,7 @@ export class DepositChangeService {
    */
   private async getDepositSettings() {
     const interestSetting = await this.prisma.cooperativeSetting.findUnique({
-        where: { key: 'deposit_interest_rate' },
+      where: { key: 'deposit_interest_rate' },
     });
 
     return {
@@ -178,9 +179,31 @@ export class DepositChangeService {
       throw new BadRequestException('Anda harus menyetujui biaya admin');
     }
 
-    // Validate new amount and tenor values
-    const newAmountValue = dto.newAmountValue;
-    const newTenorMonths = dto.newTenorMonths;
+    // Validate and get amount option by code
+    const amountOption = await this.depositOptionService.findAmountOptionByCode(
+      dto.newAmountCode,
+    );
+    if (!amountOption.isActive) {
+      throw new BadRequestException('Opsi jumlah deposito tidak aktif');
+    }
+
+    // Validate and get tenor option by code
+    const tenorOption = await this.depositOptionService.findTenorOptionByCode(
+      dto.newTenorCode,
+    );
+    if (!tenorOption.isActive) {
+      throw new BadRequestException('Opsi tenor deposito tidak aktif');
+    }
+
+    const newAmountValue = amountOption.amount.toNumber();
+    const newTenorMonths = tenorOption.months;
+
+    // Validate new tenor must be greater than installment count
+    if (newTenorMonths <= deposit.installmentCount) {
+      throw new BadRequestException(
+        `Jangka waktu baru harus lebih besar dari jumlah setoran yang sudah dilakukan (${deposit.installmentCount} bulan)`,
+      );
+    }
 
     // Determine change type
     const changeType = this.determineChangeType(
@@ -284,14 +307,33 @@ export class DepositChangeService {
     let newAmountValue = changeRequest.newAmountValue.toNumber();
     let newTenorMonths = changeRequest.newTenorMonths;
 
-    if (dto.newAmountValue !== undefined) {
-      updateData.newAmountValue = dto.newAmountValue;
-      newAmountValue = dto.newAmountValue;
+    if (dto.newAmountCode !== undefined) {
+      const amountOption = await this.depositOptionService.findAmountOptionByCode(
+        dto.newAmountCode,
+      );
+      if (!amountOption.isActive) {
+        throw new BadRequestException('Opsi jumlah deposito tidak aktif');
+      }
+      updateData.newAmountValue = amountOption.amount;
+      newAmountValue = amountOption.amount.toNumber();
     }
 
-    if (dto.newTenorMonths !== undefined) {
-      updateData.newTenorMonths = dto.newTenorMonths;
-      newTenorMonths = dto.newTenorMonths;
+    if (dto.newTenorCode !== undefined) {
+      const tenorOption = await this.depositOptionService.findTenorOptionByCode(
+        dto.newTenorCode,
+      );
+      if (!tenorOption.isActive) {
+        throw new BadRequestException('Opsi tenor deposito tidak aktif');
+      }
+      updateData.newTenorMonths = tenorOption.months;
+      newTenorMonths = tenorOption.months;
+    }
+
+    // Validate new tenor must be greater than installment count
+    if (newTenorMonths <= changeRequest.depositApplication.installmentCount) {
+      throw new BadRequestException(
+        `Jangka waktu baru harus lebih besar dari jumlah setoran yang sudah dilakukan (${changeRequest.depositApplication.installmentCount} bulan)`,
+      );
     }
 
     // Validate there's an actual change
@@ -869,9 +911,14 @@ export class DepositChangeService {
         },
       });
 
+      // Map current step to corresponding "under review" status
+      const stepStatusMap: { [key in DepositChangeApprovalStep]?: DepositChangeStatus } = {
+        [DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM]: DepositChangeStatus.UNDER_REVIEW_KETUA,
+      };
+
       const newStatus = isLastStep
         ? DepositChangeStatus.APPROVED
-        : changeRequest.status;
+        : stepStatusMap[changeRequest.currentStep as DepositChangeApprovalStep] ?? changeRequest.status;
 
       // Update change request
       await tx.depositChangeRequest.update({

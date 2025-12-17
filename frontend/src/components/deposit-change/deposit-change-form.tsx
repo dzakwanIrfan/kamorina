@@ -5,15 +5,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { 
-  Loader2, 
-  Calendar as CalendarIcon, 
-  CheckCircle2, 
-  Info, 
-  TrendingUp,
-  TrendingDown,
-  ArrowRight,
-  AlertTriangle,
+import {
+  Loader2,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
 import { FaRupiahSign } from 'react-icons/fa6';
 
@@ -38,8 +34,8 @@ import { depositChangeService } from '@/services/deposit-change.service';
 import { handleApiError } from '@/lib/axios';
 import { useDepositConfig } from '@/hooks/use-deposit-config';
 import { DepositApplication } from '@/types/deposit.types';
-import { DepositChangePreview } from '@/types/deposit-change.types';
-import { formatCurrency, formatDifference } from '@/lib/deposit-change-constants';
+import { formatCurrency } from '@/lib/deposit-change-constants';
+import { settingsService } from '@/services/setting.service';
 
 interface DepositChangeFormProps {
   deposit: DepositApplication;
@@ -49,14 +45,14 @@ interface DepositChangeFormProps {
 
 export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChangeFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [preview, setPreview] = useState<DepositChangePreview | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [adminFee, setAdminFee] = useState<number>(0);
   const { data: config, isLoading: isLoadingConfig } = useDepositConfig();
 
   const formSchema = z.object({
-    newAmountCode: z.string(). min(1, 'Pilih jumlah deposito baru'),
+    newAmountCode: z.string().min(1, 'Pilih jumlah deposito baru'),
     newTenorCode: z.string().min(1, 'Pilih jangka waktu baru'),
-    agreedToTerms: z.boolean(). refine((val) => val === true, {
+    agreedToTerms: z.boolean().refine((val) => val === true, {
       message: 'Anda harus menyetujui syarat dan ketentuan',
     }),
     agreedToAdminFee: z.boolean().refine((val) => val === true, {
@@ -76,58 +72,34 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
     },
   });
 
-  const newAmountCode = form.watch('newAmountCode');
-  const newTenorCode = form. watch('newTenorCode');
-
-  // Fetch preview calculation when options change
   useEffect(() => {
-    const fetchPreview = async () => {
-      if (!newAmountCode || !newTenorCode) {
-        setPreview(null);
-        return;
-      }
-
-      // Check if there's any change
-      if (
-        newAmountCode === deposit.depositAmountCode &&
-        newTenorCode === deposit.depositTenorCode
-      ) {
-        setPreview(null);
-        return;
-      }
-
+    const fetchSettings = async () => {
       try {
-        setIsCalculating(true);
-        const result = await depositChangeService.previewChange(
-          deposit.id,
-          newAmountCode,
-          newTenorCode
-        );
-        setPreview(result);
+        setIsLoadingSettings(true);
+        const [adminFee] = await Promise.all([
+          settingsService.getByKey('deposit_change_admin_fee'),
+        ]);
+
+        setAdminFee(parseFloat(adminFee.value));
       } catch (error) {
-        console.error('Failed to fetch preview:', error);
-        setPreview(null);
+        console.error('Failed to fetch settings:', error);
+        toast.error('Gagal memuat data pengaturan koperasi');
       } finally {
-        setIsCalculating(false);
+        setIsLoadingSettings(false);
       }
     };
 
-    fetchPreview();
-  }, [newAmountCode, newTenorCode, deposit.id, deposit.depositAmountCode, deposit.depositTenorCode]);
+    fetchSettings();
+  }, []);
 
   const onSubmit = async (data: FormData) => {
-    if (! preview?. hasChanges) {
-      toast. error('Tidak ada perubahan yang diajukan');
-      return;
-    }
-
     try {
       setIsSubmitting(true);
 
       // Create draft first
       const draftResult = await depositChangeService.createDraft({
         depositApplicationId: deposit.id,
-        newAmountCode: data. newAmountCode,
+        newAmountCode: data.newAmountCode,
         newTenorCode: data.newTenorCode,
         agreedToTerms: data.agreedToTerms,
         agreedToAdminFee: data.agreedToAdminFee,
@@ -166,7 +138,17 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
     );
   }
 
-  if (! config) {
+  if (isLoadingSettings) {
+    return (
+      <Card className="w-full max-w-3xl mx-auto">
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!config) {
     return (
       <Card className="w-full">
         <CardContent className="py-10">
@@ -186,7 +168,7 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
       <CardHeader>
         <CardTitle>Formulir Perubahan Tabungan Deposito</CardTitle>
         <CardDescription>
-          Ubah jumlah atau jangka waktu deposito Anda.  Biaya admin akan dikenakan untuk setiap perubahan. 
+          Ubah jumlah atau jangka waktu deposito Anda.  Biaya admin akan dikenakan untuk setiap perubahan.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -202,16 +184,16 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Jumlah</p>
-                <p className="font-semibold">{formatCurrency(deposit.amountValue)}</p>
+                <p className="font-semibold text-green-600">{formatCurrency(deposit.amountValue)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Tenor</p>
                 <p className="font-semibold">{deposit.tenorMonths} Bulan</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Total Return</p>
-                <p className="font-semibold text-green-600">
-                  {deposit.totalReturn ?  formatCurrency(deposit.totalReturn) : '-'}
+                <p className="text-xs text-muted-foreground">Setoran</p>
+                <p className="font-semibold">
+                  {deposit.installmentCount}/{deposit.tenorMonths}
                 </p>
               </div>
             </div>
@@ -234,7 +216,7 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
                       className="grid grid-cols-2 md:grid-cols-3 gap-4"
                     >
                       {config.amounts.map((option) => {
-                        const isCurrent = option.code === deposit.depositAmountCode;
+                        const isCurrent = option.amount === deposit.amountValue;
                         return (
                           <div key={option.code}>
                             <RadioGroupItem
@@ -244,13 +226,12 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
                             />
                             <label
                               htmlFor={`amount-${option.code}`}
-                              className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative ${
-                                isCurrent ?  'ring-2 ring-blue-200 dark:ring-blue-800' : ''
-                              }`}
+                              className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent [&:has([data-state=checked])]:border-primary cursor-pointer relative ${isCurrent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
+                                }`}
                             >
                               {isCurrent && (
-                                <Badge 
-                                  variant="secondary" 
+                                <Badge
+                                  variant="secondary"
                                   className="absolute -top-2 -right-2 text-xs"
                                 >
                                   Saat Ini
@@ -275,7 +256,12 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
               name="newTenorCode"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Jangka Waktu Baru</FormLabel>
+                  <div className="flex flex-col space-y-2">
+                    <FormLabel>Jangka Waktu Baru</FormLabel>
+                    <FormDescription>
+                      Jangka waktu baru harus lebih besar dari jumlah setoran yang sudah dilakukan ({deposit.installmentCount} bulan)
+                    </FormDescription>
+                  </div>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -283,26 +269,40 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
                       className="grid grid-cols-2 md:grid-cols-4 gap-4"
                     >
                       {config.tenors.map((option) => {
-                        const isCurrent = option.code === deposit.depositTenorCode;
+                        const isCurrent = option.months === deposit.tenorMonths;
+                        // Disable if tenor months is less than or equal to installmentCount
+                        const isDisabled = option.months <= deposit.installmentCount;
                         return (
                           <div key={option.code}>
                             <RadioGroupItem
                               value={option.code}
                               id={`tenor-${option.code}`}
                               className="peer sr-only"
+                              disabled={isDisabled}
                             />
                             <label
                               htmlFor={`tenor-${option.code}`}
-                              className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative ${
-                                isCurrent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
-                              }`}
+                              className={`flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 relative ${isCurrent ? 'ring-2 ring-blue-200 dark:ring-blue-800' : ''
+                                } ${isDisabled
+                                  ? 'opacity-50 cursor-not-allowed bg-muted'
+                                  : 'hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-accent [&:has([data-state=checked])]:border-primary cursor-pointer'
+                                }`}
+                              title={isDisabled ? `Tidak dapat dipilih karena sudah ada ${deposit.installmentCount} setoran` : undefined}
                             >
                               {isCurrent && (
-                                <Badge 
-                                  variant="secondary" 
+                                <Badge
+                                  variant="secondary"
                                   className="absolute -top-2 -right-2 text-xs"
                                 >
                                   Saat Ini
+                                </Badge>
+                              )}
+                              {isDisabled && !isCurrent && (
+                                <Badge
+                                  variant="outline"
+                                  className="absolute -top-2 -right-2 text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200 border-orange-300"
+                                >
+                                  Tidak Tersedia
                                 </Badge>
                               )}
                               <CalendarIcon className="mb-2 h-6 w-6" />
@@ -317,145 +317,6 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
                 </FormItem>
               )}
             />
-
-            {/* Calculation Preview */}
-            {isCalculating && (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span className="text-muted-foreground">Menghitung perubahan...</span>
-              </div>
-            )}
-
-            {preview && preview.hasChanges && ! isCalculating && (
-              <div className="space-y-4">
-                <Alert className="bg-primary/5 border-primary/20">
-                  <TrendingUp className="h-4 w-4" />
-                  <AlertTitle>Perbandingan Perubahan</AlertTitle>
-                  <AlertDescription>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-                      {/* Before */}
-                      <div className="bg-background rounded-lg p-4 border">
-                        <p className="text-sm font-medium text-muted-foreground mb-3">Sebelum</p>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm">Jumlah:</span>
-                            <span className="font-medium">{formatCurrency(preview. current.principal)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm">Tenor:</span>
-                            <span className="font-medium">{preview.current.tenorMonths} Bulan</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm">Bunga:</span>
-                            <span className="font-medium text-green-600">
-                              {formatCurrency(preview.current.projectedInterest)}
-                            </span>
-                          </div>
-                          <Separator />
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Total Return:</span>
-                            <span className="font-bold">{formatCurrency(preview.current.totalReturn)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Arrow */}
-                      <div className="hidden lg:flex items-center justify-center">
-                        <ArrowRight className="h-8 w-8 text-muted-foreground" />
-                      </div>
-
-                      {/* After */}
-                      <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
-                        <p className="text-sm font-medium text-primary mb-3">Sesudah</p>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-sm">Jumlah:</span>
-                            <span className="font-medium">{formatCurrency(preview.new.principal)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm">Tenor:</span>
-                            <span className="font-medium">{preview.new. tenorMonths} Bulan</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-sm">Bunga:</span>
-                            <span className="font-medium text-green-600">
-                              {formatCurrency(preview. new.projectedInterest)}
-                            </span>
-                          </div>
-                          <Separator />
-                          <div className="flex justify-between">
-                            <span className="text-sm font-medium">Total Return:</span>
-                            <span className="font-bold text-primary">
-                              {formatCurrency(preview.new.totalReturn)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Difference Summary */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                      <div className="bg-background rounded-lg p-3 border">
-                        <p className="text-xs text-muted-foreground mb-1">Selisih Jumlah</p>
-                        <p className={`text-lg font-bold ${
-                          preview.difference. amount >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {formatDifference(preview.difference.amount)}
-                        </p>
-                      </div>
-                      <div className="bg-background rounded-lg p-3 border">
-                        <p className="text-xs text-muted-foreground mb-1">Selisih Tenor</p>
-                        <p className={`text-lg font-bold ${
-                          preview.difference.tenor >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {preview.difference.tenor > 0 ? '+' : ''}{preview.difference.tenor} Bulan
-                        </p>
-                      </div>
-                      <div className="bg-background rounded-lg p-3 border">
-                        <p className="text-xs text-muted-foreground mb-1">Selisih Bunga</p>
-                        <p className={`text-lg font-bold ${
-                          preview.difference.projectedInterest >= 0 ?  'text-green-600' : 'text-red-600'
-                        }`}>
-                          {formatDifference(preview.difference.projectedInterest)}
-                        </p>
-                      </div>
-                      <div className="bg-background rounded-lg p-3 border">
-                        <p className="text-xs text-muted-foreground mb-1">Selisih Total</p>
-                        <p className={`text-lg font-bold ${
-                          preview.difference. totalReturn >= 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {formatDifference(preview.difference.totalReturn)}
-                        </p>
-                      </div>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-
-                {/* Admin Fee Warning */}
-                <Alert variant="destructive" className="bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800">
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                  <AlertTitle className="text-orange-800 dark:text-orange-200">Biaya Admin</AlertTitle>
-                  <AlertDescription className="text-orange-700 dark:text-orange-300">
-                    <p className="text-2xl font-bold mt-2">
-                      {formatCurrency(preview.adminFee)}
-                    </p>
-                    <p className="text-sm mt-1">
-                      Biaya admin akan dipotong dari gaji Anda pada periode berikutnya.
-                    </p>
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
-
-            {! preview?. hasChanges && ! isCalculating && newAmountCode && newTenorCode && (
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertTitle>Tidak Ada Perubahan</AlertTitle>
-                <AlertDescription>
-                  Pilihan Anda sama dengan deposito saat ini. Silakan pilih jumlah atau tenor yang berbeda.
-                </AlertDescription>
-              </Alert>
-            )}
 
             <Separator />
 
@@ -473,7 +334,7 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
                       DENGAN INI SAYA MENGAJUKAN PERUBAHAN TABUNGAN DEPOSITO DAN SAYA BERSEDIA DIPOTONG GAJI
                     </FormLabel>
                     <FormDescription>
-                      Saya menyetujui bahwa perubahan deposito akan berlaku setelah disetujui dan pemotongan gaji akan disesuaikan. 
+                      Saya menyetujui bahwa perubahan deposito akan berlaku setelah disetujui dan pemotongan gaji akan disesuaikan.
                     </FormDescription>
                     <FormMessage />
                   </div>
@@ -487,14 +348,14 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field. onChange} />
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel className="font-medium">
-                      SAYA SETUJU UNTUK MEMBAYAR BIAYA ADMIN SEBESAR {preview ?  formatCurrency(preview.adminFee) : 'Rp 15.000'}
+                      SAYA SETUJU UNTUK MEMBAYAR BIAYA ADMIN SEBESAR {formatCurrency(adminFee)}
                     </FormLabel>
                     <FormDescription>
-                      Biaya admin akan dipotong langsung dari tabungan/gaji saya pada periode berikutnya. 
+                      Biaya admin akan dipotong langsung dari tabungan/gaji saya pada periode berikutnya.
                     </FormDescription>
                     <FormMessage />
                   </div>
@@ -509,7 +370,7 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
               <AlertDescription className="text-xs space-y-1 mt-2">
                 <ul className="list-disc list-inside space-y-1">
                   <li>Pengajuan perubahan akan melalui 2 tahap approval: DSP → Ketua</li>
-                  <li>Biaya admin {preview ? formatCurrency(preview. adminFee) : 'Rp 15.000'} akan dipotong setelah perubahan disetujui</li>
+                  <li>Biaya admin  akan dipotong setelah perubahan disetujui</li>
                   <li>Perubahan akan berlaku efektif setelah mendapat persetujuan akhir</li>
                   <li>Pemotongan gaji akan disesuaikan mulai periode berikutnya</li>
                 </ul>
@@ -529,9 +390,9 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
                   Batal
                 </Button>
               )}
-              <Button 
-                type="submit" 
-                disabled={isSubmitting || isCalculating || !preview?.hasChanges} 
+              <Button
+                type="submit"
+                disabled={isSubmitting}
                 className="flex-1"
               >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -206,6 +206,10 @@ export function DepositDetailDialog({
                   <p className="text-muted-foreground">Suku Bunga</p>
                   <p className="font-medium">{deposit.interestRate}% per tahun</p>
                 </div>
+                <div>
+                  <p className="text-muted-foreground">Setoran</p>
+                  <p className="font-medium">{deposit.installmentCount}/{deposit.tenorMonths}</p>
+                </div>
               </div>
             </div>
 
