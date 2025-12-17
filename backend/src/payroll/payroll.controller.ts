@@ -60,11 +60,6 @@ export class PayrollController {
             total: result.depositSavings.totalAmount.toString(),
             errors: result.depositSavings.errors.length,
           },
-          loanInstallments: {
-            count: result.loanInstallments.processedCount,
-            total: result.loanInstallments.totalAmount.toString(),
-            errors: result.loanInstallments.errors.length,
-          },
           interest: {
             count: result.interest.processedCount,
             total: result.interest.totalAmount.toString(),
