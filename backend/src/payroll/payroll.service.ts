@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Prisma, SettingCategory } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
@@ -16,7 +16,7 @@ import {
 import { MembershipFeeProcessor } from './services/membership-fee.processor';
 import { MandatorySavingsProcessor } from './services/mandatory-savings.processor';
 import { DepositSavingsProcessor } from './services/deposit-savings.processor';
-import { LoanInstallmentProcessor } from './services/loan-installment.processor';
+import { SavingsWithdrawalProcessor } from './services/savings-withdrawal.processor';
 import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
 import { ManualPayrollDto } from './dto/payroll.dto';
 
@@ -29,9 +29,9 @@ export class PayrollService {
     private membershipFeeProcessor: MembershipFeeProcessor,
     private mandatorySavingsProcessor: MandatorySavingsProcessor,
     private depositSavingsProcessor: DepositSavingsProcessor,
-    private loanInstallmentProcessor: LoanInstallmentProcessor,
+    private savingsWithdrawalProcessor: SavingsWithdrawalProcessor,
     private interestCalculatorProcessor: InterestCalculatorProcessor,
-  ) {}
+  ) { }
 
   /**
    * Cron job berjalan setiap hari jam 00:01
@@ -150,7 +150,7 @@ export class PayrollService {
     let membershipResult: ProcessorResult = this.emptyResult();
     let mandatorySavingsResult: ProcessorResult = this.emptyResult();
     let depositSavingsResult: ProcessorResult = this.emptyResult();
-    let loanInstallmentResult: ProcessorResult = this.emptyResult();
+    let savingsWithdrawalResult: ProcessorResult = this.emptyResult();
     let interestResult: ProcessorResult = this.emptyResult();
 
     // Process dalam transaction
@@ -174,8 +174,8 @@ export class PayrollService {
           context,
         );
 
-        // 4. Process loan installments (Angsuran Pinjaman)
-        loanInstallmentResult = await this.loanInstallmentProcessor.process(
+        // 4. Process savings withdrawal (Penarikan Tabungan)
+        savingsWithdrawalResult = await this.savingsWithdrawalProcessor.process(
           tx,
           context,
         );
@@ -190,7 +190,7 @@ export class PayrollService {
         const grandTotal = membershipResult.totalAmount
           .add(mandatorySavingsResult.totalAmount)
           .add(depositSavingsResult.totalAmount)
-          .add(loanInstallmentResult.totalAmount);
+          .sub(savingsWithdrawalResult.totalAmount);
 
         // Finalize payroll period
         await tx.payrollPeriod.update({
@@ -211,7 +211,7 @@ export class PayrollService {
     const grandTotal = membershipResult.totalAmount
       .add(mandatorySavingsResult.totalAmount)
       .add(depositSavingsResult.totalAmount)
-      .add(loanInstallmentResult.totalAmount);
+      .sub(savingsWithdrawalResult.totalAmount);
 
     const summary: PayrollSummary = {
       periodId: payrollPeriod.id,
@@ -220,7 +220,7 @@ export class PayrollService {
       membership: membershipResult,
       mandatorySavings: mandatorySavingsResult,
       depositSavings: depositSavingsResult,
-      loanInstallments: loanInstallmentResult,
+      savingsWithdrawal: savingsWithdrawalResult,
       interest: interestResult,
       grandTotal,
     };
@@ -355,10 +355,6 @@ export class PayrollService {
       depositInterestRate: getValue(
         PAYROLL_SETTINGS_KEYS.DEPOSIT_INTEREST_RATE,
         DEFAULT_VALUES.DEPOSIT_INTEREST_RATE,
-      ),
-      loanInterestRate: getValue(
-        PAYROLL_SETTINGS_KEYS.LOAN_INTEREST_RATE,
-        DEFAULT_VALUES.LOAN_INTEREST_RATE,
       ),
       initialMembershipFee: new Prisma.Decimal(
         getValue(

@@ -878,6 +878,7 @@ model SavingsWithdrawal {
   submittedAt DateTime? @map("submitted_at")
   rejectedAt  DateTime? @map("rejected_at")
   completedAt DateTime? @map("completed_at")
+  activatedAt DateTime? @map("activated_at")
 
   rejectionReason String? @map("rejection_reason") @db.Text
 

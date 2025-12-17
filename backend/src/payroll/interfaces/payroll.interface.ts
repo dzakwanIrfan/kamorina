@@ -6,7 +6,6 @@ export interface PayrollSettings {
   payrollDate: number;
   monthlyMembershipFee: Prisma.Decimal;
   depositInterestRate: number;
-  loanInterestRate: number;
   initialMembershipFee: Prisma.Decimal;
 }
 
@@ -57,7 +56,7 @@ export interface PayrollSummary {
   membership: ProcessorResult;
   mandatorySavings: ProcessorResult;
   depositSavings: ProcessorResult;
-  loanInstallments: ProcessorResult;
+  savingsWithdrawal: ProcessorResult;
   interest: ProcessorResult;
   grandTotal: Prisma.Decimal;
 }
