@@ -128,10 +128,6 @@ model User {
   // Session management
   sessions                        UserSession[]
   savingsAccount                  SavingsAccount?
-  depositWithdrawals              DepositWithdrawal[]
-  depositWithdrawalApprovals      DepositWithdrawalApproval[]      @relation("withdrawal_approver")
-  depositWithdrawalDisbursements  DepositWithdrawalDisbursement[]  @relation("withdrawal_processor")
-  depositWithdrawalAuthorizations DepositWithdrawalAuthorization[] @relation("withdrawal_authorizer")
   savingsWithdrawals              SavingsWithdrawal[]
   savingsWithdrawalApprovals      SavingsWithdrawalApproval[]      @relation("savings_withdrawal_approver")
   savingsWithdrawalDisbursements  SavingsWithdrawalDisbursement[]  @relation("savings_withdrawal_processor")
@@ -799,7 +795,6 @@ model DepositApplication {
 
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
-  depositWithdrawals DepositWithdrawal[]
 
   @@map("deposit_applications")
 }
@@ -839,132 +834,6 @@ model DepositApproval {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("deposit_approvals")
-}
-
-// FITUR PENARIKAN DEPOSITO (DEPOSIT WITHDRAWAL)
-enum DepositWithdrawalStatus {
-  SUBMITTED
-  UNDER_REVIEW_DSP
-  UNDER_REVIEW_KETUA
-  APPROVED_WAITING_DISBURSEMENT
-  DISBURSEMENT_IN_PROGRESS
-  COMPLETED
-  REJECTED
-  CANCELLED
-}
-
-enum DepositWithdrawalStep {
-  DIVISI_SIMPAN_PINJAM
-  KETUA
-  SHOPKEEPER
-  KETUA_AUTH
-}
-
-model DepositWithdrawal {
-  id               String @id @default(uuid())
-  withdrawalNumber String @unique @map("withdrawal_number")
-
-  // Relasi ke Deposit Application yang mau ditarik
-  depositApplicationId String             @map("deposit_application_id")
-  depositApplication   DepositApplication @relation(fields: [depositApplicationId], references: [id])
-
-  // User yang request
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Data Keuangan
-  withdrawalAmount Decimal @map("withdrawal_amount") @db.Decimal(15, 2)
-
-  // Logika Pinalti
-  isEarlyWithdrawal Boolean @default(false) @map("is_early_withdrawal")
-  penaltyRate       Decimal @default(0) @map("penalty_rate") @db.Decimal(5, 2)
-  penaltyAmount     Decimal @default(0) @map("penalty_amount") @db.Decimal(15, 2)
-
-  netAmount Decimal @map("net_amount") @db.Decimal(15, 2) // Amount - Penalty
-
-  // Informasi Tujuan Transfer (Opsional jika transfer balik ke rekening user)
-  bankAccountNumber String? @map("bank_account_number")
-  notes             String? @db.Text
-
-  // Status Tracking
-  status      DepositWithdrawalStatus @default(SUBMITTED)
-  currentStep DepositWithdrawalStep?  @map("current_step")
-
-  // Timestamps Workflow
-  submittedAt DateTime? @map("submitted_at")
-  rejectedAt  DateTime? @map("rejected_at")
-  completedAt DateTime? @map("completed_at")
-
-  rejectionReason String? @map("rejection_reason") @db.Text
-
-  // Relasi ke proses workflow
-  approvals     DepositWithdrawalApproval[]
-  disbursement  DepositWithdrawalDisbursement? // Tahap Shopkeeper
-  authorization DepositWithdrawalAuthorization? // Tahap Akhir Ketua
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([userId])
-  @@index([depositApplicationId])
-  @@index([status])
-  @@map("deposit_withdrawals")
-}
-
-// APPROVAL LOG (DSP & KETUA)
-model DepositWithdrawalApproval {
-  id                  String            @id @default(uuid())
-  depositWithdrawalId String            @map("deposit_withdrawal_id")
-  depositWithdrawal   DepositWithdrawal @relation(fields: [depositWithdrawalId], references: [id], onDelete: Cascade)
-
-  step     DepositWithdrawalStep
-  decision ApprovalDecision
-
-  approverId String? @map("approver_id")
-  approver   User?   @relation("withdrawal_approver", fields: [approverId], references: [id])
-
-  notes     String?  @db.Text
-  decidedAt DateTime @default(now()) @map("decided_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("deposit_withdrawal_approvals")
-}
-
-// SHOPKEEPER CONFIRMATION (Create Transaksi)
-model DepositWithdrawalDisbursement {
-  id                  String            @id @default(uuid())
-  depositWithdrawalId String            @unique @map("deposit_withdrawal_id")
-  depositWithdrawal   DepositWithdrawal @relation(fields: [depositWithdrawalId], references: [id], onDelete: Cascade)
-
-  // Siapa shopkeeper yang memproses
-  processedBy     String @map("processed_by")
-  processedByUser User   @relation("withdrawal_processor", fields: [processedBy], references: [id])
-
-  transactionDate DateTime @default(now()) @map("transaction_date")
-  notes           String?  @db.Text
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("deposit_withdrawal_disbursements")
-}
-
-// KETUA AUTHORIZATION (Otorisasi Akhir)
-model DepositWithdrawalAuthorization {
-  id                  String            @id @default(uuid())
-  depositWithdrawalId String            @unique @map("deposit_withdrawal_id")
-  depositWithdrawal   DepositWithdrawal @relation(fields: [depositWithdrawalId], references: [id], onDelete: Cascade)
-
-  // Siapa ketua yang mengotorisasi
-  authorizedBy     String @map("authorized_by")
-  authorizedByUser User   @relation("withdrawal_authorizer", fields: [authorizedBy], references: [id])
-
-  authorizationDate DateTime @default(now()) @map("authorization_date")
-  notes             String?  @db.Text
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("deposit_withdrawal_authorizations")
 }
 
 enum SavingsWithdrawalStatus {
