@@ -1416,4 +1416,314 @@ export class MailService {
       `,
     });
   }
+
+  // SAVINGS WITHDRAWAL EMAIL METHODS
+
+  /**
+   * Send savings withdrawal approval request to approvers
+   */
+  async sendSavingsWithdrawalApprovalRequest(
+    email: string,
+    approverName: string,
+    applicantName: string,
+    withdrawalNumber: string,
+    withdrawalAmount: number,
+    roleName: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/approvals`;
+    const formattedAmount = this.formatCurrency(withdrawalAmount);
+    const roleLabel = roleName === 'divisi_simpan_pinjam'
+      ? 'Divisi Simpan Pinjam'
+      : 'Ketua Koperasi';
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `[Perlu Review] Pengajuan Penarikan Tabungan ${withdrawalNumber} - Koperasi Kamorina`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1976d2;">Halo ${approverName},</h2>
+          <p>Ada pengajuan penarikan tabungan yang memerlukan persetujuan Anda.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Pengajuan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${withdrawalNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pemohon:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${applicantName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #d32f2f;">${formattedAmount}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p>Sebagai <strong>${roleLabel}</strong>, Anda diminta untuk meninjau dan menyetujui/menolak pengajuan ini.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #1976d2; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Review Pengajuan
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">Atau akses dashboard di: <a href="${dashboardUrl}">${dashboardUrl}</a></p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send savings withdrawal rejected notification to applicant
+   */
+  async sendSavingsWithdrawalRejected(
+    email: string,
+    applicantName: string,
+    withdrawalNumber: string,
+    reason: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/my-withdrawals`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Pengajuan Penarikan Tabungan Ditolak - ${withdrawalNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #d32f2f;">Halo ${applicantName},</h2>
+          <p>Kami informasikan bahwa pengajuan penarikan tabungan Anda telah <strong style="color: #d32f2f;">DITOLAK</strong>.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Pengajuan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${withdrawalNumber}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; border-left: 4px solid #d32f2f; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #d32f2f;">Alasan Penolakan:</h4>
+            <p style="margin-bottom: 0; color: #333;">${reason}</p>
+          </div>
+
+          <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #757575; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Riwayat Penarikan
+            </a>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send savings withdrawal disbursement request to shopkeeper
+   */
+  async sendSavingsWithdrawalDisbursementRequest(
+    email: string,
+    shopkeeperName: string,
+    applicantName: string,
+    withdrawalNumber: string,
+    netAmount: number,
+    bankAccountNumber: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/disbursement`;
+    const formattedAmount = this.formatCurrency(netAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `[Action Required] Penarikan Tabungan Menunggu Pencairan - ${withdrawalNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4caf50;">Halo ${shopkeeperName},</h2>
+          <p>Ada penarikan tabungan yang sudah disetujui dan menunggu untuk dicairkan.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Penarikan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${withdrawalNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pemohon:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${applicantName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Net:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #4caf50;">${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">No. Rekening:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${bankAccountNumber}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #e65100;">📋 Yang Perlu Dilakukan:</h4>
+            <ol style="margin-bottom: 0; padding-left: 20px; color: #333;">
+              <li>Proses transaksi BCA untuk transfer dana</li>
+              <li>Konfirmasi pencairan di sistem setelah transaksi selesai</li>
+            </ol>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Proses Pencairan
+            </a>
+          </div>
+          
+          <p>Terima kasih atas perhatian Anda.</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send savings withdrawal authorization request to ketua
+   */
+  async sendSavingsWithdrawalAuthorizationRequest(
+    email: string,
+    ketuaName: string,
+    applicantName: string,
+    withdrawalNumber: string,
+    netAmount: number,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/authorization`;
+    const formattedAmount = this.formatCurrency(netAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `[Action Required] Penarikan Tabungan Menunggu Otorisasi - ${withdrawalNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #f44336;">Halo ${ketuaName},</h2>
+          <p>Ada penarikan tabungan yang sudah dicairkan oleh Shopkeeper dan menunggu otorisasi dari Anda.</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Penarikan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${withdrawalNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Pemohon:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${applicantName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Net:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #f44336;">${formattedAmount}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336; margin: 20px 0;">
+            <h4 style="margin-top: 0; color: #c62828;">🔐 Otorisasi Diperlukan:</h4>
+            <p style="margin-bottom: 0; color: #333;">
+              Silakan lakukan otorisasi transaksi BCA dan konfirmasi di sistem untuk menyelesaikan proses penarikan.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #f44336; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Proses Otorisasi
+            </a>
+          </div>
+          
+          <p>Terima kasih.</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send savings withdrawal completed notification to user
+   */
+  async sendSavingsWithdrawalCompleted(
+    email: string,
+    applicantName: string,
+    withdrawalNumber: string,
+    netAmount: number,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/my-withdrawals`;
+    const formattedAmount = this.formatCurrency(netAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Penarikan Tabungan Berhasil Diselesaikan - ${withdrawalNumber} 🎉`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4caf50;">Selamat ${applicantName}! 🎉</h2>
+          <p>Pengajuan penarikan tabungan Anda telah <strong style="color: #4caf50;">BERHASIL DISELESAIKAN</strong> dan dana telah ditransfer!</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Penarikan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${withdrawalNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Diterima:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #4caf50; font-size: 18px;">${formattedAmount}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50; margin: 20px 0;">
+            <p style="margin: 0; color: #2e7d32;">
+              <strong>✅ Status: SELESAI</strong><br>
+              <small>Dana telah ditransfer ke rekening Anda. Silakan cek mutasi rekening Anda.</small>
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Riwayat Penarikan
+            </a>
+          </div>
+          
+          <p>Terima kasih telah menggunakan layanan koperasi!</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
 }

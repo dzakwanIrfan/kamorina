@@ -132,6 +132,10 @@ model User {
   depositWithdrawalApprovals      DepositWithdrawalApproval[]      @relation("withdrawal_approver")
   depositWithdrawalDisbursements  DepositWithdrawalDisbursement[]  @relation("withdrawal_processor")
   depositWithdrawalAuthorizations DepositWithdrawalAuthorization[] @relation("withdrawal_authorizer")
+  savingsWithdrawals              SavingsWithdrawal[]
+  savingsWithdrawalApprovals      SavingsWithdrawalApproval[]      @relation("savings_withdrawal_approver")
+  savingsWithdrawalDisbursements  SavingsWithdrawalDisbursement[]  @relation("savings_withdrawal_processor")
+  savingsWithdrawalAuthorizations SavingsWithdrawalAuthorization[] @relation("savings_withdrawal_authorizer")
 
   @@map("users")
 }
@@ -961,6 +965,114 @@ model DepositWithdrawalAuthorization {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("deposit_withdrawal_authorizations")
+}
+
+enum SavingsWithdrawalStatus {
+  SUBMITTED
+  UNDER_REVIEW_DSP
+  UNDER_REVIEW_KETUA
+  APPROVED_WAITING_DISBURSEMENT
+  DISBURSEMENT_IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum SavingsWithdrawalStep {
+  DIVISI_SIMPAN_PINJAM
+  KETUA
+  SHOPKEEPER
+  KETUA_AUTH
+}
+
+model SavingsWithdrawal {
+  id               String @id @default(uuid())
+  withdrawalNumber String @unique @map("withdrawal_number")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  withdrawalAmount Decimal @map("withdrawal_amount") @db.Decimal(15, 2)
+
+  hasEarlyDepositPenalty Boolean @default(false) @map("has_early_deposit_penalty")
+  penaltyRate            Decimal @default(0) @map("penalty_rate") @db.Decimal(5, 2)
+  penaltyAmount          Decimal @default(0) @map("penalty_amount") @db.Decimal(15, 2)
+
+  netAmount Decimal @map("net_amount") @db.Decimal(15, 2)
+
+  bankAccountNumber String? @map("bank_account_number")
+  notes             String? @db.Text
+
+  status      SavingsWithdrawalStatus @default(SUBMITTED)
+  currentStep SavingsWithdrawalStep?  @map("current_step")
+
+  submittedAt DateTime? @map("submitted_at")
+  rejectedAt  DateTime? @map("rejected_at")
+  completedAt DateTime? @map("completed_at")
+
+  rejectionReason String? @map("rejection_reason") @db.Text
+
+  approvals     SavingsWithdrawalApproval[]
+  disbursement  SavingsWithdrawalDisbursement?
+  authorization SavingsWithdrawalAuthorization?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("savings_withdrawals")
+}
+
+model SavingsWithdrawalApproval {
+  id                  String            @id @default(uuid())
+  savingsWithdrawalId String            @map("savings_withdrawal_id")
+  savingsWithdrawal   SavingsWithdrawal @relation(fields: [savingsWithdrawalId], references: [id], onDelete: Cascade)
+
+  step     SavingsWithdrawalStep
+  decision ApprovalDecision
+
+  approverId String? @map("approver_id")
+  approver   User?   @relation("savings_withdrawal_approver", fields: [approverId], references: [id])
+
+  notes     String?  @db.Text
+  decidedAt DateTime @default(now()) @map("decided_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("savings_withdrawal_approvals")
+}
+
+model SavingsWithdrawalDisbursement {
+  id                  String            @id @default(uuid())
+  savingsWithdrawalId String            @unique @map("savings_withdrawal_id")
+  savingsWithdrawal   SavingsWithdrawal @relation(fields: [savingsWithdrawalId], references: [id], onDelete: Cascade)
+
+  processedBy     String @map("processed_by")
+  processedByUser User   @relation("savings_withdrawal_processor", fields: [processedBy], references: [id])
+
+  transactionDate DateTime @default(now()) @map("transaction_date")
+  notes           String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("savings_withdrawal_disbursements")
+}
+
+model SavingsWithdrawalAuthorization {
+  id                  String            @id @default(uuid())
+  savingsWithdrawalId String            @unique @map("savings_withdrawal_id")
+  savingsWithdrawal   SavingsWithdrawal @relation(fields: [savingsWithdrawalId], references: [id], onDelete: Cascade)
+
+  authorizedBy     String @map("authorized_by")
+  authorizedByUser User   @relation("savings_withdrawal_authorizer", fields: [authorizedBy], references: [id])
+
+  authorizationDate DateTime @default(now()) @map("authorization_date")
+  notes             String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("savings_withdrawal_authorizations")
 }
 
 model SavingsAccount {

@@ -3,13 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { WithdrawalForm } from '@/components/deposit-withdrawal/withdrawal-form';
+import { SavingsWithdrawalForm } from '@/components/savings-withdrawal/savings-withdrawal-form';
 
-export default function CreateWithdrawalPage() {
+export default function CreateSavingsWithdrawalPage() {
     const router = useRouter();
 
     const handleSuccess = () => {
-        router.push('/dashboard/deposit-withdrawals');
+        router.push('/dashboard/savings-withdrawals');
     };
 
     const handleCancel = () => {
@@ -24,15 +24,15 @@ export default function CreateWithdrawalPage() {
                 </Button>
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">
-                        Ajukan Penarikan Deposito
+                        Ajukan Penarikan Tabungan
                     </h1>
                     <p className="text-muted-foreground">
-                        Lengkapi formulir pengajuan penarikan deposito
+                        Lengkapi formulir pengajuan penarikan tabungan
                     </p>
                 </div>
             </div>
 
-            <WithdrawalForm onSuccess={handleSuccess} onCancel={handleCancel} />
+            <SavingsWithdrawalForm onSuccess={handleSuccess} onCancel={handleCancel} />
         </div>
     );
 }

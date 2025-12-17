@@ -5,68 +5,68 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Eye, CheckCircle2, XCircle, Clock, Calendar, Download } from 'lucide-react';
+import { Eye, CheckCircle2, XCircle, Clock, Calendar, Download, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { DataTableAdvanced } from '@/components/data-table/data-table-advanced';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { WithdrawalDetailDialog } from '@/components/deposit-withdrawal/withdrawal-detail-dialog';
-import { BulkApproveWithdrawalDialog } from '@/components/deposit-withdrawal/bulk-approve-withdrawal-dialog';
+import { SavingsWithdrawalDetailDialog } from './savings-withdrawal-detail-dialog';
+import { BulkApproveSavingsWithdrawalDialog } from './bulk-approve-savings-withdrawal-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
-import { depositWithdrawalService } from '@/services/deposit-withdrawal.service';
+import { savingsWithdrawalService } from '@/services/savings-withdrawal.service';
 import { useAuthStore } from '@/store/auth.store';
 import { usePermissions } from '@/hooks/use-permission';
 import {
-    DepositWithdrawal,
-    DepositWithdrawalStatus,
-    DepositWithdrawalStep,
-} from '@/types/deposit-withdrawal.types';
+    SavingsWithdrawal,
+    SavingsWithdrawalStatus,
+    SavingsWithdrawalStep,
+} from '@/types/savings-withdrawal.types';
 import { DataTableConfig } from '@/types/data-table.types';
 import { formatCurrency } from '@/lib/format';
 import * as XLSX from 'xlsx';
 
 const statusMap = {
-    [DepositWithdrawalStatus.SUBMITTED]: {
+    [SavingsWithdrawalStatus.SUBMITTED]: {
         label: 'Submitted',
         variant: 'default' as const,
         icon: Clock
     },
-    [DepositWithdrawalStatus.UNDER_REVIEW_DSP]: {
+    [SavingsWithdrawalStatus.UNDER_REVIEW_DSP]: {
         label: 'Review DSP',
         variant: 'default' as const,
         icon: Clock
     },
-    [DepositWithdrawalStatus.UNDER_REVIEW_KETUA]: {
+    [SavingsWithdrawalStatus.UNDER_REVIEW_KETUA]: {
         label: 'Review Ketua',
         variant: 'default' as const,
         icon: Clock
     },
-    [DepositWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT]: {
+    [SavingsWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT]: {
         label: 'Menunggu Pencairan',
         variant: 'default' as const,
         icon: Clock
     },
-    [DepositWithdrawalStatus.DISBURSEMENT_IN_PROGRESS]: {
+    [SavingsWithdrawalStatus.DISBURSEMENT_IN_PROGRESS]: {
         label: 'Proses Pencairan',
         variant: 'default' as const,
         icon: Clock
     },
-    [DepositWithdrawalStatus.COMPLETED]: {
+    [SavingsWithdrawalStatus.COMPLETED]: {
         label: 'Selesai',
         variant: 'default' as const,
         icon: CheckCircle2
     },
-    [DepositWithdrawalStatus.REJECTED]: {
+    [SavingsWithdrawalStatus.REJECTED]: {
         label: 'Ditolak',
         variant: 'destructive' as const,
         icon: XCircle
     },
-    [DepositWithdrawalStatus.CANCELLED]: {
+    [SavingsWithdrawalStatus.CANCELLED]: {
         label: 'Dibatalkan',
         variant: 'destructive' as const,
         icon: XCircle
@@ -74,29 +74,29 @@ const statusMap = {
 };
 
 const stepMap = {
-    [DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM]: 'Divisi Simpan Pinjam',
-    [DepositWithdrawalStep.KETUA]: 'Ketua',
-    [DepositWithdrawalStep.SHOPKEEPER]: 'Shopkeeper',
-    [DepositWithdrawalStep.KETUA_AUTH]: 'Ketua (Otorisasi)',
+    [SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM]: 'Divisi Simpan Pinjam',
+    [SavingsWithdrawalStep.KETUA]: 'Ketua',
+    [SavingsWithdrawalStep.SHOPKEEPER]: 'Shopkeeper',
+    [SavingsWithdrawalStep.KETUA_AUTH]: 'Ketua (Otorisasi)',
 };
 
-interface WithdrawalApprovalListProps {
-    defaultStatus?: DepositWithdrawalStatus;
-    defaultStep?: DepositWithdrawalStep;
+interface SavingsWithdrawalApprovalListProps {
+    defaultStatus?: SavingsWithdrawalStatus;
+    defaultStep?: SavingsWithdrawalStep;
 }
 
-export function WithdrawalApprovalList({
+export function SavingsWithdrawalApprovalList({
     defaultStatus,
     defaultStep
-}: WithdrawalApprovalListProps) {
+}: SavingsWithdrawalApprovalListProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useAuthStore();
     const { hasRole } = usePermissions();
 
-    const [data, setData] = useState<DepositWithdrawal[]>([]);
+    const [data, setData] = useState<SavingsWithdrawal[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedWithdrawal, setSelectedWithdrawal] = useState<DepositWithdrawal | null>(null);
+    const [selectedWithdrawal, setSelectedWithdrawal] = useState<SavingsWithdrawal | null>(null);
     const [detailDialogOpen, setDetailDialogOpen] = useState(false);
     const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -115,14 +115,14 @@ export function WithdrawalApprovalList({
 
     const getDefaultStepFilter = () => {
         if (defaultStep) return defaultStep;
-        if (hasRole('ketua')) return DepositWithdrawalStep.KETUA;
-        if (hasRole('divisi_simpan_pinjam')) return DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM;
+        if (hasRole('ketua')) return SavingsWithdrawalStep.KETUA;
+        if (hasRole('divisi_simpan_pinjam')) return SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM;
         return undefined;
     };
 
     const getDefaultStatusFilter = () => {
         if (defaultStatus) return defaultStatus;
-        return DepositWithdrawalStatus.SUBMITTED;
+        return SavingsWithdrawalStatus.SUBMITTED;
     };
 
     const [filters, setFilters] = useState<Record<string, any>>({});
@@ -175,7 +175,7 @@ export function WithdrawalApprovalList({
                 params.endDate = format(dateRange.to, 'yyyy-MM-dd');
             }
 
-            const response = await depositWithdrawalService.getAllWithdrawals(params);
+            const response = await savingsWithdrawalService.getAllWithdrawals(params);
             setData(response.data);
             setMeta(response.meta);
         } catch (error: any) {
@@ -202,9 +202,9 @@ export function WithdrawalApprovalList({
         router.replace(newUrl, { scroll: false });
     }, [filters, router, isInitialized]);
 
-    const handleViewDetail = async (withdrawal: DepositWithdrawal) => {
+    const handleViewDetail = async (withdrawal: SavingsWithdrawal) => {
         try {
-            const fullWithdrawal = await depositWithdrawalService.getWithdrawalById(withdrawal.id);
+            const fullWithdrawal = await savingsWithdrawalService.getWithdrawalById(withdrawal.id);
             setSelectedWithdrawal(fullWithdrawal);
             setDetailDialogOpen(true);
         } catch (error) {
@@ -215,7 +215,7 @@ export function WithdrawalApprovalList({
 
     const handleBulkAction = async (decision: 'APPROVED' | 'REJECTED', notes?: string) => {
         try {
-            const result = await depositWithdrawalService.bulkProcessApproval({
+            const result = await savingsWithdrawalService.bulkProcessApproval({
                 withdrawalIds: selectedIds,
                 decision,
                 notes,
@@ -259,14 +259,13 @@ export function WithdrawalApprovalList({
         try {
             const exportData = data.map((withdrawal) => ({
                 'Nomor Penarikan': withdrawal.withdrawalNumber,
-                'Nomor Deposito': withdrawal.depositApplication?.depositNumber || '-',
                 'Nama': withdrawal.user?.name || '-',
                 'No. Karyawan': withdrawal.user?.employee.employeeNumber || '-',
                 'Department': withdrawal.user?.employee.department?.departmentName || '-',
                 'Jumlah Penarikan': withdrawal.withdrawalAmount,
                 'Pinalti': withdrawal.penaltyAmount,
                 'Diterima': withdrawal.netAmount,
-                'Penarikan Dini': withdrawal.isEarlyWithdrawal ? 'Ya' : 'Tidak',
+                'Ada Pinalti': withdrawal.hasEarlyDepositPenalty ? 'Ya' : 'Tidak',
                 'Status': statusMap[withdrawal.status]?.label || withdrawal.status,
                 'Step Saat Ini': withdrawal.currentStep ? stepMap[withdrawal.currentStep] : '-',
                 'Tanggal Submit': withdrawal.submittedAt
@@ -276,9 +275,9 @@ export function WithdrawalApprovalList({
 
             const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Penarikan Deposito');
+            XLSX.utils.book_append_sheet(wb, ws, 'Penarikan Tabungan');
 
-            const fileName = `penarikan_deposito_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
+            const fileName = `penarikan_tabungan_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`;
             XLSX.writeFile(wb, fileName);
 
             toast.success('Data berhasil diekspor');
@@ -287,7 +286,7 @@ export function WithdrawalApprovalList({
         }
     };
 
-    const columns: ColumnDef<DepositWithdrawal>[] = useMemo(
+    const columns: ColumnDef<SavingsWithdrawal>[] = useMemo(
         () => [
             {
                 accessorKey: 'withdrawalNumber',
@@ -313,15 +312,6 @@ export function WithdrawalApprovalList({
                 cell: ({ row }) => row.original.user?.name || '-',
             },
             {
-                accessorKey: 'depositApplication.depositNumber',
-                header: 'No. Deposito',
-                cell: ({ row }) => (
-                    <span className="font-mono text-sm">
-                        {row.original.depositApplication?.depositNumber || '-'}
-                    </span>
-                ),
-            },
-            {
                 accessorKey: 'withdrawalAmount',
                 header: 'Jumlah',
                 cell: ({ row }) => (
@@ -338,8 +328,9 @@ export function WithdrawalApprovalList({
                         <div className="font-semibold text-green-600">
                             {formatCurrency(row.original.netAmount)}
                         </div>
-                        {row.original.isEarlyWithdrawal && (
-                            <div className="text-xs text-orange-600">
+                        {row.original.hasEarlyDepositPenalty && (
+                            <div className="flex items-center gap-1 text-xs text-orange-600">
+                                <AlertTriangle className="h-3 w-3" />
                                 Pinalti: -{formatCurrency(row.original.penaltyAmount)}
                             </div>
                         )}
@@ -403,7 +394,7 @@ export function WithdrawalApprovalList({
         []
     );
 
-    const tableConfig: DataTableConfig<DepositWithdrawal> = {
+    const tableConfig: DataTableConfig<SavingsWithdrawal> = {
         searchable: true,
         searchPlaceholder: 'Cari berdasarkan nama, nomor penarikan...',
         filterable: true,
@@ -416,13 +407,13 @@ export function WithdrawalApprovalList({
                 placeholder: 'Semua Status',
                 options: [
                     { label: 'Semua Status', value: 'all' },
-                    { label: 'Submitted', value: DepositWithdrawalStatus.SUBMITTED },
-                    { label: 'Review DSP', value: DepositWithdrawalStatus.UNDER_REVIEW_DSP },
-                    { label: 'Review Ketua', value: DepositWithdrawalStatus.UNDER_REVIEW_KETUA },
-                    { label: 'Menunggu Pencairan', value: DepositWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT },
-                    { label: 'Proses Pencairan', value: DepositWithdrawalStatus.DISBURSEMENT_IN_PROGRESS },
-                    { label: 'Selesai', value: DepositWithdrawalStatus.COMPLETED },
-                    { label: 'Ditolak', value: DepositWithdrawalStatus.REJECTED },
+                    { label: 'Submitted', value: SavingsWithdrawalStatus.SUBMITTED },
+                    { label: 'Review DSP', value: SavingsWithdrawalStatus.UNDER_REVIEW_DSP },
+                    { label: 'Review Ketua', value: SavingsWithdrawalStatus.UNDER_REVIEW_KETUA },
+                    { label: 'Menunggu Pencairan', value: SavingsWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT },
+                    { label: 'Proses Pencairan', value: SavingsWithdrawalStatus.DISBURSEMENT_IN_PROGRESS },
+                    { label: 'Selesai', value: SavingsWithdrawalStatus.COMPLETED },
+                    { label: 'Ditolak', value: SavingsWithdrawalStatus.REJECTED },
                 ],
             },
             {
@@ -432,10 +423,10 @@ export function WithdrawalApprovalList({
                 placeholder: 'Semua Step',
                 options: [
                     { label: 'Semua Step', value: 'all' },
-                    { label: 'Divisi Simpan Pinjam', value: DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM },
-                    { label: 'Ketua', value: DepositWithdrawalStep.KETUA },
-                    { label: 'Shopkeeper', value: DepositWithdrawalStep.SHOPKEEPER },
-                    { label: 'Ketua (Otorisasi)', value: DepositWithdrawalStep.KETUA_AUTH },
+                    { label: 'Divisi Simpan Pinjam', value: SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM },
+                    { label: 'Ketua', value: SavingsWithdrawalStep.KETUA },
+                    { label: 'Shopkeeper', value: SavingsWithdrawalStep.SHOPKEEPER },
+                    { label: 'Ketua (Otorisasi)', value: SavingsWithdrawalStep.KETUA_AUTH },
                 ],
             },
         ],
@@ -564,20 +555,20 @@ export function WithdrawalApprovalList({
                 </CardContent>
             </Card>
 
-            <WithdrawalDetailDialog
+            <SavingsWithdrawalDetailDialog
                 withdrawal={selectedWithdrawal}
                 open={detailDialogOpen}
                 onOpenChange={setDetailDialogOpen}
                 onSuccess={fetchData}
                 canApprove={
                     canApprove &&
-                    selectedWithdrawal?.status !== DepositWithdrawalStatus.COMPLETED &&
-                    selectedWithdrawal?.status !== DepositWithdrawalStatus.REJECTED &&
+                    selectedWithdrawal?.status !== SavingsWithdrawalStatus.COMPLETED &&
+                    selectedWithdrawal?.status !== SavingsWithdrawalStatus.REJECTED &&
                     selectedWithdrawal?.currentStep !== null
                 }
             />
 
-            <BulkApproveWithdrawalDialog
+            <BulkApproveSavingsWithdrawalDialog
                 open={bulkDialogOpen}
                 onOpenChange={setBulkDialogOpen}
                 selectedCount={selectedIds.length}

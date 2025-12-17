@@ -1,12 +1,8 @@
 import { IsString, IsNotEmpty, IsNumber, Min, IsOptional } from 'class-validator';
 
-export class CreateDepositWithdrawalDto {
-    @IsString()
-    @IsNotEmpty({ message: 'ID deposito harus diisi' })
-    depositApplicationId: string;
-
+export class CreateSavingsWithdrawalDto {
     @IsNumber()
-    @Min(0, { message: 'Jumlah penarikan minimal 0' })
+    @Min(1000, { message: 'Jumlah penarikan minimal Rp 1.000' })
     withdrawalAmount: number;
 
     @IsString()

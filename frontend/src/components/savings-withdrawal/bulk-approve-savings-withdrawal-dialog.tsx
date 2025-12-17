@@ -14,19 +14,19 @@ import { Label } from '@/components/ui/label';
 import { Loader2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface BulkApproveWithdrawalDialogProps {
+interface BulkApproveSavingsWithdrawalDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     selectedCount: number;
     onConfirm: (decision: 'APPROVED' | 'REJECTED', notes?: string) => Promise<void>;
 }
 
-export function BulkApproveWithdrawalDialog({
+export function BulkApproveSavingsWithdrawalDialog({
     open,
     onOpenChange,
     selectedCount,
     onConfirm,
-}: BulkApproveWithdrawalDialogProps) {
+}: BulkApproveSavingsWithdrawalDialogProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [notes, setNotes] = useState('');
     const [action, setAction] = useState<'APPROVED' | 'REJECTED' | null>(null);

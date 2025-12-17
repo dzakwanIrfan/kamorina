@@ -1,7 +1,7 @@
 import { IsEnum, IsString, IsOptional, IsArray, ArrayMinSize } from 'class-validator';
 import { ApprovalDecision } from '@prisma/client';
 
-export class BulkApproveWithdrawalDto {
+export class BulkApproveSavingsWithdrawalDto {
     @IsArray()
     @ArrayMinSize(1, { message: 'Minimal 1 penarikan harus dipilih' })
     @IsString({ each: true })

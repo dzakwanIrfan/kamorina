@@ -6,15 +6,17 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
-import { CreateDepositWithdrawalDto } from './dto/withdrawal/create-withdrawal.dto';
-import { ApproveWithdrawalDto } from './dto/withdrawal/approve-withdrawal.dto';
+import { CreateSavingsWithdrawalDto } from './dto/withdrawal/create-savings-withdrawal.dto';
+import { ApproveSavingsWithdrawalDto } from './dto/withdrawal/approve-savings-withdrawal.dto';
 import { ConfirmDisbursementDto } from './dto/withdrawal/confirm-disbursement.dto';
 import { ConfirmAuthorizationDto } from './dto/withdrawal/confirm-authorization.dto';
-import { QueryWithdrawalDto } from './dto/withdrawal/query-withdrawal.dto';
-import { BulkApproveWithdrawalDto } from './dto/withdrawal/bulk-approve-withdrawal.dto';
+import { QuerySavingsWithdrawalDto } from './dto/withdrawal/query-savings-withdrawal.dto';
+import { BulkApproveSavingsWithdrawalDto } from './dto/withdrawal/bulk-approve-savings-withdrawal.dto';
+import { BulkConfirmDisbursementDto } from './dto/withdrawal/bulk-confirm-disbursement.dto';
+import { BulkConfirmAuthorizationDto } from './dto/withdrawal/bulk-confirm-authorization.dto';
 import {
-    DepositWithdrawalStatus,
-    DepositWithdrawalStep,
+    SavingsWithdrawalStatus,
+    SavingsWithdrawalStep,
     ApprovalDecision,
     DepositStatus,
     Prisma,
@@ -22,23 +24,20 @@ import {
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
 @Injectable()
-export class DepositWithdrawalService {
+export class SavingsWithdrawalService {
     constructor(
         private prisma: PrismaService,
         private mailService: MailService,
     ) { }
 
-    /**
-     * Generate withdrawal number: WD-YYYYMMDD-XXXX
-     */
     private async generateWithdrawalNumber(): Promise<string> {
         const today = new Date();
         const dateStr = today.toISOString().split('T')[0].replace(/-/g, '');
 
-        const lastWithdrawal = await this.prisma.depositWithdrawal.findFirst({
+        const lastWithdrawal = await this.prisma.savingsWithdrawal.findFirst({
             where: {
                 withdrawalNumber: {
-                    startsWith: `WD-${dateStr}`,
+                    startsWith: `SW-${dateStr}`,
                 },
             },
             orderBy: { createdAt: 'desc' },
@@ -50,12 +49,9 @@ export class DepositWithdrawalService {
             sequence = lastSequence + 1;
         }
 
-        return `WD-${dateStr}-${sequence.toString().padStart(4, '0')}`;
+        return `SW-${dateStr}-${sequence.toString().padStart(4, '0')}`;
     }
 
-    /**
-     * Get penalty rate from settings
-     */
     private async getPenaltyRate(): Promise<number> {
         const setting = await this.prisma.cooperativeSetting.findUnique({
             where: { key: 'deposit_early_withdrawal_penalty_rate' },
@@ -63,43 +59,46 @@ export class DepositWithdrawalService {
         return setting ? parseFloat(setting.value) : 3;
     }
 
-    /**
-     * Calculate penalty and net amount
-     */
-    private async calculateWithdrawal(
-        depositApplication: any,
-        withdrawalAmount: number,
-    ) {
-        const penaltyRate = await this.getPenaltyRate();
+    private async checkEarlyDepositPenalty(userId: string, withdrawalAmount: number) {
         const now = new Date();
-        const maturityDate = depositApplication.maturityDate;
+        const penaltyRate = await this.getPenaltyRate();
 
-        let isEarlyWithdrawal = false;
-        let penaltyAmount = 0;
+        // Check if user has active deposits that haven't matured
+        const activeDeposits = await this.prisma.depositApplication.findMany({
+            where: {
+                userId,
+                status: {
+                    in: [DepositStatus.ACTIVE, DepositStatus.APPROVED],
+                },
+                maturityDate: {
+                    gt: now,
+                },
+            },
+        });
 
-        // Check if early withdrawal (before maturity date)
-        if (maturityDate && now < maturityDate) {
-            isEarlyWithdrawal = true;
-            penaltyAmount = (withdrawalAmount * penaltyRate) / 100;
+        if (activeDeposits.length > 0) {
+            // Has early deposits - apply penalty
+            const penaltyAmount = (withdrawalAmount * penaltyRate) / 100;
+            return {
+                hasEarlyDepositPenalty: true,
+                penaltyRate,
+                penaltyAmount,
+                netAmount: withdrawalAmount - penaltyAmount,
+            };
         }
 
-        const netAmount = withdrawalAmount - penaltyAmount;
-
         return {
-            isEarlyWithdrawal,
-            penaltyRate,
-            penaltyAmount,
-            netAmount,
+            hasEarlyDepositPenalty: false,
+            penaltyRate: 0,
+            penaltyAmount: 0,
+            netAmount: withdrawalAmount,
         };
     }
 
-    /**
-     * Create withdrawal request
-     */
-    async createWithdrawal(userId: string, dto: CreateDepositWithdrawalDto) {
-        // 1. Validate deposit application
-        const depositApplication = await this.prisma.depositApplication.findUnique({
-            where: { id: dto.depositApplicationId },
+    async createWithdrawal(userId: string, dto: CreateSavingsWithdrawalDto) {
+        // 1. Check savings account
+        const savingsAccount = await this.prisma.savingsAccount.findUnique({
+            where: { userId },
             include: {
                 user: {
                     include: {
@@ -109,33 +108,28 @@ export class DepositWithdrawalService {
             },
         });
 
-        if (!depositApplication) {
-            throw new NotFoundException('Deposito tidak ditemukan');
+        if (!savingsAccount) {
+            throw new NotFoundException('Akun tabungan tidak ditemukan');
         }
 
-        if (depositApplication.userId !== userId) {
-            throw new ForbiddenException('Anda tidak memiliki akses ke deposito ini');
-        }
+        // 2. Check available balance (saldoSukarela)
+        const availableBalance = savingsAccount.saldoSukarela.toNumber();
 
-        // Check deposit status
-        if (
-            depositApplication.status !== DepositStatus.ACTIVE &&
-            depositApplication.status !== DepositStatus.APPROVED
-        ) {
+        if (dto.withdrawalAmount > availableBalance) {
             throw new BadRequestException(
-                'Hanya deposito yang aktif atau sudah disetujui yang dapat ditarik',
+                `Saldo tidak mencukupi. Saldo tersedia: Rp ${availableBalance.toLocaleString('id-ID')}`,
             );
         }
 
-        // 2. Check if there's pending withdrawal for this deposit
-        const pendingWithdrawal = await this.prisma.depositWithdrawal.findFirst({
+        // 3. Check for pending withdrawal
+        const pendingWithdrawal = await this.prisma.savingsWithdrawal.findFirst({
             where: {
-                depositApplicationId: dto.depositApplicationId,
+                userId,
                 status: {
                     notIn: [
-                        DepositWithdrawalStatus.COMPLETED,
-                        DepositWithdrawalStatus.REJECTED,
-                        DepositWithdrawalStatus.CANCELLED,
+                        SavingsWithdrawalStatus.COMPLETED,
+                        SavingsWithdrawalStatus.REJECTED,
+                        SavingsWithdrawalStatus.CANCELLED,
                     ],
                 },
             },
@@ -143,56 +137,40 @@ export class DepositWithdrawalService {
 
         if (pendingWithdrawal) {
             throw new BadRequestException(
-                'Sudah ada pengajuan penarikan yang sedang diproses untuk deposito ini',
+                'Anda masih memiliki pengajuan penarikan yang sedang diproses',
             );
         }
 
-        // 3. Check savings account balance (saldoSukarela)
-        const savingsAccount = await this.prisma.savingsAccount.findUnique({
-            where: { userId },
-        });
+        // 4. Check for early deposit penalty
+        const penaltyCalc = await this.checkEarlyDepositPenalty(userId, dto.withdrawalAmount);
 
-        if (!savingsAccount) {
-            throw new NotFoundException('Akun tabungan tidak ditemukan');
-        }
-
-        // Calculate available balance (collected amount from deposit)
-        const collectedAmount = depositApplication.collectedAmount.toNumber();
-
-        if (dto.withdrawalAmount > collectedAmount) {
+        // 5. Check if net amount is still valid after penalty
+        if (penaltyCalc.netAmount > availableBalance) {
             throw new BadRequestException(
-                `Jumlah penarikan melebihi saldo deposito yang sudah terkumpul. Saldo tersedia: Rp ${collectedAmount.toLocaleString('id-ID')}`,
+                `Saldo tidak mencukupi setelah pinalti. Saldo tersedia: Rp ${availableBalance.toLocaleString('id-ID')}`,
             );
         }
 
-        // 4. Calculate penalty and net amount
-        const calculation = await this.calculateWithdrawal(
-            depositApplication,
-            dto.withdrawalAmount,
-        );
-
-        // 5. Generate withdrawal number
+        // 6. Generate withdrawal number
         const withdrawalNumber = await this.generateWithdrawalNumber();
 
-        // 6. Create withdrawal request
-        const withdrawal = await this.prisma.depositWithdrawal.create({
+        // 7. Create withdrawal
+        const withdrawal = await this.prisma.savingsWithdrawal.create({
             data: {
                 withdrawalNumber,
-                depositApplicationId: dto.depositApplicationId,
                 userId,
                 withdrawalAmount: dto.withdrawalAmount,
-                isEarlyWithdrawal: calculation.isEarlyWithdrawal,
-                penaltyRate: calculation.penaltyRate,
-                penaltyAmount: calculation.penaltyAmount,
-                netAmount: calculation.netAmount,
-                bankAccountNumber: dto.bankAccountNumber || depositApplication.user.bankAccountNumber,
+                hasEarlyDepositPenalty: penaltyCalc.hasEarlyDepositPenalty,
+                penaltyRate: penaltyCalc.penaltyRate,
+                penaltyAmount: penaltyCalc.penaltyAmount,
+                netAmount: penaltyCalc.netAmount,
+                bankAccountNumber: dto.bankAccountNumber || savingsAccount.user.bankAccountNumber,
                 notes: dto.notes,
-                status: DepositWithdrawalStatus.SUBMITTED,
-                currentStep: DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM,
+                status: SavingsWithdrawalStatus.SUBMITTED,
+                currentStep: SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM,
                 submittedAt: new Date(),
             },
             include: {
-                depositApplication: true,
                 user: {
                     include: {
                         employee: {
@@ -206,72 +184,61 @@ export class DepositWithdrawalService {
             },
         });
 
-        // 7. Notify DSP
+        // 8. Notify DSP
         try {
             await this.notifyApprovers(
                 withdrawal.id,
-                DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM,
+                SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM,
             );
         } catch (error) {
             console.error('Failed to send notification:', error);
         }
 
         return {
-            message: 'Pengajuan penarikan deposito berhasil disubmit',
+            message: 'Pengajuan penarikan tabungan berhasil disubmit',
             withdrawal,
             calculation: {
                 withdrawalAmount: dto.withdrawalAmount,
-                isEarlyWithdrawal: calculation.isEarlyWithdrawal,
-                penaltyRate: calculation.penaltyRate,
-                penaltyAmount: calculation.penaltyAmount,
-                netAmount: calculation.netAmount,
-                maturityDate: depositApplication.maturityDate,
+                hasEarlyDepositPenalty: penaltyCalc.hasEarlyDepositPenalty,
+                penaltyRate: penaltyCalc.penaltyRate,
+                penaltyAmount: penaltyCalc.penaltyAmount,
+                netAmount: penaltyCalc.netAmount,
+                availableBalance,
             },
         };
     }
 
-    /**
-     * Get my withdrawals
-     */
     async getMyWithdrawals(
         userId: string,
-        query: QueryWithdrawalDto,
+        query: QuerySavingsWithdrawalDto,
     ): Promise<PaginatedResult<any>> {
         const {
             page = 1,
             limit = 10,
             status,
-            depositApplicationId,
             search,
             sortBy = 'createdAt',
             sortOrder = 'desc',
         } = query;
 
         const skip = (page - 1) * limit;
-        const where: Prisma.DepositWithdrawalWhereInput = { userId };
+        const where: Prisma.SavingsWithdrawalWhereInput = { userId };
 
         if (status) where.status = status;
-        if (depositApplicationId) where.depositApplicationId = depositApplicationId;
 
         if (search) {
             where.OR = [
                 { withdrawalNumber: { contains: search, mode: 'insensitive' } },
-                {
-                    depositApplication: {
-                        depositNumber: { contains: search, mode: 'insensitive' },
-                    },
-                },
             ];
         }
 
         const [data, total] = await Promise.all([
-            this.prisma.depositWithdrawal.findMany({
+            this.prisma.savingsWithdrawal.findMany({
                 where,
                 skip,
                 take: limit,
                 orderBy: { [sortBy]: sortOrder },
                 include: {
-                    depositApplication: true,
                     user: {
                         include: {
                             employee: {
@@ -294,9 +261,19 @@ export class DepositWithdrawalService {
                         },
                         orderBy: { createdAt: 'asc' },
                     },
+                    disbursement: {
+                        include: {
+                            processedByUser: true,
+                        },
+                    },
+                    authorization: {
+                        include: {
+                            authorizedByUser: true,
+                        },
+                    },
                 },
             }),
-            this.prisma.depositWithdrawal.count({ where }),
+            this.prisma.savingsWithdrawal.count({ where }),
         ]);
 
         return {
@@ -312,14 +289,10 @@ export class DepositWithdrawalService {
         };
     }
 
-    /**
-     * Get withdrawal by ID
-     */
     async getWithdrawalById(withdrawalId: string, userId?: string) {
-        const withdrawal = await this.prisma.depositWithdrawal.findUnique({
+        const withdrawal = await this.prisma.savingsWithdrawal.findUnique({
             where: { id: withdrawalId },
             include: {
-                depositApplication: true,
                 user: {
                     include: {
                         employee: {
@@ -378,17 +351,13 @@ export class DepositWithdrawalService {
         return withdrawal;
     }
 
-    /**
-     * Get all withdrawals (for approvers/admin)
-     */
-    async getAllWithdrawals(query: QueryWithdrawalDto): Promise<PaginatedResult<any>> {
+    async getAllWithdrawals(query: QuerySavingsWithdrawalDto): Promise<PaginatedResult<any>> {
         const {
             page = 1,
             limit = 10,
             status,
             step,
             userId,
-            depositApplicationId,
             search,
             sortBy = 'createdAt',
             sortOrder = 'desc',
@@ -397,21 +366,15 @@ export class DepositWithdrawalService {
         } = query;
 
         const skip = (page - 1) * limit;
-        const where: Prisma.DepositWithdrawalWhereInput = {};
+        const where: Prisma.SavingsWithdrawalWhereInput = {};
 
         if (status) where.status = status;
         if (step) where.currentStep = step;
         if (userId) where.userId = userId;
-        if (depositApplicationId) where.depositApplicationId = depositApplicationId;
 
         if (search) {
             where.OR = [
                 { withdrawalNumber: { contains: search, mode: 'insensitive' } },
-                {
-                    depositApplication: {
-                        depositNumber: { contains: search, mode: 'insensitive' },
-                    },
-                },
                 { user: { name: { contains: search, mode: 'insensitive' } } },
                 { user: { email: { contains: search, mode: 'insensitive' } } },
             ];
@@ -428,13 +391,12 @@ export class DepositWithdrawalService {
         }
 
         const [data, total] = await Promise.all([
-            this.prisma.depositWithdrawal.findMany({
+            this.prisma.savingsWithdrawal.findMany({
                 where,
                 skip,
                 take: limit,
                 orderBy: { [sortBy]: sortOrder },
                 include: {
-                    depositApplication: true,
                     user: {
                         include: {
                             employee: {
@@ -457,9 +419,19 @@ export class DepositWithdrawalService {
                         },
                         orderBy: { createdAt: 'asc' },
                     },
+                    disbursement: {
+                        include: {
+                            processedByUser: true,
+                        },
+                    },
+                    authorization: {
+                        include: {
+                            authorizedByUser: true,
+                        },
+                    },
                 },
             }),
-            this.prisma.depositWithdrawal.count({ where }),
+            this.prisma.savingsWithdrawal.count({ where }),
         ]);
 
         return {
@@ -475,20 +447,16 @@ export class DepositWithdrawalService {
         };
     }
 
-    /**
-     * Process approval (DSP, Ketua)
-     */
     async processApproval(
         withdrawalId: string,
         approverId: string,
         approverRoles: string[],
-        dto: ApproveWithdrawalDto,
+        dto: ApproveSavingsWithdrawalDto,
     ) {
-        const withdrawal = await this.prisma.depositWithdrawal.findUnique({
+        const withdrawal = await this.prisma.savingsWithdrawal.findUnique({
             where: { id: withdrawalId },
             include: {
                 user: true,
-                depositApplication: true,
                 approvals: true,
             },
         });
@@ -501,10 +469,9 @@ export class DepositWithdrawalService {
             throw new BadRequestException('Penarikan tidak dalam status review');
         }
 
-        // Map role to step
-        const roleStepMap: { [key: string]: DepositWithdrawalStep } = {
-            divisi_simpan_pinjam: DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM,
-            ketua: DepositWithdrawalStep.KETUA,
+        const roleStepMap: { [key: string]: SavingsWithdrawalStep } = {
+            divisi_simpan_pinjam: SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM,
+            ketua: SavingsWithdrawalStep.KETUA,
         };
 
         const approverStep = approverRoles
@@ -517,7 +484,6 @@ export class DepositWithdrawalService {
             );
         }
 
-        // Check if already approved at this step
         const existingApproval = withdrawal.approvals.find(
             (a) => a.step === withdrawal.currentStep && a.decision,
         );
@@ -533,19 +499,15 @@ export class DepositWithdrawalService {
         }
     }
 
-    /**
-     * Handle rejection
-     */
     private async handleRejection(
         withdrawal: any,
         approverId: string,
-        dto: ApproveWithdrawalDto,
+        dto: ApproveSavingsWithdrawalDto,
     ) {
         await this.prisma.$transaction(async (tx) => {
-            // Create approval record
-            await tx.depositWithdrawalApproval.create({
+            await tx.savingsWithdrawalApproval.create({
                 data: {
-                    depositWithdrawalId: withdrawal.id,
+                    savingsWithdrawalId: withdrawal.id,
                     step: withdrawal.currentStep,
                     decision: ApprovalDecision.REJECTED,
                     approverId,
@@ -554,11 +516,10 @@ export class DepositWithdrawalService {
                 },
             });
 
-            // Update withdrawal status
-            await tx.depositWithdrawal.update({
+            await tx.savingsWithdrawal.update({
                 where: { id: withdrawal.id },
                 data: {
-                    status: DepositWithdrawalStatus.REJECTED,
+                    status: SavingsWithdrawalStatus.REJECTED,
                     rejectedAt: new Date(),
                     rejectionReason: dto.notes,
                     currentStep: null,
@@ -566,53 +527,46 @@ export class DepositWithdrawalService {
             });
         });
 
-        // Notify user
         try {
-            await this.mailService.sendDepositWithdrawalRejected(
+            await this.mailService.sendSavingsWithdrawalRejected(
                 withdrawal.user.email,
                 withdrawal.user.name,
                 withdrawal.withdrawalNumber,
-                withdrawal.depositApplication.depositNumber,
                 dto.notes || 'Tidak ada catatan',
             );
         } catch (error) {
             console.error('Failed to send rejection email:', error);
         }
 
-        return { message: 'Penarikan deposito berhasil ditolak' };
+        return { message: 'Penarikan tabungan berhasil ditolak' };
     }
 
-    /**
-     * Handle approval
-     */
     private async handleApproval(
         withdrawal: any,
         approverId: string,
-        dto: ApproveWithdrawalDto,
+        dto: ApproveSavingsWithdrawalDto,
     ) {
         const stepOrder = [
-            DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM,
-            DepositWithdrawalStep.KETUA,
-            DepositWithdrawalStep.SHOPKEEPER,
-            DepositWithdrawalStep.KETUA_AUTH,
+            SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM,
+            SavingsWithdrawalStep.KETUA,
+            SavingsWithdrawalStep.SHOPKEEPER,
+            SavingsWithdrawalStep.KETUA_AUTH,
         ];
 
         const currentIndex = stepOrder.indexOf(withdrawal.currentStep);
         const nextStep = stepOrder[currentIndex + 1];
 
-        // Determine new status based on next step
         let newStatus = withdrawal.status;
-        if (nextStep === DepositWithdrawalStep.KETUA) {
-            newStatus = DepositWithdrawalStatus.UNDER_REVIEW_KETUA;
-        } else if (nextStep === DepositWithdrawalStep.SHOPKEEPER) {
-            newStatus = DepositWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT;
+        if (nextStep === SavingsWithdrawalStep.KETUA) {
+            newStatus = SavingsWithdrawalStatus.UNDER_REVIEW_KETUA;
+        } else if (nextStep === SavingsWithdrawalStep.SHOPKEEPER) {
+            newStatus = SavingsWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT;
         }
 
         await this.prisma.$transaction(async (tx) => {
-            // Create approval record
-            await tx.depositWithdrawalApproval.create({
+            await tx.savingsWithdrawalApproval.create({
                 data: {
-                    depositWithdrawalId: withdrawal.id,
+                    savingsWithdrawalId: withdrawal.id,
                     step: withdrawal.currentStep,
                     decision: ApprovalDecision.APPROVED,
                     approverId,
@@ -621,8 +575,7 @@ export class DepositWithdrawalService {
                 },
             });
 
-            // Update withdrawal
-            await tx.depositWithdrawal.update({
+            await tx.savingsWithdrawal.update({
                 where: { id: withdrawal.id },
                 data: {
                     status: newStatus,
@@ -631,7 +584,6 @@ export class DepositWithdrawalService {
             });
         });
 
-        // Notify next approver or shopkeeper
         try {
             if (nextStep) {
                 await this.notifyApprovers(withdrawal.id, nextStep);
@@ -645,13 +597,10 @@ export class DepositWithdrawalService {
         };
     }
 
-    /**
-     * Bulk approve/reject
-     */
     async bulkProcessApproval(
         approverId: string,
         approverRoles: string[],
-        dto: BulkApproveWithdrawalDto,
+        dto: BulkApproveSavingsWithdrawalDto,
     ) {
         const results = {
             success: [] as string[],
@@ -673,25 +622,83 @@ export class DepositWithdrawalService {
             }
         }
 
+
         return {
             message: `Berhasil memproses ${results.success.length} penarikan, ${results.failed.length} gagal`,
             results,
         };
     }
 
-    /**
-     * Confirm disbursement (Shopkeeper)
-     */
+    async bulkConfirmDisbursement(
+        processedBy: string,
+        dto: BulkConfirmDisbursementDto,
+    ) {
+        const results = {
+            success: [] as string[],
+            failed: [] as { id: string; reason: string }[],
+        };
+
+        for (const withdrawalId of dto.withdrawalIds) {
+            try {
+                await this.confirmDisbursement(withdrawalId, processedBy, {
+                    transactionDate: dto.transactionDate,
+                    notes: dto.notes,
+                });
+                results.success.push(withdrawalId);
+            } catch (error) {
+                results.failed.push({
+                    id: withdrawalId,
+                    reason: error.message || 'Unknown error',
+                });
+            }
+        }
+
+        return {
+            message: `Berhasil memproses ${results.success.length} pencairan, ${results.failed.length} gagal`,
+            results,
+        };
+    }
+
+    async bulkConfirmAuthorization(
+        authorizedBy: string,
+        dto: BulkConfirmAuthorizationDto,
+    ) {
+        const results = {
+            success: [] as string[],
+            failed: [] as { id: string; reason: string }[],
+        };
+
+        for (const withdrawalId of dto.withdrawalIds) {
+            try {
+                await this.confirmAuthorization(withdrawalId, authorizedBy, {
+                    authorizationDate: dto.authorizationDate,
+                    notes: dto.notes,
+                });
+                results.success.push(withdrawalId);
+            } catch (error) {
+                results.failed.push({
+                    id: withdrawalId,
+                    reason: error.message || 'Unknown error',
+                });
+            }
+        }
+
+        return {
+            message: `Berhasil memproses ${results.success.length} otorisasi, ${results.failed.length} gagal`,
+            results,
+        };
+    }
+
+
     async confirmDisbursement(
         withdrawalId: string,
         processedBy: string,
         dto: ConfirmDisbursementDto,
     ) {
-        const withdrawal = await this.prisma.depositWithdrawal.findUnique({
+        const withdrawal = await this.prisma.savingsWithdrawal.findUnique({
             where: { id: withdrawalId },
             include: {
                 user: true,
-                depositApplication: true,
             },
         });
 
@@ -699,21 +706,20 @@ export class DepositWithdrawalService {
             throw new NotFoundException('Penarikan tidak ditemukan');
         }
 
-        if (withdrawal.currentStep !== DepositWithdrawalStep.SHOPKEEPER) {
+        if (withdrawal.currentStep !== SavingsWithdrawalStep.SHOPKEEPER) {
             throw new BadRequestException(
                 'Penarikan tidak dalam tahap konfirmasi shopkeeper',
             );
         }
 
-        if (withdrawal.status !== DepositWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT) {
+        if (withdrawal.status !== SavingsWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT) {
             throw new BadRequestException('Status penarikan tidak valid untuk disbursement');
         }
 
         await this.prisma.$transaction(async (tx) => {
-            // Create disbursement record
-            await tx.depositWithdrawalDisbursement.create({
+            await tx.savingsWithdrawalDisbursement.create({
                 data: {
-                    depositWithdrawalId: withdrawalId,
+                    savingsWithdrawalId: withdrawalId,
                     processedBy,
                     transactionDate: dto.transactionDate
                         ? new Date(dto.transactionDate)
@@ -722,19 +728,17 @@ export class DepositWithdrawalService {
                 },
             });
 
-            // Update withdrawal status
-            await tx.depositWithdrawal.update({
+            await tx.savingsWithdrawal.update({
                 where: { id: withdrawalId },
                 data: {
-                    status: DepositWithdrawalStatus.DISBURSEMENT_IN_PROGRESS,
-                    currentStep: DepositWithdrawalStep.KETUA_AUTH,
+                    status: SavingsWithdrawalStatus.DISBURSEMENT_IN_PROGRESS,
+                    currentStep: SavingsWithdrawalStep.KETUA_AUTH,
                 },
             });
         });
 
-        // Notify ketua for authorization
         try {
-            await this.notifyApprovers(withdrawalId, DepositWithdrawalStep.KETUA_AUTH);
+            await this.notifyApprovers(withdrawalId, SavingsWithdrawalStep.KETUA_AUTH);
         } catch (error) {
             console.error('Failed to notify ketua for authorization:', error);
         }
@@ -744,19 +748,15 @@ export class DepositWithdrawalService {
         };
     }
 
-    /**
-     * Confirm authorization (Ketua Final)
-     */
     async confirmAuthorization(
         withdrawalId: string,
         authorizedBy: string,
         dto: ConfirmAuthorizationDto,
     ) {
-        const withdrawal = await this.prisma.depositWithdrawal.findUnique({
+        const withdrawal = await this.prisma.savingsWithdrawal.findUnique({
             where: { id: withdrawalId },
             include: {
                 user: true,
-                depositApplication: true,
             },
         });
 
@@ -764,19 +764,19 @@ export class DepositWithdrawalService {
             throw new NotFoundException('Penarikan tidak ditemukan');
         }
 
-        if (withdrawal.currentStep !== DepositWithdrawalStep.KETUA_AUTH) {
+        if (withdrawal.currentStep !== SavingsWithdrawalStep.KETUA_AUTH) {
             throw new BadRequestException('Penarikan tidak dalam tahap otorisasi ketua');
         }
 
-        if (withdrawal.status !== DepositWithdrawalStatus.DISBURSEMENT_IN_PROGRESS) {
+        if (withdrawal.status !== SavingsWithdrawalStatus.DISBURSEMENT_IN_PROGRESS) {
             throw new BadRequestException('Status penarikan tidak valid untuk otorisasi');
         }
 
         await this.prisma.$transaction(async (tx) => {
             // Create authorization record
-            await tx.depositWithdrawalAuthorization.create({
+            await tx.savingsWithdrawalAuthorization.create({
                 data: {
-                    depositWithdrawalId: withdrawalId,
+                    savingsWithdrawalId: withdrawalId,
                     authorizedBy,
                     authorizationDate: dto.authorizationDate
                         ? new Date(dto.authorizationDate)
@@ -786,10 +786,10 @@ export class DepositWithdrawalService {
             });
 
             // Update withdrawal status to COMPLETED
-            await tx.depositWithdrawal.update({
+            await tx.savingsWithdrawal.update({
                 where: { id: withdrawalId },
                 data: {
-                    status: DepositWithdrawalStatus.COMPLETED,
+                    status: SavingsWithdrawalStatus.COMPLETED,
                     completedAt: new Date(),
                     currentStep: null,
                 },
@@ -810,7 +810,7 @@ export class DepositWithdrawalService {
                     },
                 });
 
-                // Create savings transaction record
+                // Create savings transaction record (penarikan)
                 await tx.savingsTransaction.create({
                     data: {
                         savingsAccountId: savingsAccount.id,
@@ -821,25 +821,14 @@ export class DepositWithdrawalService {
                     },
                 });
             }
-
-            // Update deposit application collected amount
-            await tx.depositApplication.update({
-                where: { id: withdrawal.depositApplicationId },
-                data: {
-                    collectedAmount: {
-                        decrement: withdrawal.withdrawalAmount.toNumber(),
-                    },
-                },
-            });
         });
 
         // Notify user
         try {
-            await this.mailService.sendDepositWithdrawalCompleted(
+            await this.mailService.sendSavingsWithdrawalCompleted(
                 withdrawal.user.email,
                 withdrawal.user.name,
                 withdrawal.withdrawalNumber,
-                withdrawal.depositApplication.depositNumber,
                 withdrawal.netAmount.toNumber(),
             );
         } catch (error) {
@@ -847,15 +836,12 @@ export class DepositWithdrawalService {
         }
 
         return {
-            message: 'Penarikan deposito berhasil diselesaikan dan dana telah ditransfer.',
+            message: 'Penarikan tabungan berhasil diselesaikan dan dana telah ditransfer.',
         };
     }
 
-    /**
-     * Cancel withdrawal (only for user and before disbursement)
-     */
     async cancelWithdrawal(userId: string, withdrawalId: string) {
-        const withdrawal = await this.prisma.depositWithdrawal.findUnique({
+        const withdrawal = await this.prisma.savingsWithdrawal.findUnique({
             where: { id: withdrawalId },
         });
 
@@ -868,33 +854,31 @@ export class DepositWithdrawalService {
         }
 
         if (
-            withdrawal.status !== DepositWithdrawalStatus.SUBMITTED &&
-            withdrawal.status !== DepositWithdrawalStatus.UNDER_REVIEW_DSP &&
-            withdrawal.status !== DepositWithdrawalStatus.UNDER_REVIEW_KETUA
+            withdrawal.status !== SavingsWithdrawalStatus.SUBMITTED &&
+            withdrawal.status !== SavingsWithdrawalStatus.UNDER_REVIEW_DSP &&
+            withdrawal.status !== SavingsWithdrawalStatus.UNDER_REVIEW_KETUA
         ) {
             throw new BadRequestException(
                 'Hanya penarikan yang belum diproses yang dapat dibatalkan',
             );
         }
 
-        await this.prisma.depositWithdrawal.update({
+        await this.prisma.savingsWithdrawal.update({
             where: { id: withdrawalId },
             data: {
-                status: DepositWithdrawalStatus.CANCELLED,
+                status: SavingsWithdrawalStatus.CANCELLED,
                 currentStep: null,
             },
         });
 
-        return { message: 'Penarikan deposito berhasil dibatalkan' };
+        return { message: 'Penarikan tabungan berhasil dibatalkan' };
     }
-
-    // NOTIFICATION HELPERS
 
     private async notifyApprovers(
         withdrawalId: string,
-        step: DepositWithdrawalStep,
+        step: SavingsWithdrawalStep,
     ) {
-        const withdrawal = await this.prisma.depositWithdrawal.findUnique({
+        const withdrawal = await this.prisma.savingsWithdrawal.findUnique({
             where: { id: withdrawalId },
             include: {
                 user: {
@@ -902,7 +886,6 @@ export class DepositWithdrawalService {
                         employee: true,
                     },
                 },
-                depositApplication: true,
             },
         });
 
@@ -912,57 +895,34 @@ export class DepositWithdrawalService {
         let recipients: any[] = [];
 
         switch (step) {
-            case DepositWithdrawalStep.DIVISI_SIMPAN_PINJAM:
+            case SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM:
                 roleName = 'divisi_simpan_pinjam';
-                recipients = await this.prisma.user.findMany({
-                    where: {
-                        roles: {
-                            some: {
-                                level: {
-                                    levelName: roleName,
-                                },
-                            },
-                        },
-                    },
-                });
                 break;
-
-            case DepositWithdrawalStep.KETUA:
-            case DepositWithdrawalStep.KETUA_AUTH:
+            case SavingsWithdrawalStep.KETUA:
+            case SavingsWithdrawalStep.KETUA_AUTH:
                 roleName = 'ketua';
-                recipients = await this.prisma.user.findMany({
-                    where: {
-                        roles: {
-                            some: {
-                                level: {
-                                    levelName: roleName,
-                                },
-                            },
-                        },
-                    },
-                });
                 break;
-
-            case DepositWithdrawalStep.SHOPKEEPER:
+            case SavingsWithdrawalStep.SHOPKEEPER:
                 roleName = 'shopkeeper';
-                recipients = await this.prisma.user.findMany({
-                    where: {
-                        roles: {
-                            some: {
-                                level: {
-                                    levelName: roleName,
-                                },
-                            },
-                        },
-                    },
-                });
                 break;
         }
 
+        recipients = await this.prisma.user.findMany({
+            where: {
+                roles: {
+                    some: {
+                        level: {
+                            levelName: roleName,
+                        },
+                    },
+                },
+            },
+        });
+
         for (const recipient of recipients) {
             try {
-                if (step === DepositWithdrawalStep.SHOPKEEPER) {
-                    await this.mailService.sendDepositWithdrawalDisbursementRequest(
+                if (step === SavingsWithdrawalStep.SHOPKEEPER) {
+                    await this.mailService.sendSavingsWithdrawalDisbursementRequest(
                         recipient.email,
                         recipient.name,
                         withdrawal.user.name,
@@ -970,8 +930,8 @@ export class DepositWithdrawalService {
                         withdrawal.netAmount.toNumber(),
                         withdrawal.bankAccountNumber || '',
                     );
-                } else if (step === DepositWithdrawalStep.KETUA_AUTH) {
-                    await this.mailService.sendDepositWithdrawalAuthorizationRequest(
+                } else if (step === SavingsWithdrawalStep.KETUA_AUTH) {
+                    await this.mailService.sendSavingsWithdrawalAuthorizationRequest(
                         recipient.email,
                         recipient.name,
                         withdrawal.user.name,
@@ -979,12 +939,11 @@ export class DepositWithdrawalService {
                         withdrawal.netAmount.toNumber(),
                     );
                 } else {
-                    await this.mailService.sendDepositWithdrawalApprovalRequest(
+                    await this.mailService.sendSavingsWithdrawalApprovalRequest(
                         recipient.email,
                         recipient.name,
                         withdrawal.user.name,
                         withdrawal.withdrawalNumber,
-                        withdrawal.depositApplication.depositNumber,
                         withdrawal.withdrawalAmount.toNumber(),
                         roleName,
                     );

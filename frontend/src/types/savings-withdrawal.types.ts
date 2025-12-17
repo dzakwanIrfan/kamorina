@@ -1,4 +1,4 @@
-export enum DepositWithdrawalStatus {
+export enum SavingsWithdrawalStatus {
     SUBMITTED = 'SUBMITTED',
     UNDER_REVIEW_DSP = 'UNDER_REVIEW_DSP',
     UNDER_REVIEW_KETUA = 'UNDER_REVIEW_KETUA',
@@ -9,16 +9,16 @@ export enum DepositWithdrawalStatus {
     CANCELLED = 'CANCELLED',
 }
 
-export enum DepositWithdrawalStep {
+export enum SavingsWithdrawalStep {
     DIVISI_SIMPAN_PINJAM = 'DIVISI_SIMPAN_PINJAM',
     KETUA = 'KETUA',
     SHOPKEEPER = 'SHOPKEEPER',
     KETUA_AUTH = 'KETUA_AUTH',
 }
 
-export interface DepositWithdrawalApproval {
+export interface SavingsWithdrawalApproval {
     id: string;
-    step: DepositWithdrawalStep;
+    step: SavingsWithdrawalStep;
     decision: 'APPROVED' | 'REJECTED' | null;
     decidedAt: string | null;
     notes: string | null;
@@ -30,7 +30,7 @@ export interface DepositWithdrawalApproval {
     } | null;
 }
 
-export interface DepositWithdrawalDisbursement {
+export interface SavingsWithdrawalDisbursement {
     id: string;
     transactionDate: string;
     notes: string | null;
@@ -42,7 +42,7 @@ export interface DepositWithdrawalDisbursement {
     };
 }
 
-export interface DepositWithdrawalAuthorization {
+export interface SavingsWithdrawalAuthorization {
     id: string;
     authorizationDate: string;
     notes: string | null;
@@ -54,35 +54,25 @@ export interface DepositWithdrawalAuthorization {
     };
 }
 
-export interface DepositWithdrawal {
+export interface SavingsWithdrawal {
     id: string;
     withdrawalNumber: string;
-    depositApplicationId: string;
     userId: string;
     withdrawalAmount: number;
-    isEarlyWithdrawal: boolean;
+    hasEarlyDepositPenalty: boolean;
     penaltyRate: number;
     penaltyAmount: number;
     netAmount: number;
     bankAccountNumber: string | null;
     notes: string | null;
-    status: DepositWithdrawalStatus;
-    currentStep: DepositWithdrawalStep | null;
+    status: SavingsWithdrawalStatus;
+    currentStep: SavingsWithdrawalStep | null;
     submittedAt: string | null;
     rejectedAt: string | null;
     completedAt: string | null;
     rejectionReason: string | null;
     createdAt: string;
     updatedAt: string;
-    depositApplication?: {
-        id: string;
-        depositNumber: string;
-        amountValue: number;
-        tenorMonths: number;
-        collectedAmount: number;
-        maturityDate: string | null;
-        status: string;
-    };
     user?: {
         id: string;
         name: string;
@@ -96,25 +86,25 @@ export interface DepositWithdrawal {
                 departmentName: string;
             };
         };
+        bankAccountNumber: string | null;
     };
-    approvals: DepositWithdrawalApproval[];
-    disbursement?: DepositWithdrawalDisbursement;
-    authorization?: DepositWithdrawalAuthorization;
+    approvals: SavingsWithdrawalApproval[];
+    disbursement?: SavingsWithdrawalDisbursement;
+    authorization?: SavingsWithdrawalAuthorization;
 }
 
-export interface CreateDepositWithdrawalDto {
-    depositApplicationId: string;
+export interface CreateSavingsWithdrawalDto {
     withdrawalAmount: number;
     bankAccountNumber?: string;
     notes?: string;
 }
 
-export interface ApproveWithdrawalDto {
+export interface ApproveSavingsWithdrawalDto {
     decision: 'APPROVED' | 'REJECTED';
     notes?: string;
 }
 
-export interface BulkApproveWithdrawalDto {
+export interface BulkApproveSavingsWithdrawalDto {
     withdrawalIds: string[];
     decision: 'APPROVED' | 'REJECTED';
     notes?: string;
@@ -125,21 +115,34 @@ export interface ConfirmDisbursementDto {
     notes?: string;
 }
 
+
+export interface BulkConfirmDisbursementDto {
+    withdrawalIds: string[];
+    transactionDate?: string;
+    notes?: string;
+}
+
 export interface ConfirmAuthorizationDto {
     authorizationDate?: string;
     notes?: string;
 }
 
-export interface QueryWithdrawalParams {
+export interface BulkConfirmAuthorizationDto {
+    withdrawalIds: string[];
+    authorizationDate?: string;
+    notes?: string;
+}
+
+
+export interface QuerySavingsWithdrawalParams {
     page?: number;
     limit?: number;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
-    status?: DepositWithdrawalStatus;
-    step?: DepositWithdrawalStep;
+    status?: SavingsWithdrawalStatus;
+    step?: SavingsWithdrawalStep;
     userId?: string;
-    depositApplicationId?: string;
     startDate?: string;
     endDate?: string;
 }

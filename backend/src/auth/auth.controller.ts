@@ -109,7 +109,6 @@ export class AuthController {
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getMe(@Req() req: RequestWithUser) {
-    console.log('Fetching profile for user:', req);
     return this.authService.getUserProfile(req.user.id);
   }
 }
