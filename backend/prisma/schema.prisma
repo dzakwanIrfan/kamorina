@@ -345,6 +345,7 @@ enum LoanStatus {
   DISBURSEMENT_IN_PROGRESS
   PENDING_AUTHORIZATION
   DISBURSED
+  COMPLETED
   REJECTED
   CANCELLED
 }
@@ -414,8 +415,9 @@ model LoanApplication {
   goodsOnlineDetails    GoodsOnlineDetail?
   goodsPhoneDetails     GoodsPhoneDetail?
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  loanInstallments LoanInstallment[]
 
   @@index([userId])
   @@index([loanType])
@@ -424,6 +426,35 @@ model LoanApplication {
   @@index([loanType, status])
   @@index([userId, loanType])
   @@map("loan_applications")
+}
+
+model LoanInstallment {
+  id                String          @id @default(uuid())
+  loanApplicationId String          @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  installmentNumber Int      @map("installment_number") // 1, 2, 3, ...
+  dueDate           DateTime @map("due_date") @db.Date
+  amount            Decimal  @db.Decimal(15, 2) // Monthly installment amount
+
+  isPaid     Boolean   @default(false) @map("is_paid")
+  paidAt     DateTime? @map("paid_at")
+  paidAmount Decimal?  @map("paid_amount") @db.Decimal(15, 2)
+
+  payrollPeriodId String?        @map("payroll_period_id")
+  payrollPeriod   PayrollPeriod? @relation(fields: [payrollPeriodId], references: [id])
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([loanApplicationId, installmentNumber])
+  @@index([loanApplicationId])
+  @@index([dueDate])
+  @@index([isPaid])
+  @@index([payrollPeriodId])
+  @@map("loan_installments")
 }
 
 // TYPE-SPECIFIC TABLES
@@ -793,8 +824,8 @@ model DepositApplication {
   history        DepositHistory[]
   changeRequests DepositChangeRequest[]
 
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("deposit_applications")
 }
@@ -999,7 +1030,8 @@ model PayrollPeriod {
   processedAt DateTime? @map("processed_at")
   totalAmount Decimal   @default(0) @map("total_amount") @db.Decimal(15, 2)
 
-  transactions SavingsTransaction[]
+  transactions     SavingsTransaction[]
+  loanInstallments LoanInstallment[]
 
   @@unique([month, year])
   @@map("payroll_periods")

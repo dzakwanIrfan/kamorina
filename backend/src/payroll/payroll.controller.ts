@@ -26,7 +26,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class PayrollController {
-  constructor(private readonly payrollService: PayrollService) {}
+  constructor(private readonly payrollService: PayrollService) { }
 
   @Post('process')
   @HttpCode(HttpStatus.OK)
@@ -59,6 +59,11 @@ export class PayrollController {
             count: result.depositSavings.processedCount,
             total: result.depositSavings.totalAmount.toString(),
             errors: result.depositSavings.errors.length,
+          },
+          loanInstallment: {
+            count: result.loanInstallment.processedCount,
+            total: result.loanInstallment.totalAmount.toString(),
+            errors: result.loanInstallment.errors.length,
           },
           interest: {
             count: result.interest.processedCount,

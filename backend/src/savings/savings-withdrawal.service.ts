@@ -820,6 +820,13 @@ export class SavingsWithdrawalService {
                         interestRate: 0,
                     },
                 });
+
+                await tx.savingsWithdrawal.update({
+                    where: { id: withdrawalId },
+                    data: {
+                        activatedAt: new Date(),
+                    },
+                })
             }
         });
 

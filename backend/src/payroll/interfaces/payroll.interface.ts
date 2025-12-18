@@ -57,6 +57,7 @@ export interface PayrollSummary {
   mandatorySavings: ProcessorResult;
   depositSavings: ProcessorResult;
   savingsWithdrawal: ProcessorResult;
+  loanInstallment: ProcessorResult;
   interest: ProcessorResult;
   grandTotal: Prisma.Decimal;
 }

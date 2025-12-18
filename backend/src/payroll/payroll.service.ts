@@ -19,6 +19,7 @@ import { DepositSavingsProcessor } from './services/deposit-savings.processor';
 import { SavingsWithdrawalProcessor } from './services/savings-withdrawal.processor';
 import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
 import { ManualPayrollDto } from './dto/payroll.dto';
+import { LoanInstallmentProcessor } from './services/loan-installment.processor';
 
 @Injectable()
 export class PayrollService {
@@ -31,6 +32,7 @@ export class PayrollService {
     private depositSavingsProcessor: DepositSavingsProcessor,
     private savingsWithdrawalProcessor: SavingsWithdrawalProcessor,
     private interestCalculatorProcessor: InterestCalculatorProcessor,
+    private loanInstallmentProcessor: LoanInstallmentProcessor,
   ) { }
 
   /**
@@ -151,6 +153,7 @@ export class PayrollService {
     let mandatorySavingsResult: ProcessorResult = this.emptyResult();
     let depositSavingsResult: ProcessorResult = this.emptyResult();
     let savingsWithdrawalResult: ProcessorResult = this.emptyResult();
+    let loanInstallmentResult: ProcessorResult = this.emptyResult();
     let interestResult: ProcessorResult = this.emptyResult();
 
     // Process dalam transaction
@@ -180,7 +183,13 @@ export class PayrollService {
           context,
         );
 
-        // 5. Calculate interest (Bunga Simpanan)
+        // 5. Process loan installments (Angsuran Pinjaman)
+        loanInstallmentResult = await this.loanInstallmentProcessor.process(
+          tx,
+          context,
+        );
+
+        // 6. Calculate interest (Bunga Simpanan)
         interestResult = await this.interestCalculatorProcessor.process(
           tx,
           context,
@@ -190,6 +199,7 @@ export class PayrollService {
         const grandTotal = membershipResult.totalAmount
           .add(mandatorySavingsResult.totalAmount)
           .add(depositSavingsResult.totalAmount)
+          .add(loanInstallmentResult.totalAmount)
           .sub(savingsWithdrawalResult.totalAmount);
 
         // Finalize payroll period
@@ -211,6 +221,7 @@ export class PayrollService {
     const grandTotal = membershipResult.totalAmount
       .add(mandatorySavingsResult.totalAmount)
       .add(depositSavingsResult.totalAmount)
+      .add(loanInstallmentResult.totalAmount)
       .sub(savingsWithdrawalResult.totalAmount);
 
     const summary: PayrollSummary = {
@@ -221,6 +232,7 @@ export class PayrollService {
       mandatorySavings: mandatorySavingsResult,
       depositSavings: depositSavingsResult,
       savingsWithdrawal: savingsWithdrawalResult,
+      loanInstallment: loanInstallmentResult,
       interest: interestResult,
       grandTotal,
     };

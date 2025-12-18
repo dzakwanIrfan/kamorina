@@ -30,8 +30,9 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
 import type { ICurrentUser } from '../auth/interfaces/current-user.interface';
-import { LoanType } from '@prisma/client';
+import { LoanStatus, LoanType } from '@prisma/client';
 import type { UpdateLoanDto } from './dto/update-loan.dto';
+import { LoanInstallmentService } from './services/loan-installment.service';
 
 @Controller('loans')
 @UseGuards(JwtAuthGuard)
@@ -39,6 +40,7 @@ export class LoanController {
   constructor(
     private readonly loanService: LoanService,
     private readonly uploadService: UploadService,
+    private readonly installmentService: LoanInstallmentService,
   ) { }
 
   /**
@@ -316,7 +318,7 @@ export class LoanController {
   async getPendingAuthorization(@Query() query: QueryLoanDto) {
     return this.loanService.getAllLoans({
       ...query,
-      status: 'DISBURSEMENT_IN_PROGRESS' as any,
+      status: 'PENDING_AUTHORIZATION' as LoanStatus,
     });
   }
 
@@ -347,5 +349,14 @@ export class LoanController {
     @Body() dto: BulkProcessAuthorizationDto,
   ) {
     return this.loanService.bulkProcessAuthorization(user.id, dto);
+  }
+
+  /**
+ * Get loan installment schedule
+ */
+  @Get(':id/installments')
+  @HttpCode(HttpStatus.OK)
+  async getLoanInstallments(@Param('id') id: string) {
+    return this.installmentService.getLoanInstallmentSummary(id);
   }
 }

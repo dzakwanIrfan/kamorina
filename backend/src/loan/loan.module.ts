@@ -24,6 +24,7 @@ import { GoodsPhoneHandler } from './handlers/goods-phone.handler';
 // External modules
 import { MailModule } from '../mail/mail.module';
 import { UploadModule } from '../upload/upload.module';
+import { LoanInstallmentService } from './services/loan-installment.service';
 
 @Module({
   imports: [MailModule, UploadModule],
@@ -39,6 +40,7 @@ import { UploadModule } from '../upload/upload.module';
     LoanDisbursementService,
     LoanAuthorizationService,
     LoanQueryService,
+    LoanInstallmentService,
     
     // Utility services
     LoanValidationService,
@@ -53,6 +55,7 @@ import { UploadModule } from '../upload/upload.module';
     GoodsOnlineHandler,
     GoodsPhoneHandler,
   ],
-  exports: [LoanService],
+  exports: [LoanService, LoanInstallmentService],
+
 })
 export class LoanModule {}

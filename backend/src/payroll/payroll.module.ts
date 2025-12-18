@@ -6,6 +6,7 @@ import { MandatorySavingsProcessor } from './services/mandatory-savings.processo
 import { DepositSavingsProcessor } from './services/deposit-savings.processor';
 import { SavingsWithdrawalProcessor } from './services/savings-withdrawal.processor';
 import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
+import { LoanInstallmentProcessor } from './services/loan-installment.processor';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
     DepositSavingsProcessor,
     SavingsWithdrawalProcessor,
     InterestCalculatorProcessor,
+    LoanInstallmentProcessor,
   ],
   exports: [PayrollService],
 })

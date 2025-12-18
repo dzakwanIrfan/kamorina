@@ -55,6 +55,7 @@ export function AuthorizationList() {
         sortBy: 'disbursedAt',
         sortOrder: 'asc',
       });
+      console.log("Response: ", response);
       setData(response.data);
       setMeta(response.meta);
     } catch (error: any) {

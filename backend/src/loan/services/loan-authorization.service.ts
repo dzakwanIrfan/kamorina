@@ -4,12 +4,14 @@ import { LoanStatus } from '@prisma/client';
 import { LoanNotificationService } from './loan-notification.service';
 import { ProcessAuthorizationDto } from '../dto/process-authorization.dto';
 import { BulkProcessAuthorizationDto } from '../dto/bulk-process-authorization.dto';
+import { LoanInstallmentService } from './loan-installment.service';
 
 @Injectable()
 export class LoanAuthorizationService {
   constructor(
     private prisma: PrismaService,
     private notificationService: LoanNotificationService,
+    private installmentService: LoanInstallmentService,
   ) {}
 
   /**
@@ -64,6 +66,9 @@ export class LoanAuthorizationService {
           disbursedAt: new Date(),
         },
       });
+
+      // Generate installment schedule
+      await this.installmentService.generateInstallmentSchedule(loanId, tx);
 
       // Save history
       await tx.loanHistory.create({
