@@ -23,6 +23,7 @@ import {
   FileText,
   History,
   Calendar,
+  Loader2,
 } from 'lucide-react';
 import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
@@ -70,7 +71,7 @@ export function DepositDetailDialog({
   onSuccess,
   canApprove = false,
 }: DepositDetailDialogProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingDecision, setProcessingDecision] = useState<DepositApprovalDecision | null>(null);
   const [notes, setNotes] = useState('');
   const [activeTab, setActiveTab] = useState('details');
 
@@ -92,7 +93,7 @@ export function DepositDetailDialog({
     if (!deposit) return;
 
     try {
-      setIsProcessing(true);
+      setProcessingDecision(decision);
       const dto: ApproveDepositDto = {
         decision,
         notes: notes.trim() || undefined,
@@ -112,7 +113,7 @@ export function DepositDetailDialog({
     } catch (error: any) {
       toast.error(handleApiError(error));
     } finally {
-      setIsProcessing(false);
+      setProcessingDecision(null);
     }
   };
 
@@ -165,7 +166,7 @@ export function DepositDetailDialog({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Nama</p>
-                  <p className="font-medium">{deposit.user?.name}</p>
+                  <p className="font-medium">{deposit.user?.employee.fullName}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Email</p>
@@ -279,13 +280,12 @@ export function DepositDetailDialog({
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                            isApproved
-                              ? 'border-green-500 bg-green-50 text-green-600 dark:bg-green-950'
-                              : isRejected
+                          className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${isApproved
+                            ? 'border-green-500 bg-green-50 text-green-600 dark:bg-green-950'
+                            : isRejected
                               ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950'
                               : 'border-gray-300 bg-gray-50 text-gray-400 dark:bg-gray-900'
-                          }`}
+                            }`}
                         >
                           {isApproved ? (
                             <CheckCircle2 className="h-5 w-5" />
@@ -297,9 +297,8 @@ export function DepositDetailDialog({
                         </div>
                         {!isLast && (
                           <div
-                            className={`mt-2 h-full w-0.5 ${
-                              isApproved ? 'bg-green-500' : 'bg-gray-200'
-                            }`}
+                            className={`mt-2 h-full w-0.5 ${isApproved ? 'bg-green-500' : 'bg-gray-200'
+                              }`}
                             style={{ minHeight: '40px' }}
                           />
                         )}
@@ -378,18 +377,26 @@ export function DepositDetailDialog({
                   <Button
                     variant="destructive"
                     onClick={() => handleProcess(DepositApprovalDecision.REJECTED)}
-                    disabled={isProcessing}
+                    disabled={!!processingDecision}
                     className="flex-1"
                   >
-                    <XCircle className="mr-2 h-4 w-4" />
+                    {processingDecision === DepositApprovalDecision.REJECTED ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <XCircle className="mr-2 h-4 w-4" />
+                    )}
                     Tolak
                   </Button>
                   <Button
                     onClick={() => handleProcess(DepositApprovalDecision.APPROVED)}
-                    disabled={isProcessing}
+                    disabled={!!processingDecision}
                     className="flex-1"
                   >
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    {processingDecision === DepositApprovalDecision.APPROVED ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                    )}
                     Setujui
                   </Button>
                 </div>

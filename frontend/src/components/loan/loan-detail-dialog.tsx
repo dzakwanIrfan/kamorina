@@ -237,7 +237,7 @@ export function LoanDetailDialog({
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Nama</p>
-                    <p className="font-medium">{loan.user?.name}</p>
+                    <p className="font-medium">{loan.user?.employee.fullName}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Email</p>

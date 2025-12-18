@@ -5,10 +5,10 @@ import { savingsWithdrawalService } from '@/services/savings-withdrawal.service'
 import { depositService } from '@/services/deposit.service';
 import { depositChangeService } from '@/services/deposit-change.service';
 import { memberApplicationService } from '@/services/member-application.service';
-import { LoanStatus, LoanApprovalStep } from '@/types/loan.types';
+import { LoanApprovalStep } from '@/types/loan.types';
 import { SavingsWithdrawalStatus, SavingsWithdrawalStep } from '@/types/savings-withdrawal.types';
-import { DepositStatus, DepositApprovalStep } from '@/types/deposit.types';
-import { DepositChangeStatus, DepositChangeApprovalStep } from '@/types/deposit-change.types';
+import { DepositApprovalStep } from '@/types/deposit.types';
+import { DepositChangeApprovalStep } from '@/types/deposit-change.types';
 import { ApplicationStatus, ApprovalStep } from '@/types/member-application.types';
 
 export function useSidebarBadges() {
@@ -39,32 +39,19 @@ export function useSidebarBadges() {
 
                 // 1. Loans Approvals
                 if (isKetua || isDSP || isPengawas) {
-                    // Determine the correct status/step query based on role
-                    // Note: The backend logic for "getPending" might be complex, so relying on "All Loans + Status Filter" 
-                    // might be the standard way if specific "pending" endpoints don't cover everything.
-                    // However, for badge count, "SUBMITTED" or specific steps are usually what we want.
-
-                    let loanStatus: LoanStatus | undefined;
                     let loanStep: LoanApprovalStep | undefined;
 
-                    // Simple logic: If any approver, just fetch what's pending for them.
-                    // Since the API typically filters by what the USER can see/approve, 
-                    // allow the backend (via service methods) to handle the heavy lifting if possible.
-                    // We will use standard "pending" queries where available.
-
-                    // Wait, loanService uses general getAllLoans. We should filter.
                     if (isDSP) {
-                        loanStatus = LoanStatus.UNDER_REVIEW_DSP;
+                        loanStep = LoanApprovalStep.DIVISI_SIMPAN_PINJAM;
                     } else if (isKetua) {
-                        loanStatus = LoanStatus.UNDER_REVIEW_KETUA;
+                        loanStep = LoanApprovalStep.KETUA;
                     } else if (isPengawas) {
-                        loanStatus = LoanStatus.UNDER_REVIEW_PENGAWAS;
+                        loanStep = LoanApprovalStep.PENGAWAS;
                     }
 
-                    // If we have a specific status target, fetch it
-                    if (loanStatus) {
+                    if (loanStep) {
                         keys.push('/dashboard/loans/approvals');
-                        promises.push(loanService.getAllLoans({ status: loanStatus, limit: 1 }));
+                        promises.push(loanService.getAllLoans({ step: loanStep, limit: 1 }));
                     }
                 }
 
@@ -82,24 +69,23 @@ export function useSidebarBadges() {
 
                 // 4. Savings Withdrawal Approvals
                 if (isKetua || isDSP) {
-                    let swStatus: SavingsWithdrawalStatus | undefined;
+                    let swStep: SavingsWithdrawalStep | undefined;
 
                     if (isDSP) {
-                        swStatus = SavingsWithdrawalStatus.UNDER_REVIEW_DSP;
+                        swStep = SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM;
                     } else if (isKetua) {
-                        swStatus = SavingsWithdrawalStatus.UNDER_REVIEW_KETUA;
+                        swStep = SavingsWithdrawalStep.KETUA;
                     }
 
-                    if (swStatus) {
+                    if (swStep) {
                         keys.push('/dashboard/savings-withdrawals/approvals');
-                        promises.push(savingsWithdrawalService.getAllWithdrawals({ status: swStatus, limit: 1 }));
+                        promises.push(savingsWithdrawalService.getAllWithdrawals({ step: swStep, limit: 1 }));
                     }
                 }
 
                 // 5. Savings Withdrawal Disbursement (Shopkeeper)
                 if (isShopkeeper) {
                     keys.push('/dashboard/savings-withdrawals/disbursement');
-                    // No specific "pending disbursement" endpoint visible in service, so we filter normal list
                     promises.push(savingsWithdrawalService.getAllWithdrawals({
                         status: SavingsWithdrawalStatus.APPROVED_WAITING_DISBURSEMENT,
                         limit: 1
@@ -109,11 +95,6 @@ export function useSidebarBadges() {
                 // 6. Savings Withdrawal Authorization (Ketua)
                 if (isKetua) {
                     keys.push('/dashboard/savings-withdrawals/authorization');
-                    /* 
-                      Based on types: 
-                      Ketua Authorization probably happens after DISBURSEMENT_IN_PROGRESS 
-                      or is a separate step. Checking step KETUA_AUTH usually implies pending auth.
-                    */
                     promises.push(savingsWithdrawalService.getAllWithdrawals({
                         step: SavingsWithdrawalStep.KETUA_AUTH,
                         limit: 1
@@ -122,25 +103,27 @@ export function useSidebarBadges() {
 
                 // 7. Deposit Approvals
                 if (isKetua || isDSP) {
-                    let depositStatus: DepositStatus | undefined;
-                    if (isDSP) depositStatus = DepositStatus.UNDER_REVIEW_DSP;
-                    if (isKetua) depositStatus = DepositStatus.UNDER_REVIEW_KETUA;
+                    let depositStep: DepositApprovalStep | undefined;
 
-                    if (depositStatus) {
+                    if (isDSP) depositStep = DepositApprovalStep.DIVISI_SIMPAN_PINJAM;
+                    if (isKetua) depositStep = DepositApprovalStep.KETUA;
+
+                    if (depositStep) {
                         keys.push('/dashboard/deposits/approvals');
-                        promises.push(depositService.getAllDeposits({ status: depositStatus, limit: 1 }));
+                        promises.push(depositService.getAllDeposits({ step: depositStep, limit: 1 }));
                     }
                 }
 
                 // 8. Deposit Change Approvals
                 if (isKetua || isDSP) {
-                    let dcStatus: DepositChangeStatus | undefined;
-                    if (isDSP) dcStatus = DepositChangeStatus.UNDER_REVIEW_DSP;
-                    if (isKetua) dcStatus = DepositChangeStatus.UNDER_REVIEW_KETUA;
+                    let dcStep: DepositChangeApprovalStep | undefined;
 
-                    if (dcStatus) {
+                    if (isDSP) dcStep = DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM;
+                    if (isKetua) dcStep = DepositChangeApprovalStep.KETUA;
+
+                    if (dcStep) {
                         keys.push('/dashboard/deposit-changes/approvals');
-                        promises.push(depositChangeService.getAllChangeRequests({ status: dcStatus, limit: 1 }));
+                        promises.push(depositChangeService.getAllChangeRequests({ step: dcStep, limit: 1 }));
                     }
                 }
 
