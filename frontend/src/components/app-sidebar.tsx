@@ -24,6 +24,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
+import { useSidebarBadges } from "@/hooks/use-sidebar-badges";
 
 import {
   Sidebar,
@@ -47,6 +48,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/auth.store";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -243,6 +245,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const { badges } = useSidebarBadges();
 
   const handleLogout = () => {
     logout();
@@ -320,6 +323,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 const isActive = pathname === item.href;
                 const isDisabled =
                   item.requiresMemberVerified && !isMemberVerified;
+                const badgeCount = badges[item.href];
 
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -335,11 +339,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <div className="flex items-center gap-3">
                           <item.icon className="size-4" />
                           <span>{item.title}</span>
+                          {/* Disabled badges are hidden or optional here */}
                         </div>
                       ) : (
-                        <Link href={item.href}>
+                        <Link href={item.href} className="flex items-center gap-3 w-full pr-2">
                           <item.icon className="size-4" />
                           <span>{item.title}</span>
+                          {badgeCount !== undefined && badgeCount > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20"
+                            >
+                              {badgeCount > 99 ? '99+' : badgeCount}
+                            </Badge>
+                          )}
                         </Link>
                       )}
                     </SidebarMenuButton>
@@ -368,12 +381,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenu>
                     {visibleItems.map((item) => {
                       const isActive = pathname === item.href;
+                      const badgeCount = badges[item.href];
+
                       return (
                         <SidebarMenuItem key={item.href}>
                           <SidebarMenuButton asChild isActive={isActive}>
-                            <Link href={item.href}>
+                            <Link href={item.href} className="flex items-center gap-3 w-full pr-2">
                               <item.icon className="size-4" />
                               <span>{item.title}</span>
+                              {badgeCount !== undefined && badgeCount > 0 && (
+                                <Badge
+                                  variant="secondary"
+                                  className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
+                                >
+                                  {badgeCount > 99 ? '99+' : badgeCount}
+                                </Badge>
+                              )}
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -424,12 +447,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Link href="/dashboard/profile">
                     <Users className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Pengaturan</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

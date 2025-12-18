@@ -20,7 +20,7 @@ import {
 } from '@/types/member-application.types';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { CheckCircle2, XCircle, Clock, User, Building2, Calendar, Award } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, User, Building2, Calendar, Award, Loader2 } from 'lucide-react';
 import { memberApplicationService } from '@/services/member-application.service';
 import { toast } from 'sonner';
 
@@ -50,7 +50,7 @@ export function ApplicationDetailDialog({
   onSuccess,
   canApprove = false,
 }: ApplicationDetailDialogProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingDecision, setProcessingDecision] = useState<ApprovalDecision | null>(null);
   const [notes, setNotes] = useState('');
 
   if (!application) return null;
@@ -62,7 +62,7 @@ export function ApplicationDetailDialog({
     if (!application) return;
 
     try {
-      setIsProcessing(true);
+      setProcessingDecision(decision);
       await memberApplicationService.processApproval(application.id, {
         decision,
         notes: notes.trim() || undefined,
@@ -80,7 +80,7 @@ export function ApplicationDetailDialog({
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal memproses pengajuan');
     } finally {
-      setIsProcessing(false);
+      setProcessingDecision(null);
     }
   };
 
@@ -194,13 +194,12 @@ export function ApplicationDetailDialog({
                 <div key={approval.id} className="flex gap-4">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`rounded-full p-2 ${
-                        approval.decision === ApprovalDecision.APPROVED
-                          ? 'bg-green-100 text-green-600'
-                          : approval.decision === ApprovalDecision.REJECTED
+                      className={`rounded-full p-2 ${approval.decision === ApprovalDecision.APPROVED
+                        ? 'bg-green-100 text-green-600'
+                        : approval.decision === ApprovalDecision.REJECTED
                           ? 'bg-red-100 text-red-600'
                           : 'bg-gray-100 text-gray-400'
-                      }`}
+                        }`}
                     >
                       {approval.decision === ApprovalDecision.APPROVED ? (
                         <CheckCircle2 className="h-4 w-4" />
@@ -284,18 +283,26 @@ export function ApplicationDetailDialog({
                     <Button
                       variant="destructive"
                       onClick={() => handleProcess(ApprovalDecision.REJECTED)}
-                      disabled={isProcessing}
+                      disabled={!!processingDecision}
                       className="flex-1"
                     >
-                      <XCircle className="mr-2 h-4 w-4" />
+                      {processingDecision === ApprovalDecision.REJECTED ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <XCircle className="mr-2 h-4 w-4" />
+                      )}
                       Tolak
                     </Button>
                     <Button
                       onClick={() => handleProcess(ApprovalDecision.APPROVED)}
-                      disabled={isProcessing}
+                      disabled={!!processingDecision}
                       className="flex-1"
                     >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      {processingDecision === ApprovalDecision.APPROVED ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                      )}
                       Setujui
                     </Button>
                   </div>
