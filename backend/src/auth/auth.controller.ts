@@ -69,8 +69,6 @@ export class AuthController {
 
     // Don't send token in response body
     const { accessToken: _, ...response } = result;
-
-    console.log("Response from login:", response);
     
     return response;
   }

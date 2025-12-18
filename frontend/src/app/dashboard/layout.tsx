@@ -14,9 +14,9 @@ export default function DashboardLayout({
     <ProtectedRoute>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset>
+        <SidebarInset className="w-full min-w-0">
           <AppHeader />
-          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 w-full min-w-0">
             {children}
           </main>
         </SidebarInset>
