@@ -57,6 +57,7 @@ export function MyLoans() {
         sortOrder: 'desc',
       });
       setData(response.data);
+      console.log("response", response.data)
       setMeta(response.meta);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Gagal memuat data');

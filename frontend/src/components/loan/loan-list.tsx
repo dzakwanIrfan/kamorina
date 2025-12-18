@@ -60,7 +60,6 @@ interface LoanListProps {
 export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuthStore();
   const { hasRole } = usePermissions();
 
   const [data, setData] = useState<LoanApplication[]>([]);

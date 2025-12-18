@@ -1,5 +1,3 @@
-// backend/src/loan/services/loan-query.service.ts
-
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { QueryLoanDto } from '../dto/query-loan.dto';
@@ -11,7 +9,7 @@ export class LoanQueryService {
   constructor(
     private prisma: PrismaService,
     private loanHandlerFactory: LoanHandlerFactory,
-  ) {}
+  ) { }
 
   /**
    * Get my loans
@@ -98,6 +96,9 @@ export class LoanQueryService {
           goodsReimburseDetails: true,
           goodsOnlineDetails: true,
           goodsPhoneDetails: true,
+          loanInstallments: {
+            orderBy: { installmentNumber: 'asc' },
+          },
         },
       }),
       this.prisma.loanApplication.count({ where }),
@@ -223,6 +224,9 @@ export class LoanQueryService {
           goodsReimburseDetails: true,
           goodsOnlineDetails: true,
           goodsPhoneDetails: true,
+          loanInstallments: {
+            orderBy: { installmentNumber: 'asc' },
+          },
         },
       }),
       this.prisma.loanApplication.count({ where }),
@@ -308,6 +312,9 @@ export class LoanQueryService {
         goodsReimburseDetails: true,
         goodsOnlineDetails: true,
         goodsPhoneDetails: true,
+        loanInstallments: {
+          orderBy: { installmentNumber: 'asc' },
+        },
       },
     });
   }

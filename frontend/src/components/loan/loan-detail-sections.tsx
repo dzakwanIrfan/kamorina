@@ -141,22 +141,6 @@ export function CalculationBreakdown({ loan }: CalculationBreakdownProps) {
             </span>
           </div>
         </div>
-
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-xs space-y-1">
-            <div>
-              <strong>Catatan:</strong> Perhitungan menggunakan metode bunga flat rate.
-              Cicilan akan dipotong langsung dari gaji setiap bulan.
-            </div>
-            {loan.loanType === LoanType.GOODS_ONLINE && shopMargin > 0 && (
-              <div className="mt-2 pt-2 border-t">
-                Untuk kredit barang online, total pembayaran sudah termasuk margin toko {shopMarginRate}% 
-                sebesar {formatCurrency(shopMargin)}.
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
       </CardContent>
     </Card>
   );

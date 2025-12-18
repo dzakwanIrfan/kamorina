@@ -57,7 +57,7 @@ export interface GoodsOnlineDetail {
   itemName: string;
   itemPrice: number;
   itemUrl: string;
-  shopMarginRate: number; 
+  shopMarginRate: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -154,6 +154,18 @@ export interface LoanAuthorization {
   };
 }
 
+export interface LoanInstallment {
+  id: string;
+  installmentNumber: number;
+  dueDate: string;
+  amount: number;
+  isPaid: boolean;
+  paidAt: string | null;
+  paidAmount: number | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 export interface LoanApplication {
   id: string;
   loanNumber: string;
@@ -207,6 +219,7 @@ export interface LoanApplication {
   goodsReimburseDetails?: GoodsReimburseDetail | null;
   goodsOnlineDetails?: GoodsOnlineDetail | null;
   goodsPhoneDetails?: GoodsPhoneDetail | null;
+  loanInstallments?: LoanInstallment[];
 }
 
 // Create DTOs

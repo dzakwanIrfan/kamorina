@@ -30,6 +30,15 @@ import { FaRupiahSign } from "react-icons/fa6";
 import { toast } from 'sonner';
 
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+import {
   LoanApplication,
   LoanStatus,
   LoanApprovalStep,
@@ -38,8 +47,8 @@ import {
 } from '@/types/loan.types';
 import { loanService } from '@/services/loan.service';
 import { handleApiError } from '@/lib/axios';
-import { ReviseLoanDialog } from '@/components/loan/revise-loan-dialog'; 
-import { usePermissions } from '@/hooks/use-permission'; 
+import { ReviseLoanDialog } from '@/components/loan/revise-loan-dialog';
+import { usePermissions } from '@/hooks/use-permission';
 import { LoanTypeDetails } from './loan-type-details';
 import { CalculationBreakdown, LoanRevisionsDisplay } from './loan-detail-sections';
 
@@ -78,13 +87,12 @@ export function LoanDetailDialog({
   onOpenChange,
   onSuccess,
   canApprove = false,
-  canRevise = false,
 }: LoanDetailDialogProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [notes, setNotes] = useState('');
   const [activeTab, setActiveTab] = useState('details');
-  const [reviseDialogOpen, setReviseDialogOpen] = useState(false); 
-  const { hasRole } = usePermissions(); 
+  const [reviseDialogOpen, setReviseDialogOpen] = useState(false);
+  const { hasRole } = usePermissions();
 
   if (!loan) return null;
 
@@ -92,7 +100,7 @@ export function LoanDetailDialog({
   const StatusIcon = status.icon;
 
   const isDSP = hasRole('divisi_simpan_pinjam');
-  const canDSPRevise = isDSP && 
+  const canDSPRevise = isDSP &&
     loan.currentStep === LoanApprovalStep.DIVISI_SIMPAN_PINJAM &&
     (loan.status === LoanStatus.SUBMITTED || loan.status === LoanStatus.UNDER_REVIEW_DSP);
 
@@ -147,15 +155,15 @@ export function LoanDetailDialog({
   };
 
   return (
-    <>  
+    <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detail Pengajuan Pinjaman</DialogTitle>
           </DialogHeader>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="details">
                 <FileText className="h-4 w-4 mr-2" />
                 Detail
@@ -167,6 +175,10 @@ export function LoanDetailDialog({
               <TabsTrigger value="calculation">
                 <FaRupiahSign className="h-4 w-4 mr-2" />
                 Perhitungan
+              </TabsTrigger>
+              <TabsTrigger value="installments">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Cicilan
               </TabsTrigger>
             </TabsList>
 
@@ -184,7 +196,7 @@ export function LoanDetailDialog({
                 )}
               </div>
 
-              {/* ADD THIS - Revise Button for DSP */}
+              {/* Revise Button for DSP */}
               {canDSPRevise && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/30 p-4">
                   <div className="flex items-start justify-between gap-4">
@@ -378,101 +390,194 @@ export function LoanDetailDialog({
             <TabsContent value="timeline" className="space-y-6 mt-6">
               {/* Approval Timeline */}
               <div className="space-y-4">
-                {loan.approvals.map((approval, index) => {
-                  const isLast = index === loan.approvals.length - 1;
-                  const isPending = !approval.decision;
-                  const isApproved = approval.decision === LoanApprovalDecision.APPROVED;
-                  const isRejected = approval.decision === LoanApprovalDecision.REJECTED;
-                  const isRevised = approval.decision === LoanApprovalDecision.REVISED;
+                {(() => {
+                  const timelineSteps = [
+                    {
+                      id: 'dsp',
+                      step: LoanApprovalStep.DIVISI_SIMPAN_PINJAM,
+                      label: stepMap[LoanApprovalStep.DIVISI_SIMPAN_PINJAM],
+                      type: 'approval'
+                    },
+                    {
+                      id: 'ketua',
+                      step: LoanApprovalStep.KETUA,
+                      label: stepMap[LoanApprovalStep.KETUA],
+                      type: 'approval'
+                    },
+                    {
+                      id: 'pengawas',
+                      step: LoanApprovalStep.PENGAWAS,
+                      label: stepMap[LoanApprovalStep.PENGAWAS],
+                      type: 'approval'
+                    },
+                    {
+                      id: 'disbursement',
+                      label: 'Pencairan Dana (Kasir)',
+                      type: 'disbursement'
+                    },
+                    {
+                      id: 'authorization',
+                      label: 'Otorisasi Final (Ketua)',
+                      type: 'authorization'
+                    }
+                  ];
 
-                  return (
-                    <div key={approval.id} className="relative">
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col items-center">
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
-                              isApproved
+                  return timelineSteps.map((item, index) => {
+                    const isLast = index === timelineSteps.length - 1;
+                    let status: 'completed' | 'rejected' | 'revised' | 'current' | 'waiting' = 'waiting';
+                    let data: any = null;
+                    let date: string | null = null;
+                    let actorName: string | null = null;
+                    let notes: string | null = null;
+
+                    // Determine status and data based on step type
+                    if (item.type === 'approval' && item.step) {
+                      const approval = loan.approvals.find(a => a.step === item.step);
+                      if (approval) {
+                        if (approval.decision === LoanApprovalDecision.APPROVED) status = 'completed';
+                        else if (approval.decision === LoanApprovalDecision.REJECTED) status = 'rejected';
+                        else if (approval.decision === LoanApprovalDecision.REVISED) status = 'revised';
+                        else status = 'current'; // Should ideally be caught by approval logic, but fallback
+
+                        data = approval;
+                        date = approval.decidedAt;
+                        actorName = approval.approver?.name || '-';
+                        notes = approval.notes;
+                      } else if (loan.currentStep === item.step && loan.status !== LoanStatus.REJECTED && loan.status !== LoanStatus.CANCELLED) {
+                        status = 'current';
+                      } else if (loan.status === LoanStatus.REJECTED || loan.status === LoanStatus.CANCELLED) {
+                        status = 'waiting'; // effectively cancelled
+                      }
+                    } else if (item.type === 'disbursement') {
+                      if (loan.disbursement) {
+                        status = 'completed';
+                        data = loan.disbursement;
+                        date = loan.disbursement.disbursementDate; // Note: Date only string in interface usually
+                        actorName = loan.disbursement.processedByUser.name;
+                        notes = loan.disbursement.notes;
+                      } else if ((loan.status === LoanStatus.APPROVED_PENDING_DISBURSEMENT || loan.status === LoanStatus.DISBURSEMENT_IN_PROGRESS) && !loan.disbursement) {
+                        status = 'current';
+                      }
+                    } else if (item.type === 'authorization') {
+                      if (loan.authorization) {
+                        status = 'completed';
+                        data = loan.authorization;
+                        date = loan.authorization.authorizationDate;
+                        actorName = loan.authorization.authorizedByUser.name;
+                        notes = loan.authorization.notes;
+                      } else if (loan.status === LoanStatus.PENDING_AUTHORIZATION && !loan.authorization) {
+                        status = 'current';
+                      }
+                    }
+
+                    const isCompleted = status === 'completed';
+                    const isRejected = status === 'rejected';
+                    const isRevised = status === 'revised';
+                    const isCurrent = status === 'current';
+                    const isWaiting = status === 'waiting';
+
+                    return (
+                      <div key={item.id} className="relative">
+                        <div className="flex items-start gap-4">
+                          <div className="flex flex-col items-center">
+                            <div
+                              className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${isCompleted
                                 ? 'border-green-500 bg-green-50 text-green-600 dark:bg-green-950'
                                 : isRejected
-                                ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950'
-                                : isRevised
-                                ? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-950'
-                                : 'border-gray-300 bg-gray-50 text-gray-400 dark:bg-gray-900'
-                            }`}
-                          >
-                            {isApproved ? (
-                              <CheckCircle2 className="h-5 w-5" />
-                            ) : isRejected ? (
-                              <XCircle className="h-5 w-5" />
-                            ) : isRevised ? (
-                              <FileText className="h-5 w-5" />
-                            ) : (
-                              <Clock className="h-5 w-5" />
-                            )}
-                          </div>
-                          {!isLast && (
-                            <div
-                              className={`mt-2 h-full w-0.5 ${
-                                isApproved ? 'bg-green-500' : 'bg-gray-200'
-                              }`}
-                              style={{ minHeight: '40px' }}
-                            />
-                          )}
-                        </div>
-
-                        <div className="flex-1 space-y-1 pb-8">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold">{stepMap[approval.step]}</h4>
-                            {isPending && (
-                              <Badge variant="outline" className="gap-1">
-                                <Clock className="h-3 w-3" />
-                                Menunggu
-                              </Badge>
-                            )}
-                            {isApproved && (
-                              <Badge variant="default" className="gap-1 bg-green-600">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Disetujui
-                              </Badge>
-                            )}
-                            {isRejected && (
-                              <Badge variant="destructive" className="gap-1">
-                                <XCircle className="h-3 w-3" />
-                                Ditolak
-                              </Badge>
-                            )}
-                            {isRevised && (
-                              <Badge variant="outline" className="gap-1 border-orange-500 text-orange-600">
-                                <FileText className="h-3 w-3" />
-                                Direvisi
-                              </Badge>
+                                  ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950'
+                                  : isRevised
+                                    ? 'border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-950'
+                                    : isCurrent
+                                      ? 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950'
+                                      : 'border-gray-300 bg-gray-50 text-gray-400 dark:bg-gray-900'
+                                }`}
+                            >
+                              {isRejected ? (
+                                <XCircle className="h-5 w-5" />
+                              ) : isRevised ? (
+                                <FileText className="h-5 w-5" />
+                              ) : item.type === 'disbursement' ? (
+                                <FaRupiahSign className="h-5 w-5" />
+                              ) : isCompleted ? (
+                                <CheckCircle2 className="h-5 w-5" />
+                              ) : (
+                                <Clock className={`h-5 w-5 ${isCurrent ? 'animate-pulse' : ''}`} />
+                              )}
+                            </div>
+                            {!isLast && (
+                              <div
+                                className={`mt-2 h-full w-0.5 ${isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                                  }`}
+                                style={{ minHeight: '40px' }}
+                              />
                             )}
                           </div>
 
-                          {approval.approver && (
-                            <p className="text-sm text-muted-foreground">
-                              oleh {approval.approver.name}
-                            </p>
-                          )}
+                          <div className="flex-1 space-y-1 pb-8">
+                            <div className="flex items-center justify-between">
+                              <h4 className={`font-semibold ${isWaiting ? 'text-muted-foreground' : ''}`}>
+                                {item.label}
+                              </h4>
+                              {isCurrent && (
+                                <Badge variant="outline" className="gap-1 border-blue-200 bg-blue-50 text-blue-700">
+                                  <Clock className="h-3 w-3" />
+                                  Sedang Proses
+                                </Badge>
+                              )}
+                              {isCompleted && (
+                                <Badge variant="default" className="gap-1 bg-green-600">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Selesai
+                                </Badge>
+                              )}
+                              {isRejected && (
+                                <Badge variant="destructive" className="gap-1">
+                                  <XCircle className="h-3 w-3" />
+                                  Ditolak
+                                </Badge>
+                              )}
+                              {isRevised && (
+                                <Badge variant="outline" className="gap-1 border-orange-500 text-orange-600">
+                                  <FileText className="h-3 w-3" />
+                                  Direvisi
+                                </Badge>
+                              )}
+                              {isWaiting && (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  Menunggu
+                                </Badge>
+                              )}
+                            </div>
 
-                          {approval.decidedAt && (
-                            <p className="text-sm text-muted-foreground">
-                              {format(new Date(approval.decidedAt), 'dd MMMM yyyy HH:mm', {
-                                locale: id,
-                              })}
-                            </p>
-                          )}
+                            {!isWaiting && (
+                              <>
+                                {actorName && (
+                                  <p className="text-sm text-muted-foreground">
+                                    oleh {actorName}
+                                  </p>
+                                )}
 
-                          {approval.notes && (
-                            <p className="text-sm mt-2 p-2 bg-muted rounded">
-                              {approval.notes}
-                            </p>
-                          )}
+                                {date && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {format(new Date(date), 'dd MMMM yyyy HH:mm', {
+                                      locale: id,
+                                    })}
+                                  </p>
+                                )}
+
+                                {notes && (
+                                  <p className="text-sm mt-2 p-2 bg-muted rounded">
+                                    {notes}
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
 
               {/* Disbursement Info */}
@@ -549,6 +654,65 @@ export function LoanDetailDialog({
             <TabsContent value="calculation" className="space-y-4 mt-6">
               <CalculationBreakdown loan={loan} />
             </TabsContent>
+
+            <TabsContent value="installments" className="space-y-6 mt-6">
+              {loan.loanInstallments && loan.loanInstallments.length > 0 ? (
+                <div className="rounded-md border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px] text-center">No</TableHead>
+                        <TableHead>Jatuh Tempo</TableHead>
+                        <TableHead className="text-right">Jumlah</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead>Tanggal Bayar</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loan.loanInstallments.map((installment) => (
+                        <TableRow key={installment.id}>
+                          <TableCell className="text-center font-medium">
+                            {installment.installmentNumber}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(installment.dueDate), 'dd MMMM yyyy', { locale: id })}
+                          </TableCell>
+                          <TableCell className="text-right font-mono">
+                            {formatCurrency(installment.amount)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {installment.isPaid ? (
+                              <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                Lunas
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                Belum Lunas
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {installment.paidAt ? (
+                              <span className="text-sm text-muted-foreground">
+                                {format(new Date(installment.paidAt), 'dd MMM yyyy HH:mm', { locale: id })}
+                              </span>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg border-dashed text-muted-foreground">
+                  <CreditCard className="h-10 w-10 mb-4 opacity-50" />
+                  <p className="font-semibold">Belum Ada Data Cicilan</p>
+                  <p className="text-sm">Jadwal cicilan akan muncul setelah pinjaman dicairkan.</p>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
 
           {/* Action Buttons for Approvers */}
@@ -593,7 +757,7 @@ export function LoanDetailDialog({
             )}
         </DialogContent>
       </Dialog>
-      {/* ADD THIS - Revise Loan Dialog */}
+      {/* Revise Loan Dialog */}
       <ReviseLoanDialog
         loan={loan}
         open={reviseDialogOpen}
