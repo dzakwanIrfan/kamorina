@@ -90,137 +90,152 @@ const menuItems = [
   },
 ];
 
-const managementItems = [
+const managementGroups = [
   {
-    title: "Pengajuan Anggota",
-    icon: FileText,
-    href: "/dashboard/member-application",
-    roles: ["ketua", "divisi_simpan_pinjam", "pengawas", "payroll"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Approval Deposito",
-    icon: PiggyBank,
-    href: "/dashboard/deposits/approvals",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Perubahan Deposito",
-    icon: Edit,
-    href: "/dashboard/deposit-changes/approvals",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Approval Penarikan",
-    icon: TrendingDown,
-    href: "/dashboard/savings-withdrawals/approvals",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Pencairan Tabungan",
-    icon: Banknote,
-    href: "/dashboard/savings-withdrawals/disbursement",
-    roles: ["shopkeeper"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Otorisasi Tabungan",
-    icon: Shield,
-    href: "/dashboard/savings-withdrawals/authorization",
-    roles: ["ketua"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Opsi Jumlah Deposito",
-    icon: Wallet,
-    href: "/dashboard/deposit-options/amounts",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Opsi Tenor Deposito",
-    icon: Clock,
-    href: "/dashboard/deposit-options/tenors",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Approval Pinjaman",
-    icon: CheckCircle2,
-    href: "/dashboard/loans/approvals",
-    roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Pencairan Pinjaman",
-    icon: Banknote,
-    href: "/dashboard/loans/disbursement",
-    roles: ["shopkeeper"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Otorisasi Pinjaman",
-    icon: Shield,
-    href: "/dashboard/loans/authorization",
-    roles: ["ketua"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Semua Buku Tabungan",
-    icon: BookOpen,
-    href: "/dashboard/buku-tabungan/all",
-    roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Karyawan",
-    icon: Users,
-    href: "/dashboard/employees",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Departemen",
-    icon: Building2,
-    href: "/dashboard/departments",
-    roles: [
-      "ketua",
-      "divisi_simpan_pinjam",
-      "pengawas",
-      "bendahara",
-      "payroll",
+    label: "Manajemen Tabungan",
+    items: [
+      {
+        title: "Approval Deposito",
+        icon: PiggyBank,
+        href: "/dashboard/deposits/approvals",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Perubahan Deposito",
+        icon: Edit,
+        href: "/dashboard/deposit-changes/approvals",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Approval Penarikan",
+        icon: TrendingDown,
+        href: "/dashboard/savings-withdrawals/approvals",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Pencairan Tabungan",
+        icon: Banknote,
+        href: "/dashboard/savings-withdrawals/disbursement",
+        roles: ["shopkeeper"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Otorisasi Tabungan",
+        icon: Shield,
+        href: "/dashboard/savings-withdrawals/authorization",
+        roles: ["ketua"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Opsi Jumlah Deposito",
+        icon: Wallet,
+        href: "/dashboard/deposit-options/amounts",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Opsi Tenor Deposito",
+        icon: Clock,
+        href: "/dashboard/deposit-options/tenors",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Semua Buku Tabungan",
+        icon: BookOpen,
+        href: "/dashboard/buku-tabungan/all",
+        roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
+        requiresMemberVerified: true,
+      },
     ],
-    requiresMemberVerified: true,
   },
   {
-    title: "Jabatan",
-    icon: Shield,
-    href: "/dashboard/levels",
-    roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
-    requiresMemberVerified: true,
-  },
-  {
-    title: "Golongan",
-    icon: AlignVerticalJustifyEnd,
-    href: "/dashboard/golongan",
-    roles: [
-      "ketua",
-      "divisi_simpan_pinjam",
-      "pengawas",
-      "bendahara",
-      "payroll",
+    label: "Manajemen Pinjaman",
+    items: [
+      {
+        title: "Approval Pinjaman",
+        icon: CheckCircle2,
+        href: "/dashboard/loans/approvals",
+        roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Pencairan Pinjaman",
+        icon: Banknote,
+        href: "/dashboard/loans/disbursement",
+        roles: ["shopkeeper"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Otorisasi Pinjaman",
+        icon: Shield,
+        href: "/dashboard/loans/authorization",
+        roles: ["ketua"],
+        requiresMemberVerified: true,
+      },
     ],
-    requiresMemberVerified: true,
   },
   {
-    title: "Pengaturan",
-    icon: Settings,
-    href: "/dashboard/settings",
-    roles: ["ketua", "divisi_simpan_pinjam"],
-    requiresMemberVerified: true,
+    label: "Administrasi & Master Data",
+    items: [
+      {
+        title: "Pengajuan Anggota",
+        icon: FileText,
+        href: "/dashboard/member-application",
+        roles: ["ketua", "divisi_simpan_pinjam", "pengawas", "payroll"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Karyawan",
+        icon: Users,
+        href: "/dashboard/employees",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Departemen",
+        icon: Building2,
+        href: "/dashboard/departments",
+        roles: [
+          "ketua",
+          "divisi_simpan_pinjam",
+          "pengawas",
+          "bendahara",
+          "payroll",
+        ],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Jabatan",
+        icon: Shield,
+        href: "/dashboard/levels",
+        roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Golongan",
+        icon: AlignVerticalJustifyEnd,
+        href: "/dashboard/golongan",
+        roles: [
+          "ketua",
+          "divisi_simpan_pinjam",
+          "pengawas",
+          "bendahara",
+          "payroll",
+        ],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Pengaturan",
+        icon: Settings,
+        href: "/dashboard/settings",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+    ],
   },
 ];
 
@@ -336,30 +351,39 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {/* Only show management menu if member is verified */}
-        {isMemberVerified && isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Manajemen</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {managementItems
-                  .filter((item) => hasAccess(item.roles))
-                  .map((item) => {
-                    const isActive = pathname === item.href;
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton asChild isActive={isActive}>
-                          <Link href={item.href}>
-                            <item.icon className="size-4" />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {/* Management Menus - Grouped */}
+        {isMemberVerified &&
+          isAdmin &&
+          managementGroups.map((group) => {
+            const visibleItems = group.items.filter((item) =>
+              hasAccess(item.roles)
+            );
+
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {visibleItems.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <SidebarMenuItem key={item.href}>
+                          <SidebarMenuButton asChild isActive={isActive}>
+                            <Link href={item.href}>
+                              <item.icon className="size-4" />
+                              <span>{item.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
       </SidebarContent>
 
       <SidebarFooter>
