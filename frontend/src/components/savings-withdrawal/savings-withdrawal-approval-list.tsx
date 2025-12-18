@@ -91,7 +91,6 @@ export function SavingsWithdrawalApprovalList({
 }: SavingsWithdrawalApprovalListProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user } = useAuthStore();
     const { hasRole } = usePermissions();
 
     const [data, setData] = useState<SavingsWithdrawal[]>([]);
@@ -122,6 +121,8 @@ export function SavingsWithdrawalApprovalList({
 
     const getDefaultStatusFilter = () => {
         if (defaultStatus) return defaultStatus;
+        if (hasRole('ketua')) return SavingsWithdrawalStatus.UNDER_REVIEW_KETUA;
+        if (hasRole('divisi_simpan_pinjam')) return SavingsWithdrawalStatus.SUBMITTED;
         return SavingsWithdrawalStatus.SUBMITTED;
     };
 
