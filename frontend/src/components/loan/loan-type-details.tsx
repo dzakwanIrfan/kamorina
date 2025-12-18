@@ -4,16 +4,17 @@ import { LoanApplication, LoanType } from '@/types/loan.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Banknote, 
-  ShoppingBag, 
-  ShoppingCart, 
+import {
+  Banknote,
+  ShoppingBag,
+  ShoppingCart,
   Smartphone,
-  ExternalLink 
+  ExternalLink
 } from 'lucide-react';
 import { formatCurrency, getLoanTypeLabel } from '@/lib/loan-utils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { usePermissions } from '@/hooks/use-permission';
 
 interface LoanTypeDetailsProps {
   loan: LoanApplication;
@@ -27,6 +28,9 @@ const loanTypeIcons: Record<LoanType, any> = {
 };
 
 export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
+  const { hasRole } = usePermissions();
+  // Check if user has any of the admin/staff roles
+  const showCoopPrice = hasRole(['ketua', 'divisi_simpan_pinjam', 'shopkeeper', 'payroll', 'pengawas']);
   const Icon = loanTypeIcons[loan.loanType];
 
   const renderTypeSpecificDetails = () => {
@@ -98,7 +102,7 @@ export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
                 </p>
               </div>
             </div>
-            
+
             {loan.goodsOnlineDetails.shopMarginRate && (
               <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3">
                 <p className="text-sm text-muted-foreground mb-1">Informasi Margin Toko</p>
@@ -147,21 +151,23 @@ export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
               <p className="text-sm text-muted-foreground">Nama Handphone</p>
               <p className="text-lg font-semibold">{loan.goodsPhoneDetails.itemName}</p>
             </div>
-            
+
             {loan.goodsPhoneDetails.retailPrice > 0 ? (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Harga Retail</p>
-                  <p className="font-bold text-gray-600">
+                  <p className="text-sm text-muted-foreground">Harga Retail (Pinjaman)</p>
+                  <p className="text-xl font-bold text-primary">
                     {formatCurrency(loan.goodsPhoneDetails.retailPrice)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Harga Koperasi</p>
-                  <p className="text-xl font-bold text-primary">
-                    {formatCurrency(loan.goodsPhoneDetails.cooperativePrice)}
-                  </p>
-                </div>
+                {showCoopPrice && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Harga Beli Koperasi</p>
+                    <p className="font-semibold text-gray-600">
+                      {formatCurrency(loan.goodsPhoneDetails.cooperativePrice)}
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <Badge variant="secondary">Harga akan diisi oleh DSP</Badge>

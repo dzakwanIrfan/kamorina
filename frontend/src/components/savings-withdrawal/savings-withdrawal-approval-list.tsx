@@ -19,7 +19,6 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
 import { savingsWithdrawalService } from '@/services/savings-withdrawal.service';
-import { useAuthStore } from '@/store/auth.store';
 import { usePermissions } from '@/hooks/use-permission';
 import {
     SavingsWithdrawal,

@@ -74,7 +74,7 @@ export class SavingsWithdrawalController {
 
     @Get()
     @UseGuards(RolesGuard)
-    @Roles('ketua', 'divisi_simpan_pinjam')
+    @Roles('ketua', 'divisi_simpan_pinjam', 'shopkeeper')
     @HttpCode(HttpStatus.OK)
     async getAllWithdrawals(@Query() query: QuerySavingsWithdrawalDto) {
         return this.savingsWithdrawalService.getAllWithdrawals(query);

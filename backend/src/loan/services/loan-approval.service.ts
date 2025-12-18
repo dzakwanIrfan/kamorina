@@ -103,7 +103,7 @@ export class LoanApprovalService {
         newLoanAmount = (dto as any).itemPrice;
         break;
       case LoanType.GOODS_PHONE:
-        newLoanAmount = (dto as any).cooperativePrice;
+        newLoanAmount = (dto as any).retailPrice;
         break;
       default:
         throw new BadRequestException('Tipe pinjaman tidak valid');

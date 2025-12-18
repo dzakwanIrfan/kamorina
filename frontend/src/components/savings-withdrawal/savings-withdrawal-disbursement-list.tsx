@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { Banknote, AlertTriangle, Download } from 'lucide-react';
@@ -15,7 +14,6 @@ import { SavingsWithdrawalDisbursementDialog } from './savings-withdrawal-disbur
 import { SavingsWithdrawalDetailDialog } from './savings-withdrawal-detail-dialog';
 
 import { savingsWithdrawalService } from '@/services/savings-withdrawal.service';
-import { usePermissions } from '@/hooks/use-permission';
 import {
     SavingsWithdrawal,
     SavingsWithdrawalStatus,

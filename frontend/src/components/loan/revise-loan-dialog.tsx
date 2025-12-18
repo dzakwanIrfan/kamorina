@@ -67,7 +67,7 @@ function createReviseSchema(loanType: LoanType) {
           .min(0, 'Margin tidak boleh negatif')
           .max(100, 'Margin maksimal 100%'),
         cooperativePrice: z.number().positive('Harga koperasi harus lebih dari 0'),
-      }). refine(
+      }).refine(
         (data) => data.cooperativePrice <= data.retailPrice,
         {
           message: 'Harga koperasi tidak boleh lebih besar dari harga retail',
@@ -118,13 +118,13 @@ export function ReviseLoanDialog({
         case LoanType.GOODS_PHONE:
           const currentRetail = loan.goodsPhoneDetails?.retailPrice || 0;
           const currentCoop = loan.goodsPhoneDetails?.cooperativePrice || 0;
-          
+
           // Calculate existing margin percentage if prices exist
           let existingMargin = 3; // default 3%
           if (currentRetail > 0 && currentCoop > 0 && currentCoop < currentRetail) {
             existingMargin = ((currentRetail - currentCoop) / currentRetail) * 100;
           }
-          
+
           defaultValues.retailPrice = currentRetail;
           defaultValues.cooperativePrice = currentCoop;
           defaultValues.partnerMarginPercent = Math.round(existingMargin * 100) / 100; // round to 2 decimals
@@ -139,8 +139,8 @@ export function ReviseLoanDialog({
   useEffect(() => {
     if (loan?.loanType === LoanType.GOODS_PHONE && retailPrice > 0 && partnerMarginPercent >= 0) {
       const calculatedCoopPrice = retailPrice - (retailPrice * (partnerMarginPercent / 100));
-      form.setValue('cooperativePrice', Math.round(calculatedCoopPrice), { 
-        shouldValidate: true 
+      form.setValue('cooperativePrice', Math.round(calculatedCoopPrice), {
+        shouldValidate: true
       });
     }
   }, [retailPrice, partnerMarginPercent, loan?.loanType, form]);
@@ -150,13 +150,13 @@ export function ReviseLoanDialog({
 
     try {
       setIsSubmitting(true);
-      
+
       // For GOODS_PHONE, ensure cooperativePrice is calculated correctly
       if (loan.loanType === LoanType.GOODS_PHONE) {
         const finalCoopPrice = data.retailPrice - (data.retailPrice * (data.partnerMarginPercent / 100));
         data.cooperativePrice = Math.round(finalCoopPrice);
       }
-      
+
       await loanService.reviseLoan(loan.id, data);
       toast.success('Pinjaman berhasil direvisi');
       onSuccess?.();
@@ -222,9 +222,9 @@ export function ReviseLoanDialog({
             </div>
             <div className="col-span-2">
               <p className="text-muted-foreground">Link Barang</p>
-              <a 
-                href={loan.goodsOnlineDetails?.itemUrl} 
-                target="_blank" 
+              <a
+                href={loan.goodsOnlineDetails?.itemUrl}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary hover:underline truncate block"
               >
@@ -242,11 +242,11 @@ export function ReviseLoanDialog({
         const currentRetail = loan.goodsPhoneDetails?.retailPrice || 0;
         const currentCoop = loan.goodsPhoneDetails?.cooperativePrice || 0;
         let currentMargin = 0;
-        
+
         if (currentRetail > 0 && currentCoop > 0 && currentCoop < currentRetail) {
           currentMargin = ((currentRetail - currentCoop) / currentRetail) * 100;
         }
-        
+
         return (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -354,7 +354,7 @@ export function ReviseLoanDialog({
         const watchedMargin = form.watch('partnerMarginPercent') || 0;
         const watchedCoop = form.watch('cooperativePrice') || 0;
         const discount = watchedRetail - watchedCoop;
-        
+
         return (
           <>
             <FormField
@@ -413,7 +413,7 @@ export function ReviseLoanDialog({
             />
 
             <FormField
-              control={form. control}
+              control={form.control}
               name="cooperativePrice"
               render={({ field }) => (
                 <FormItem>
@@ -475,7 +475,7 @@ export function ReviseLoanDialog({
                 <div className="pt-2 border-t border-green-200 dark:border-green-800">
                   <p className="text-xs text-green-600">
                     <strong>Jumlah Pinjaman</strong> yang akan diberikan:{' '}
-                    <strong>{formatCurrency(watchedCoop)}</strong>
+                    <strong>{formatCurrency(watchedRetail)}</strong>
                   </p>
                 </div>
               </div>
@@ -491,7 +491,7 @@ export function ReviseLoanDialog({
         <DialogHeader>
           <DialogTitle>Revisi Pengajuan Pinjaman</DialogTitle>
           <DialogDescription>
-            Ubah jumlah pinjaman atau tenor yang diajukan oleh pemohon. 
+            Ubah jumlah pinjaman atau tenor yang diajukan oleh pemohon.
           </DialogDescription>
         </DialogHeader>
 
