@@ -32,7 +32,8 @@ export interface SavingsWithdrawalApproval {
 
 export interface SavingsWithdrawalDisbursement {
     id: string;
-    transactionDate: string;
+    disbursementDate: string;
+    disbursementTime?: string;
     notes: string | null;
     createdAt: string;
     processedByUser: {
@@ -45,6 +46,7 @@ export interface SavingsWithdrawalDisbursement {
 export interface SavingsWithdrawalAuthorization {
     id: string;
     authorizationDate: string;
+    authorizationTime?: string;
     notes: string | null;
     createdAt: string;
     authorizedByUser: {
@@ -111,25 +113,29 @@ export interface BulkApproveSavingsWithdrawalDto {
 }
 
 export interface ConfirmDisbursementDto {
-    transactionDate?: string;
+    disbursementDate?: string;
+    disbursementTime?: string;
     notes?: string;
 }
 
 
 export interface BulkConfirmDisbursementDto {
     withdrawalIds: string[];
-    transactionDate?: string;
+    disbursementDate?: string;
+    disbursementTime?: string;
     notes?: string;
 }
 
 export interface ConfirmAuthorizationDto {
     authorizationDate?: string;
+    authorizationTime?: string;
     notes?: string;
 }
 
 export interface BulkConfirmAuthorizationDto {
     withdrawalIds: string[];
     authorizationDate?: string;
+    authorizationTime?: string;
     notes?: string;
 }
 

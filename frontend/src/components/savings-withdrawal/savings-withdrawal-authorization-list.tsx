@@ -71,13 +71,14 @@ export function SavingsWithdrawalAuthorizationList() {
         fetchData();
     }, [meta.page, meta.limit, searchValue]);
 
-    const handleBulkAuthorization = async (authorizationDate: Date | undefined, notes: string) => {
+    const handleBulkAuthorization = async (authorizationDate: Date | undefined, authorizationTime: string, notes: string) => {
         try {
             const idsToProcess = singleActionId ? [singleActionId] : selectedIds;
 
             const result = await savingsWithdrawalService.bulkConfirmAuthorization({
                 withdrawalIds: idsToProcess,
                 authorizationDate: authorizationDate ? format(authorizationDate, 'yyyy-MM-dd') : undefined,
+                authorizationTime,
                 notes,
             });
 
@@ -164,7 +165,7 @@ export function SavingsWithdrawalAuthorizationList() {
                                 {disb.processedByUser?.name || 'Shopkeeper'}
                             </div>
                             <span className="text-xs">
-                                {format(new Date(disb.transactionDate), 'dd/MM/yyyy')}
+                                {format(new Date(disb.disbursementDate), 'dd/MM/yyyy')}
                             </span>
                         </div>
                     );
@@ -243,6 +244,7 @@ export function SavingsWithdrawalAuthorizationList() {
                 open={authDialogOpen}
                 onOpenChange={setAuthDialogOpen}
                 selectedCount={singleActionId ? 1 : selectedIds.length}
+                withdrawal={singleActionId ? data.find((item) => item.id === singleActionId) : null}
                 onConfirm={handleBulkAuthorization}
             />
         </>

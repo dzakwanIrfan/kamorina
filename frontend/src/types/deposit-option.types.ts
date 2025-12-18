@@ -67,6 +67,7 @@ export interface CreateDepositTenorDto {
   months: number;
   isActive?: boolean;
   sortOrder?: number;
+  createdAt?: string; // Optional since backend might handle it, but defined here for completeness if needed? No, DTO usually input.
 }
 
 export interface UpdateDepositTenorDto {
@@ -75,4 +76,13 @@ export interface UpdateDepositTenorDto {
   months?: number;
   isActive?: boolean;
   sortOrder?: number;
+}
+
+export interface QueryDepositOptionParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  isActive?: string | boolean;
 }

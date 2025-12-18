@@ -3,7 +3,11 @@ import { IsString, IsOptional, IsDateString } from 'class-validator';
 export class ConfirmDisbursementDto {
     @IsDateString()
     @IsOptional()
-    transactionDate?: string;
+    disbursementDate?: string;
+
+    @IsString()
+    @IsOptional()
+    disbursementTime?: string;
 
     @IsString()
     @IsOptional()

@@ -641,7 +641,8 @@ export class SavingsWithdrawalService {
         for (const withdrawalId of dto.withdrawalIds) {
             try {
                 await this.confirmDisbursement(withdrawalId, processedBy, {
-                    transactionDate: dto.transactionDate,
+                    disbursementDate: dto.disbursementDate,
+                    disbursementTime: dto.disbursementTime,
                     notes: dto.notes,
                 });
                 results.success.push(withdrawalId);
@@ -672,6 +673,7 @@ export class SavingsWithdrawalService {
             try {
                 await this.confirmAuthorization(withdrawalId, authorizedBy, {
                     authorizationDate: dto.authorizationDate,
+                    authorizationTime: dto.authorizationTime,
                     notes: dto.notes,
                 });
                 results.success.push(withdrawalId);
@@ -721,9 +723,10 @@ export class SavingsWithdrawalService {
                 data: {
                     savingsWithdrawalId: withdrawalId,
                     processedBy,
-                    transactionDate: dto.transactionDate
-                        ? new Date(dto.transactionDate)
+                    disbursementDate: dto.disbursementDate
+                        ? new Date(dto.disbursementDate)
                         : new Date(),
+                    disbursementTime: dto.disbursementTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
                     notes: dto.notes,
                 },
             });
@@ -781,6 +784,7 @@ export class SavingsWithdrawalService {
                     authorizationDate: dto.authorizationDate
                         ? new Date(dto.authorizationDate)
                         : new Date(),
+                    authorizationTime: dto.authorizationTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
                     notes: dto.notes,
                 },
             });

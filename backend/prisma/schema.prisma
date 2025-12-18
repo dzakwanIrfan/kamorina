@@ -952,8 +952,9 @@ model SavingsWithdrawalDisbursement {
   processedBy     String @map("processed_by")
   processedByUser User   @relation("savings_withdrawal_processor", fields: [processedBy], references: [id])
 
-  transactionDate DateTime @default(now()) @map("transaction_date")
-  notes           String?  @db.Text
+  disbursementDate DateTime @map("disbursement_date")
+  disbursementTime String   @map("disbursement_time")
+  notes            String?  @db.Text
 
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -968,7 +969,8 @@ model SavingsWithdrawalAuthorization {
   authorizedBy     String @map("authorized_by")
   authorizedByUser User   @relation("savings_withdrawal_authorizer", fields: [authorizedBy], references: [id])
 
-  authorizationDate DateTime @default(now()) @map("authorization_date")
+  authorizationDate DateTime @map("authorization_date")
+  authorizationTime String   @map("authorization_time")
   notes             String?  @db.Text
 
   createdAt DateTime @default(now()) @map("created_at")

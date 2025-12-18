@@ -7,5 +7,9 @@ export class ConfirmAuthorizationDto {
 
     @IsString()
     @IsOptional()
+    authorizationTime?: string;
+
+    @IsString()
+    @IsOptional()
     notes?: string;
 }

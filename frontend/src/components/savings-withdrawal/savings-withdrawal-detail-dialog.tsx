@@ -284,6 +284,24 @@ export function SavingsWithdrawalDetailDialog({
                                         </p>
                                     </div>
                                 )}
+                                {withdrawal.disbursement && (
+                                    <div>
+                                        <p className="text-muted-foreground">Tanggal Pencairan</p>
+                                        <p className="font-medium">
+                                            {format(new Date(withdrawal.disbursement.disbursementDate), 'dd MMMM yyyy', { locale: id })}
+                                            {withdrawal.disbursement.disbursementTime && ` ${withdrawal.disbursement.disbursementTime}`}
+                                        </p>
+                                    </div>
+                                )}
+                                {withdrawal.authorization && (
+                                    <div>
+                                        <p className="text-muted-foreground">Tanggal Otorisasi</p>
+                                        <p className="font-medium">
+                                            {format(new Date(withdrawal.authorization.authorizationDate), 'dd MMMM yyyy', { locale: id })}
+                                            {withdrawal.authorization.authorizationTime && ` ${withdrawal.authorization.authorizationTime}`}
+                                        </p>
+                                    </div>
+                                )}
                                 {withdrawal.completedAt && (
                                     <div>
                                         <p className="text-muted-foreground">Tanggal Selesai</p>
@@ -342,6 +360,7 @@ export function SavingsWithdrawalDetailDialog({
                                     let status: 'completed' | 'rejected' | 'current' | 'waiting' = 'waiting';
                                     let data: any = null;
                                     let date: string | null = null;
+                                    let timeString: string | undefined = undefined;
                                     let actorName: string | null = null;
                                     let notes: string | null = null;
 
@@ -363,7 +382,8 @@ export function SavingsWithdrawalDetailDialog({
                                         if (withdrawal.disbursement) {
                                             status = 'completed';
                                             data = withdrawal.disbursement;
-                                            date = withdrawal.disbursement.transactionDate;
+                                            date = withdrawal.disbursement.disbursementDate;
+                                            timeString = withdrawal.disbursement.disbursementTime;
                                             actorName = withdrawal.disbursement.processedByUser.name;
                                             notes = withdrawal.disbursement.notes;
                                         } else if (withdrawal.currentStep === SavingsWithdrawalStep.SHOPKEEPER && withdrawal.status !== SavingsWithdrawalStatus.REJECTED) {
@@ -374,6 +394,7 @@ export function SavingsWithdrawalDetailDialog({
                                             status = 'completed';
                                             data = withdrawal.authorization;
                                             date = withdrawal.authorization.authorizationDate;
+                                            timeString = withdrawal.authorization.authorizationTime;
                                             actorName = withdrawal.authorization.authorizedByUser.name;
                                             notes = withdrawal.authorization.notes;
                                         } else if (withdrawal.currentStep === SavingsWithdrawalStep.KETUA_AUTH && withdrawal.status !== SavingsWithdrawalStatus.REJECTED) {
@@ -459,9 +480,13 @@ export function SavingsWithdrawalDetailDialog({
 
                                                             {date && (
                                                                 <p className="text-sm text-muted-foreground">
-                                                                    {format(new Date(date), 'dd MMMM yyyy HH:mm', {
-                                                                        locale: id,
-                                                                    })}
+                                                                    {timeString ? (
+                                                                        <>
+                                                                            {format(new Date(date), 'dd MMMM yyyy', { locale: id })} {timeString}
+                                                                        </>
+                                                                    ) : (
+                                                                        format(new Date(date), 'dd MMMM yyyy HH:mm', { locale: id })
+                                                                    )}
                                                                 </p>
                                                             )}
 

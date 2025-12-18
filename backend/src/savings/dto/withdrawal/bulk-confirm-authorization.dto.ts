@@ -12,5 +12,9 @@ export class BulkConfirmAuthorizationDto {
 
     @IsString()
     @IsOptional()
+    authorizationTime?: string;
+
+    @IsString()
+    @IsOptional()
     notes?: string;
 }

@@ -67,13 +67,14 @@ export function SavingsWithdrawalDisbursementList() {
         fetchData();
     }, [meta.page, meta.limit, searchValue]);
 
-    const handleBulkDisbursement = async (transactionDate: Date | undefined, notes: string) => {
+    const handleBulkDisbursement = async (disbursementDate: Date | undefined, disbursementTime: string, notes: string) => {
         try {
             const idsToProcess = singleActionId ? [singleActionId] : selectedIds;
 
             const result = await savingsWithdrawalService.bulkConfirmDisbursement({
                 withdrawalIds: idsToProcess,
-                transactionDate: transactionDate ? format(transactionDate, 'yyyy-MM-dd') : undefined,
+                disbursementDate: disbursementDate ? format(disbursementDate, 'yyyy-MM-dd') : undefined,
+                disbursementTime,
                 notes,
             });
 
@@ -265,6 +266,7 @@ export function SavingsWithdrawalDisbursementList() {
                 open={disbursementDialogOpen}
                 onOpenChange={setDisbursementDialogOpen}
                 selectedCount={singleActionId ? 1 : selectedIds.length}
+                withdrawal={singleActionId ? data.find((item) => item.id === singleActionId) : null}
                 onConfirm={handleBulkDisbursement}
             />
         </>

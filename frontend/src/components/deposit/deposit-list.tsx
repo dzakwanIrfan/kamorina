@@ -240,7 +240,6 @@ export function DepositList({ defaultStatus, defaultStep }: DepositListProps) {
         'Jumlah Deposito': deposit.amountValue,
         'Jangka Waktu (Bulan)': deposit.tenorMonths,
         'Bunga (%)': deposit.interestRate || 0,
-        'Proyeksi Bunga': deposit.projectedInterest || 0,
         'Status': statusMap[deposit.status]?.label || deposit.status,
         'Step Saat Ini': deposit.currentStep ? stepMap[deposit.currentStep] : '-',
         'Tanggal Submit': deposit.submittedAt 

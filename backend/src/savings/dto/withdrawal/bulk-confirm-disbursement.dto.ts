@@ -8,7 +8,11 @@ export class BulkConfirmDisbursementDto {
 
     @IsDateString()
     @IsOptional()
-    transactionDate?: string;
+    disbursementDate?: string;
+
+    @IsString()
+    @IsOptional()
+    disbursementTime?: string;
 
     @IsString()
     @IsOptional()
