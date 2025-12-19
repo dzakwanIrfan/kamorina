@@ -812,7 +812,7 @@ export class SavingsWithdrawalService {
                     where: { userId: withdrawal.userId },
                     data: {
                         saldoSukarela: {
-                            decrement: withdrawal.netAmount.toNumber(),
+                            decrement: withdrawal.withdrawalAmount.toNumber(),
                         },
                     },
                 });
@@ -821,7 +821,7 @@ export class SavingsWithdrawalService {
                 await tx.savingsTransaction.create({
                     data: {
                         savingsAccountId: savingsAccount.id,
-                        penarikan: withdrawal.netAmount.toNumber(),
+                        penarikan: withdrawal.withdrawalAmount.toNumber(),
                         transactionDate: new Date(),
                         createdBy: authorizedBy,
                         interestRate: 0,

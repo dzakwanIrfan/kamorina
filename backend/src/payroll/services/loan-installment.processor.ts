@@ -25,13 +25,17 @@ export class LoanInstallmentProcessor {
 
         this.logger.log('Processing loan installments (Angsuran Pinjaman)...');
 
-        // Get unpaid installments within cutoff period
+        // Installments are processed based on their due date month, not cutoff dates
+        const monthStart = context.processDate.startOf('month').toDate();
+        const monthEnd = context.processDate.endOf('month').toDate();
+
+        // Get unpaid installments for the current payroll month
         const unpaidInstallments = await tx.loanInstallment.findMany({
             where: {
                 isPaid: false,
                 dueDate: {
-                    gte: context.cutoffStart.toDate(),
-                    lte: context.cutoffEnd.toDate(),
+                    gte: monthStart,
+                    lte: monthEnd,
                 },
                 loanApplication: {
                     status: 'DISBURSED',
