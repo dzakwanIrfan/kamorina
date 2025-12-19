@@ -3,9 +3,10 @@ import {
     BadRequestException,
     NotFoundException,
     ForbiddenException,
+    Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
+import { MailQueueService } from '../mail/mail-queue.service';
 import { CreateSavingsWithdrawalDto } from './dto/withdrawal/create-savings-withdrawal.dto';
 import { ApproveSavingsWithdrawalDto } from './dto/withdrawal/approve-savings-withdrawal.dto';
 import { ConfirmDisbursementDto } from './dto/withdrawal/confirm-disbursement.dto';
@@ -25,9 +26,11 @@ import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
 @Injectable()
 export class SavingsWithdrawalService {
+    private readonly logger = new Logger(SavingsWithdrawalService.name);
+
     constructor(
         private prisma: PrismaService,
-        private mailService: MailService,
+        private mailQueueService: MailQueueService,
     ) { }
 
     private async generateWithdrawalNumber(): Promise<string> {
@@ -528,14 +531,14 @@ export class SavingsWithdrawalService {
         });
 
         try {
-            await this.mailService.sendSavingsWithdrawalRejected(
+            await this.mailQueueService.queueSavingsWithdrawalRejected(
                 withdrawal.user.email,
                 withdrawal.user.name,
                 withdrawal.withdrawalNumber,
                 dto.notes || 'Tidak ada catatan',
             );
         } catch (error) {
-            console.error('Failed to send rejection email:', error);
+            this.logger.error('Failed to queue rejection email:', error);
         }
 
         return { message: 'Penarikan tabungan berhasil ditolak' };
@@ -834,16 +837,16 @@ export class SavingsWithdrawalService {
             }
         });
 
-        // Notify user
+        // Notify user (queued)
         try {
-            await this.mailService.sendSavingsWithdrawalCompleted(
+            await this.mailQueueService.queueSavingsWithdrawalCompleted(
                 withdrawal.user.email,
                 withdrawal.user.name,
                 withdrawal.withdrawalNumber,
                 withdrawal.netAmount.toNumber(),
             );
         } catch (error) {
-            console.error('Failed to send completion email:', error);
+            this.logger.error('Failed to queue completion email:', error);
         }
 
         return {
@@ -930,10 +933,11 @@ export class SavingsWithdrawalService {
             },
         });
 
+        // Queue emails to all recipients
         for (const recipient of recipients) {
             try {
                 if (step === SavingsWithdrawalStep.SHOPKEEPER) {
-                    await this.mailService.sendSavingsWithdrawalDisbursementRequest(
+                    await this.mailQueueService.queueSavingsWithdrawalDisbursementRequest(
                         recipient.email,
                         recipient.name,
                         withdrawal.user.name,
@@ -942,7 +946,7 @@ export class SavingsWithdrawalService {
                         withdrawal.bankAccountNumber || '',
                     );
                 } else if (step === SavingsWithdrawalStep.KETUA_AUTH) {
-                    await this.mailService.sendSavingsWithdrawalAuthorizationRequest(
+                    await this.mailQueueService.queueSavingsWithdrawalAuthorizationRequest(
                         recipient.email,
                         recipient.name,
                         withdrawal.user.name,
@@ -950,7 +954,7 @@ export class SavingsWithdrawalService {
                         withdrawal.netAmount.toNumber(),
                     );
                 } else {
-                    await this.mailService.sendSavingsWithdrawalApprovalRequest(
+                    await this.mailQueueService.queueSavingsWithdrawalApprovalRequest(
                         recipient.email,
                         recipient.name,
                         withdrawal.user.name,
@@ -960,8 +964,10 @@ export class SavingsWithdrawalService {
                     );
                 }
             } catch (error) {
-                console.error(`Failed to send notification to ${recipient.email}:`, error);
+                this.logger.error(`Failed to queue notification for ${recipient.email}:`, error);
             }
         }
+
+        this.logger.log(`Queued ${recipients.length} notifications for step ${step}`);
     }
 }

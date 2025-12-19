@@ -3,9 +3,10 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
+import { MailQueueService } from '../mail/mail-queue.service';
 import { DepositOptionService } from './deposit-option.service';
 import { CreateDepositDto } from './dto/create-deposit.dto';
 import { UpdateDepositDto } from './dto/update-deposit.dto';
@@ -22,11 +23,13 @@ import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
 @Injectable()
 export class DepositService {
+  private readonly logger = new Logger(DepositService.name);
+
   constructor(
     private prisma: PrismaService,
-    private mailService: MailService,
+    private mailQueueService: MailQueueService,
     private depositOptionService: DepositOptionService,
-  ) {}
+  ) { }
 
   /**
    * Generate deposit number: DEP-YYYYMMDD-XXXX
@@ -622,16 +625,16 @@ export class DepositService {
         });
       });
 
-      // Notify User
+      // Notify User (queued)
       try {
-        await this.mailService.sendDepositRejected(
+        await this.mailQueueService.queueDepositRejected(
           deposit.user.email,
           deposit.user.name,
           deposit.depositNumber,
           dto.notes || 'Tidak ada catatan',
         );
       } catch (error) {
-        console.error('Failed to send rejection email:', error);
+        this.logger.error('Failed to queue rejection email:', error);
       }
 
       return { message: 'Deposito berhasil ditolak' };
@@ -869,22 +872,18 @@ export class DepositService {
       },
     });
 
-    for (const approver of approvers) {
-      try {
-        await this.mailService.sendDepositApprovalRequest(
-          approver.email,
-          approver.name,
-          deposit.user.name,
-          deposit.depositNumber,
-          deposit.amountValue.toNumber(),
-          roleName,
-        );
-      } catch (error) {
-        console.error(
-          `Failed to send approval request to ${approver.email}:`,
-          error,
-        );
-      }
+    // Queue bulk approval request emails
+    try {
+      await this.mailQueueService.queueBulkDepositApprovalRequests(
+        approvers.map(a => ({ email: a.email, approverName: a.name })),
+        deposit.user.name,
+        deposit.depositNumber,
+        deposit.amountValue.toNumber(),
+        roleName,
+      );
+      this.logger.log(`Queued ${approvers.length} deposit approval request emails`);
+    } catch (error) {
+      this.logger.error('Failed to queue approval requests:', error);
     }
   }
 
@@ -898,9 +897,9 @@ export class DepositService {
 
     if (!deposit) return;
 
-    // Notify applicant
+    // Notify applicant (queued)
     try {
-      await this.mailService.sendDepositApproved(
+      await this.mailQueueService.queueDepositApproved(
         deposit.user.email,
         deposit.user.name,
         deposit.depositNumber,
@@ -908,10 +907,10 @@ export class DepositService {
         deposit.tenorMonths,
       );
     } catch (error) {
-      console.error('Failed to notify applicant:', error);
+      this.logger.error('Failed to queue applicant notification:', error);
     }
 
-    // Notify payroll
+    // Notify payroll users
     const payrollUsers = await this.prisma.user.findMany({
       where: {
         roles: {
@@ -926,7 +925,7 @@ export class DepositService {
 
     for (const payroll of payrollUsers) {
       try {
-        await this.mailService.sendDepositPayrollNotification(
+        await this.mailQueueService.queueDepositPayrollNotification(
           payroll.email,
           payroll.name,
           deposit.user.name,
@@ -934,11 +933,13 @@ export class DepositService {
           deposit.amountValue.toNumber(),
         );
       } catch (error) {
-        console.error(
-          `Failed to send payroll notification to ${payroll.email}:`,
+        this.logger.error(
+          `Failed to queue payroll notification for ${payroll.email}:`,
           error,
         );
       }
     }
+
+    this.logger.log(`Queued deposit approved notifications for ${deposit.depositNumber}`);
   }
 }

@@ -1,6 +1,6 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { MailService } from '../../mail/mail.service';
+import { MailQueueService } from '../../mail/mail-queue.service';
 import { LoanStatus, LoanApprovalStep, LoanApprovalDecision, LoanType } from '@prisma/client';
 import { LoanHandlerFactory } from '../handlers/loan-handler.factory';
 import { LoanCalculationService } from './loan-calculation.service';
@@ -12,14 +12,16 @@ import { ReviseLoanDto } from '../dto/revise-loan.dto';
 
 @Injectable()
 export class LoanApprovalService {
+  private readonly logger = new Logger(LoanApprovalService.name);
+
   constructor(
     private prisma: PrismaService,
-    private mailService: MailService,
+    private mailQueueService: MailQueueService,
     private loanHandlerFactory: LoanHandlerFactory,
     private calculationService: LoanCalculationService,
     private validationService: LoanValidationService,
     private notificationService: LoanNotificationService,
-  ) {}
+  ) { }
 
   /**
    * Helper: Get status for current approval step
@@ -112,7 +114,7 @@ export class LoanApprovalService {
     await handler.validateLoanAmount(loan.userId, newLoanAmount);
     await this.validationService.validateLoanTenor(dto.loanTenor);
     const calculations = await this.calculationService.calculateLoanDetails(
-      newLoanAmount, 
+      newLoanAmount,
       dto.loanTenor,
       loan.loanType
     );
@@ -185,16 +187,16 @@ export class LoanApprovalService {
       return updated;
     });
 
-    // Notify applicant about revision
+    // Notify applicant about revision (queued)
     try {
-      await this.mailService.sendLoanRevised(
+      await this.mailQueueService.queueLoanRevised(
         loan.user.email,
         loan.user.name,
         loan.loanNumber,
         dto.revisionNotes,
       );
     } catch (error) {
-      console.error('Failed to send revision notification:', error);
+      this.logger.error('Failed to queue revision notification:', error);
     }
 
     return {
@@ -322,20 +324,20 @@ export class LoanApprovalService {
       });
     });
 
-    // Notify applicant
+    // Notify applicant (queued)
     try {
-      await this.mailService.sendLoanRejected(
+      await this.mailQueueService.queueLoanRejected(
         loan.user.email,
         loan.user.name,
         loan.loanNumber,
         dto.notes || 'Tidak ada catatan',
       );
     } catch (error) {
-      console.error('Failed to send rejection email:', error);
+      this.logger.error('Failed to queue rejection email:', error);
     }
 
-    return { 
-      message: `Pinjaman berhasil ditolak oleh ${this.getStepDisplayName(loan.currentStep)}` 
+    return {
+      message: `Pinjaman berhasil ditolak oleh ${this.getStepDisplayName(loan.currentStep)}`
     };
   }
 

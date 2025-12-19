@@ -4,9 +4,10 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
+import { MailQueueService } from '../mail/mail-queue.service';
 import { SubmitApplicationDto } from './dto/submit-application.dto';
 import { ApproveRejectDto } from './dto/approve-reject.dto';
 import { QueryApplicationDto } from './dto/query-application.dto';
@@ -21,10 +22,12 @@ import { Prisma } from 'generated/prisma/browser';
 
 @Injectable()
 export class MemberApplicationService {
+  private readonly logger = new Logger(MemberApplicationService.name);
+
   constructor(
     private prisma: PrismaService,
-    private mailService: MailService,
-  ) {}
+    private mailQueueService: MailQueueService,
+  ) { }
 
   async submitApplication(userId: string, dto: SubmitApplicationDto) {
     // Check if user exists
@@ -572,15 +575,15 @@ export class MemberApplicationService {
           });
         });
 
-        // Send rejection email to applicant
+        // Send rejection email to applicant (queued)
         try {
-          await this.mailService.sendApplicationRejected(
+          await this.mailQueueService.queueApplicationRejected(
             application.user.email,
             application.user.name,
             dto.notes || 'Tidak ada catatan',
           );
         } catch (emailError) {
-          console.error('Failed to send rejection email:', emailError);
+          this.logger.error('Failed to queue rejection email:', emailError);
         }
 
         return {
@@ -769,22 +772,17 @@ export class MemberApplicationService {
       },
     });
 
-    // Send email to all approvers
-    for (const approver of approvers) {
-      try {
-        await this.mailService.sendApprovalRequest(
-          approver.email,
-          approver.name,
-          application.user.name,
-          application.user.employee.employeeNumber,
-          roleName,
-        );
-      } catch (error) {
-        console.error(
-          `Failed to send approval request to ${approver.email}:`,
-          error,
-        );
-      }
+    // Send email to all approvers (queued with bulk)
+    try {
+      await this.mailQueueService.queueBulkApprovalRequests(
+        approvers.map(a => ({ email: a.email, approverName: a.name })),
+        application.user.name,
+        application.user.employee.employeeNumber,
+        roleName,
+      );
+      this.logger.log(`Queued ${approvers.length} approval request emails`);
+    } catch (error) {
+      this.logger.error('Failed to queue approval requests:', error);
     }
   }
 
@@ -792,11 +790,12 @@ export class MemberApplicationService {
     userEmail: string,
     userName: string,
   ) {
-    // Notify the member
-    await this.mailService.sendMembershipApproved(userEmail, userName);
+    // Notify the member (queued)
+    await this.mailQueueService.queueMembershipApproved(userEmail, userName);
 
-    // Notify pengawas and payroll
+    // Notify pengawas and payroll using bulk queue
     const notifyRoles = ['pengawas', 'payroll'];
+    const recipients: Array<{ email: string; recipientName: string }> = [];
 
     for (const role of notifyRoles) {
       const users = await this.prisma.user.findMany({
@@ -812,16 +811,20 @@ export class MemberApplicationService {
       });
 
       for (const user of users) {
-        try {
-          await this.mailService.sendNewMemberNotification(
-            user.email,
-            user.name,
-            userName,
-            userEmail,
-          );
-        } catch (error) {
-          console.error(`Failed to send notification to ${user.email}:`, error);
-        }
+        recipients.push({ email: user.email, recipientName: user.name });
+      }
+    }
+
+    if (recipients.length > 0) {
+      try {
+        await this.mailQueueService.queueBulkNewMemberNotifications(
+          recipients,
+          userName,
+          userEmail,
+        );
+        this.logger.log(`Queued ${recipients.length} new member notifications`);
+      } catch (error) {
+        this.logger.error('Failed to queue new member notifications:', error);
       }
     }
   }

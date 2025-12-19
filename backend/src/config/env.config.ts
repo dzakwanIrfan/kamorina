@@ -13,6 +13,11 @@ export interface EnvironmentVariables {
   MAIL_PASSWORD: string;
   MAIL_FROM: string;
 
+  // Redis (for BullMQ)
+  REDIS_HOST?: string;
+  REDIS_PORT?: number;
+  REDIS_PASSWORD?: string;
+
   // App
   FRONTEND_URL: string;
   API_URL: string;

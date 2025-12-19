@@ -84,7 +84,7 @@ export class MailService {
     employeeNumber: string,
     roleName: string,
   ) {
-    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/member-applications`;
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/member-application`;
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -149,17 +149,17 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Selamat!  Keanggotaan Anda Disetujui - Koperasi Kamorina Surya Niaga',
+      subject: 'Keanggotaan Anda Disetujui - Koperasi Kamorina Surya Niaga',
       html: `
-        <h2>Selamat ${memberName}!  🎉</h2>
-        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Kamorina Surya Niaga telah <strong>DISETUJUI</strong>! </p>
+        <h2>Selamat ${memberName},</h2>
+        <p>Kami dengan senang hati menginformasikan bahwa pengajuan keanggotaan Anda di Koperasi Kamorina Surya Niaga telah <strong>DISETUJUI</strong>.</p>
         <br>
         <p>Sekarang Anda dapat mengakses seluruh fitur member koperasi, termasuk:</p>
         <ul>
-          <li>✓ Simpanan Wajib & Sukarela</li>
-          <li>✓ Pengajuan Pinjaman</li>
-          <li>✓ Belanja di Toko Koperasi</li>
-          <li>✓ Dan banyak lagi...</li>
+          <li>Simpanan Wajib & Sukarela</li>
+          <li>Pengajuan Pinjaman</li>
+          <li>Belanja di Toko Koperasi</li>
+          <li>Dan banyak lagi</li>
         </ul>
         <br>
         <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
@@ -167,7 +167,7 @@ export class MailService {
         </a>
         <p>Atau kunjungi: ${dashboardUrl}</p>
         <br>
-        <p>Selamat bergabung dengan keluarga besar Koperasi! </p>
+        <p>Selamat bergabung dengan keluarga besar Koperasi.</p>
       `,
     });
   }
@@ -264,14 +264,14 @@ export class MailService {
           ${revisionNotes}
         </p>
         <br>
-        <p>Silakan cek detail pinjaman Anda di dashboard. </p>
+        <p>Silakan cek detail pinjaman Anda di dashboard.</p>
         <br>
         <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Lihat Detail Pinjaman
         </a>
         <p>Atau akses: ${dashboardUrl}</p>
         <br>
-        <p>Terima kasih. </p>
+        <p>Terima kasih.</p>
       `,
     });
   }
@@ -335,7 +335,7 @@ export class MailService {
           <li><strong>No. Rekening:</strong> ${bankAccountNumber}</li>
         </ul>
         <br>
-        <p>Silakan proses transaksi BCA dan konfirmasi pencairan di sistem. </p>
+        <p>Silakan proses transaksi BCA dan konfirmasi pencairan di sistem.</p>
         <br>
         <a href="${dashboardUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin: 20px 0;">
           Proses Pencairan
@@ -404,8 +404,8 @@ export class MailService {
       to: email,
       subject: 'Pinjaman Anda Telah Dicairkan - Koperasi Kamorina Surya Niaga',
       html: `
-        <h2>Selamat ${applicantName}!  🎉</h2>
-        <p>Pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DICAIRKAN</strong>! </p>
+        <h2>Selamat ${applicantName},</h2>
+        <p>Pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah <strong>DICAIRKAN</strong>.</p>
         <br>
         <h3>Detail Pencairan:</h3>
         <ul>
@@ -413,14 +413,14 @@ export class MailService {
           <li><strong>No. Rekening:</strong> ${bankAccountNumber}</li>
         </ul>
         <br>
-        <p>Dana akan segera masuk ke rekening Anda.  Harap periksa mutasi rekening Anda.</p>
+        <p>Dana akan segera masuk ke rekening Anda. Harap periksa mutasi rekening Anda.</p>
         <br>
         <p style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3;">
           <strong>Catatan Penting:</strong><br>
-          Jangan lupa untuk membayar cicilan sesuai jadwal yang telah ditentukan. 
+          Jangan lupa untuk membayar cicilan sesuai jadwal yang telah ditentukan.
         </p>
         <br>
-        <p>Terima kasih telah menggunakan layanan koperasi. </p>
+        <p>Terima kasih telah menggunakan layanan koperasi.</p>
       `,
     });
   }
@@ -492,7 +492,7 @@ export class MailService {
         </a>
         <p>Atau akses dashboard di: ${dashboardUrl}</p>
         <br>
-        <p>Terima kasih atas perhatian Anda. </p>
+        <p>Terima kasih atas perhatian Anda.</p>
       `,
     });
   }
@@ -543,8 +543,8 @@ export class MailService {
       to: email,
       subject: 'Pengajuan Deposito Disetujui - Koperasi Kamorina Surya Niaga',
       html: `
-        <h2>Selamat ${applicantName}!  🎉</h2>
-        <p>Pengajuan deposito Anda dengan nomor <strong>${depositNumber}</strong> telah <strong>DISETUJUI</strong>!</p>
+        <h2>Selamat ${applicantName},</h2>
+        <p>Pengajuan deposito Anda dengan nomor <strong>${depositNumber}</strong> telah <strong>DISETUJUI</strong>.</p>
         <br>
         <h3>Detail Deposito:</h3>
         <ul>
@@ -554,7 +554,7 @@ export class MailService {
         <br>
         <p style="background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196F3;">
           <strong>Catatan Penting:</strong><br>
-          Deposito akan dipotong dari gaji bulanan Anda.  Pastikan saldo gaji mencukupi. 
+          Deposito akan dipotong dari gaji bulanan Anda. Pastikan saldo gaji mencukupi.
         </p>
         <br>
         <p>Terima kasih telah menggunakan layanan koperasi.</p>
@@ -768,11 +768,11 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: `Perubahan Deposito Disetujui - ${changeNumber} 🎉`,
+      subject: `Perubahan Deposito Disetujui - ${changeNumber}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4caf50;">Selamat ${applicantName}!  🎉</h2>
-          <p>Pengajuan perubahan deposito Anda telah <strong style="color: #4caf50;">DISETUJUI</strong> dan telah diterapkan! </p>
+          <h2 style="color: #4caf50;">Selamat ${applicantName},</h2>
+          <p>Pengajuan perubahan deposito Anda telah <strong style="color: #4caf50;">DISETUJUI</strong> dan telah diterapkan.</p>
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #333;">Detail Pengajuan:</h3>
@@ -811,15 +811,15 @@ export class MailService {
 
           <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
             <p style="margin: 0; color: #e65100;">
-              <strong>⚠️ Biaya Admin:</strong> ${formattedAdminFee}<br>
+              <strong>Biaya Admin:</strong> ${formattedAdminFee}<br>
               <small>Biaya admin akan dipotong langsung dari tabungan/gaji Anda.</small>
             </p>
           </div>
 
           <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 20px 0;">
             <p style="margin: 0; color: #1565c0;">
-              <strong>📝 Catatan Penting:</strong><br>
-              Perubahan deposito telah berlaku efektif.  Pemotongan gaji akan disesuaikan mulai periode berikutnya.
+              <strong>Catatan Penting:</strong><br>
+              Perubahan deposito telah berlaku efektif. Pemotongan gaji akan disesuaikan mulai periode berikutnya.
             </p>
           </div>
           
@@ -829,7 +829,7 @@ export class MailService {
             </a>
           </div>
           
-          <p>Terima kasih telah menggunakan layanan koperasi! </p>
+          <p>Terima kasih telah menggunakan layanan koperasi.</p>
           
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
           <p style="color: #999; font-size: 12px;">
@@ -912,13 +912,13 @@ export class MailService {
 
           <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #d32f2f; margin: 20px 0;">
             <p style="margin: 0; color: #c62828;">
-              <strong>💰 Biaya Admin (potong sekali):</strong> ${formattedAdminFee}<br>
+              <strong>Biaya Admin (potong sekali):</strong> ${formattedAdminFee}<br>
               <small>Biaya admin harus dipotong pada periode gaji berikutnya.</small>
             </p>
           </div>
 
           <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #1565c0;">📋 Yang Perlu Dilakukan:</h4>
+            <h4 style="margin-top: 0; color: #1565c0;">Yang Perlu Dilakukan:</h4>
             <ol style="margin-bottom: 0; padding-left: 20px; color: #333;">
               <li>Update pemotongan deposito bulanan di sistem payroll</li>
               <li>Potong biaya admin ${formattedAdminFee} pada gaji periode berikutnya</li>
@@ -932,7 +932,7 @@ export class MailService {
             </a>
           </div>
           
-          <p>Terima kasih atas perhatian Anda. </p>
+          <p>Terima kasih atas perhatian Anda.</p>
           
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
           <p style="color: #999; font-size: 12px;">
@@ -1011,7 +1011,7 @@ export class MailService {
 
           <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
             <p style="margin: 0; color: #e65100;">
-              <strong>💰 Biaya Admin:</strong> ${formattedAdminFee}<br>
+              <strong>Biaya Admin:</strong> ${formattedAdminFee}<br>
               <small>Biaya admin akan dipotong dari gaji Anda pada periode berikutnya.</small>
             </p>
           </div>
@@ -1022,7 +1022,7 @@ export class MailService {
             </a>
           </div>
           
-          <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam. </p>
+          <p>Jika Anda memiliki pertanyaan, silakan hubungi Divisi Simpan Pinjam.</p>
           
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
           <p style="color: #999; font-size: 12px;">
@@ -1053,7 +1053,7 @@ export class MailService {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1976d2;">Halo ${applicantName},</h2>
-          <p>Pengajuan perubahan deposito Anda sedang diproses. </p>
+          <p>Pengajuan perubahan deposito Anda sedang diproses.</p>
           
           <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #1565c0;">Status Terkini:</h3>
@@ -1265,7 +1265,7 @@ export class MailService {
           </div>
 
           <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #e65100;">📋 Yang Perlu Dilakukan:</h4>
+            <h4 style="margin-top: 0; color: #e65100;">Yang Perlu Dilakukan:</h4>
             <ol style="margin-bottom: 0; padding-left: 20px; color: #333;">
               <li>Proses transaksi BCA untuk transfer dana</li>
               <li>Konfirmasi pencairan di sistem setelah transaksi selesai</li>
@@ -1330,7 +1330,7 @@ export class MailService {
           </div>
 
           <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #c62828;">🔐 Otorisasi Diperlukan:</h4>
+            <h4 style="margin-top: 0; color: #c62828;">Otorisasi Diperlukan:</h4>
             <p style="margin-bottom: 0; color: #333;">
               Silakan lakukan otorisasi transaksi BCA dan konfirmasi di sistem untuk menyelesaikan proses penarikan.
             </p>
@@ -1369,11 +1369,11 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: `Penarikan Deposito Berhasil Diselesaikan - ${withdrawalNumber} 🎉`,
+      subject: `Penarikan Deposito Berhasil Diselesaikan - ${withdrawalNumber}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4caf50;">Selamat ${applicantName}! 🎉</h2>
-          <p>Pengajuan penarikan deposito Anda telah <strong style="color: #4caf50;">BERHASIL DISELESAIKAN</strong> dan dana telah ditransfer!</p>
+          <h2 style="color: #4caf50;">Selamat ${applicantName},</h2>
+          <p>Pengajuan penarikan deposito Anda telah <strong style="color: #4caf50;">BERHASIL DISELESAIKAN</strong> dan dana telah ditransfer.</p>
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #333;">Detail Penarikan:</h3>
@@ -1395,7 +1395,7 @@ export class MailService {
 
           <div style="background-color: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50; margin: 20px 0;">
             <p style="margin: 0; color: #2e7d32;">
-              <strong>✅ Status: SELESAI</strong><br>
+              <strong>Status: SELESAI</strong><br>
               <small>Dana telah ditransfer ke rekening Anda. Silakan cek mutasi rekening Anda.</small>
             </p>
           </div>
@@ -1580,7 +1580,7 @@ export class MailService {
           </div>
 
           <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #e65100;">📋 Yang Perlu Dilakukan:</h4>
+            <h4 style="margin-top: 0; color: #e65100;">Yang Perlu Dilakukan:</h4>
             <ol style="margin-bottom: 0; padding-left: 20px; color: #333;">
               <li>Proses transaksi BCA untuk transfer dana</li>
               <li>Konfirmasi pencairan di sistem setelah transaksi selesai</li>
@@ -1645,7 +1645,7 @@ export class MailService {
           </div>
 
           <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336; margin: 20px 0;">
-            <h4 style="margin-top: 0; color: #c62828;">🔐 Otorisasi Diperlukan:</h4>
+            <h4 style="margin-top: 0; color: #c62828;">Otorisasi Diperlukan:</h4>
             <p style="margin-bottom: 0; color: #333;">
               Silakan lakukan otorisasi transaksi BCA dan konfirmasi di sistem untuk menyelesaikan proses penarikan.
             </p>
@@ -1683,11 +1683,11 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: `Penarikan Tabungan Berhasil Diselesaikan - ${withdrawalNumber} 🎉`,
+      subject: `Penarikan Tabungan Berhasil Diselesaikan - ${withdrawalNumber}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #4caf50;">Selamat ${applicantName}! 🎉</h2>
-          <p>Pengajuan penarikan tabungan Anda telah <strong style="color: #4caf50;">BERHASIL DISELESAIKAN</strong> dan dana telah ditransfer!</p>
+          <h2 style="color: #4caf50;">Selamat ${applicantName},</h2>
+          <p>Pengajuan penarikan tabungan Anda telah <strong style="color: #4caf50;">BERHASIL DISELESAIKAN</strong> dan dana telah ditransfer.</p>
           
           <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0; color: #333;">Detail Penarikan:</h3>
@@ -1705,7 +1705,7 @@ export class MailService {
 
           <div style="background-color: #e8f5e9; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50; margin: 20px 0;">
             <p style="margin: 0; color: #2e7d32;">
-              <strong>✅ Status: SELESAI</strong><br>
+              <strong>Status: SELESAI</strong><br>
               <small>Dana telah ditransfer ke rekening Anda. Silakan cek mutasi rekening Anda.</small>
             </p>
           </div>
@@ -1724,6 +1724,83 @@ export class MailService {
           </p>
         </div>
       `,
+    });
+  }
+
+  /**
+   * Send savings withdrawal approved notification to applicant
+   */
+  async sendSavingsWithdrawalApproved(
+    email: string,
+    applicantName: string,
+    withdrawalNumber: string,
+    netAmount: number,
+    bankAccountNumber: string,
+  ) {
+    const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/my-withdrawals`;
+    const formattedAmount = this.formatCurrency(netAmount);
+
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject: `Pengajuan Penarikan Tabungan Disetujui - ${withdrawalNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4caf50;">Halo ${applicantName},</h2>
+          <p>Pengajuan penarikan tabungan Anda telah <strong style="color: #4caf50;">DISETUJUI</strong>!</p>
+          
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #333;">Detail Penarikan:</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Nomor Penarikan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${withdrawalNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">Jumlah Net:</td>
+                <td style="padding: 8px 0; font-weight: bold; color: #4caf50;">${formattedAmount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #666;">No. Rekening Tujuan:</td>
+                <td style="padding: 8px 0; font-weight: bold;">${bankAccountNumber}</td>
+              </tr>
+            </table>
+          </div>
+
+          <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 20px 0;">
+            <p style="margin: 0; color: #1565c0;">
+              <strong>Informasi:</strong><br>
+              Dana sedang dalam proses pencairan. Anda akan menerima notifikasi lagi setelah pencairan selesai.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${dashboardUrl}" style="padding: 12px 30px; background-color: #4caf50; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Lihat Status Penarikan
+            </a>
+          </div>
+          
+          <p>Terima kasih telah menggunakan layanan koperasi!</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            Email ini dikirim secara otomatis oleh sistem Koperasi Kamorina Surya Niaga.
+          </p>
+        </div>
+      `,
+    });
+  }
+
+  /**
+   * Send generic email with custom subject and HTML content
+   * Used by the queue system for flexible email sending
+   */
+  async sendGenericEmail(email: string, subject: string, html: string) {
+    await this.transporter.sendMail({
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+      to: email,
+      subject,
+      html,
     });
   }
 }

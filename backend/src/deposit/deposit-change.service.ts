@@ -3,9 +3,10 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MailService } from '../mail/mail.service';
+import { MailQueueService } from '../mail/mail-queue.service';
 import { DepositOptionService } from './deposit-option.service';
 import { CreateDepositChangeDto } from './dto/deposit-change/create-deposit-change.dto';
 import { UpdateDepositChangeDto } from './dto/deposit-change/update-deposit-change.dto';
@@ -24,9 +25,11 @@ import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
 @Injectable()
 export class DepositChangeService {
+  private readonly logger = new Logger(DepositChangeService.name);
+
   constructor(
     private prisma: PrismaService,
-    private mailService: MailService,
+    private mailQueueService: MailQueueService,
     private depositOptionService: DepositOptionService,
   ) { }
 
@@ -865,9 +868,9 @@ export class DepositChangeService {
       });
     });
 
-    // Notify applicant
+    // Notify applicant (queued)
     try {
-      await this.mailService.sendDepositChangeRejected(
+      await this.mailQueueService.queueDepositChangeRejected(
         changeRequest.user.email,
         changeRequest.user.name,
         changeRequest.changeNumber,
@@ -875,7 +878,7 @@ export class DepositChangeService {
         dto.notes || 'Tidak ada catatan',
       );
     } catch (error) {
-      console.error('Failed to send rejection email:', error);
+      this.logger.error('Failed to queue rejection email:', error);
     }
 
     return { message: 'Pengajuan perubahan deposito berhasil ditolak' };
@@ -1103,24 +1106,20 @@ export class DepositChangeService {
       },
     });
 
-    for (const approver of approvers) {
-      try {
-        await this.mailService.sendDepositChangeApprovalRequest(
-          approver.email,
-          approver.name,
-          changeRequest.user.name,
-          changeRequest.changeNumber,
-          changeRequest.depositApplication.depositNumber,
-          changeRequest.currentAmountValue.toNumber(),
-          changeRequest.newAmountValue.toNumber(),
-          roleName,
-        );
-      } catch (error) {
-        console.error(
-          `Failed to send approval request to ${approver.email}:`,
-          error,
-        );
-      }
+    // Queue bulk approval request emails
+    try {
+      await this.mailQueueService.queueBulkDepositChangeApprovalRequests(
+        approvers.map(a => ({ email: a.email, approverName: a.name })),
+        changeRequest.user.name,
+        changeRequest.changeNumber,
+        changeRequest.depositApplication.depositNumber,
+        changeRequest.currentAmountValue.toNumber(),
+        changeRequest.newAmountValue.toNumber(),
+        roleName,
+      );
+      this.logger.log(`Queued ${approvers.length} deposit change approval request emails`);
+    } catch (error) {
+      this.logger.error('Failed to queue approval requests:', error);
     }
   }
 
@@ -1135,9 +1134,9 @@ export class DepositChangeService {
 
     if (!changeRequest) return;
 
-    // Notify applicant
+    // Notify applicant (queued)
     try {
-      await this.mailService.sendDepositChangeApproved(
+      await this.mailQueueService.queueDepositChangeApproved(
         changeRequest.user.email,
         changeRequest.user.name,
         changeRequest.changeNumber,
@@ -1149,10 +1148,10 @@ export class DepositChangeService {
         changeRequest.adminFee.toNumber(),
       );
     } catch (error) {
-      console.error('Failed to notify applicant:', error);
+      this.logger.error('Failed to queue applicant notification:', error);
     }
 
-    // Notify payroll
+    // Notify payroll users
     const payrollUsers = await this.prisma.user.findMany({
       where: {
         roles: {
@@ -1167,7 +1166,7 @@ export class DepositChangeService {
 
     for (const payroll of payrollUsers) {
       try {
-        await this.mailService.sendDepositChangePayrollNotification(
+        await this.mailQueueService.queueDepositChangePayrollNotification(
           payroll.email,
           payroll.name,
           changeRequest.user.name,
@@ -1178,11 +1177,13 @@ export class DepositChangeService {
           changeRequest.adminFee.toNumber(),
         );
       } catch (error) {
-        console.error(
-          `Failed to send payroll notification to ${payroll.email}:`,
+        this.logger.error(
+          `Failed to queue payroll notification for ${payroll.email}:`,
           error,
         );
       }
     }
+
+    this.logger.log(`Queued deposit change approved notifications for ${changeRequest.changeNumber}`);
   }
 }
