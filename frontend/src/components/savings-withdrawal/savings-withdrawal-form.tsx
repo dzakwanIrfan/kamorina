@@ -160,7 +160,7 @@ export function SavingsWithdrawalForm({ onSuccess, onCancel }: SavingsWithdrawal
                         {/* Saldo Info */}
                         <Alert>
                             <Wallet className="h-4 w-4" />
-                            <AlertTitle>Saldo Sukarela Anda</AlertTitle>
+                            <AlertTitle>Tabungan Deposito Anda</AlertTitle>
                             <AlertDescription>
                                 <span className="text-lg font-bold text-primary">
                                     {formatCurrency(availableBalance)}
@@ -184,7 +184,7 @@ export function SavingsWithdrawalForm({ onSuccess, onCancel }: SavingsWithdrawal
                                     <p className="font-medium">{formatCurrency(Number(tabungan.summary.saldoWajib))}</p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">Saldo Sukarela</p>
+                                    <p className="text-muted-foreground">Saldo Tabungan Deposito</p>
                                     <p className="font-bold text-primary">
                                         {formatCurrency(Number(tabungan.summary.saldoSukarela))}
                                     </p>

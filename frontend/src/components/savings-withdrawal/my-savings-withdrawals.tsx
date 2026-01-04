@@ -329,7 +329,7 @@ export function MySavingsWithdrawals() {
                             {formatCurrency(Number(tabungan?.summary.saldoSukarela || 0))}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            Saldo Sukarela yang dapat ditarik
+                            Saldo Tabungan Deposito yang dapat ditarik
                         </p>
                     </CardContent>
                 </Card>

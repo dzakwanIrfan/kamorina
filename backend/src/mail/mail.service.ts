@@ -156,7 +156,7 @@ export class MailService {
         <br>
         <p>Sekarang Anda dapat mengakses seluruh fitur member koperasi, termasuk:</p>
         <ul>
-          <li>Simpanan Wajib & Sukarela</li>
+          <li>Iuran Wajib & Tabungan Deposito</li>
           <li>Pengajuan Pinjaman</li>
           <li>Belanja di Toko Koperasi</li>
           <li>Dan banyak lagi</li>

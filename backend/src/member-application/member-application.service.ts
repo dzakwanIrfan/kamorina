@@ -16,9 +16,9 @@ import {
   ApplicationStatus,
   ApprovalStep,
   ApprovalDecision,
+  Prisma,
 } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
-import { Prisma } from 'generated/prisma/browser';
 
 @Injectable()
 export class MemberApplicationService {

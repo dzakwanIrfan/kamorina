@@ -1,14 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { toast } from 'sonner';
-import { Loader2, Calendar as CalendarIcon, CheckCircle2, Info, TrendingUp, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { toast } from "sonner";
+import {
+  Loader2,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  Info,
+  TrendingUp,
+  Wallet,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -17,16 +26,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
-import { depositService } from '@/services/deposit.service';
-import { handleApiError } from '@/lib/axios';
-import { useDepositConfig } from '@/hooks/use-deposit-config';
+} from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { depositService } from "@/services/deposit.service";
+import { handleApiError } from "@/lib/axios";
+import { useDepositConfig } from "@/hooks/use-deposit-config";
 
 interface DepositFormProps {
   onSuccess: () => void;
@@ -38,10 +53,10 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   const { data: config, isLoading: isLoadingConfig } = useDepositConfig();
 
   const formSchema = z.object({
-    depositAmountCode: z.string().min(1, 'Pilih jumlah setoran bulanan'),
-    depositTenorCode: z.string().min(1, 'Pilih jangka waktu'),
+    depositAmountCode: z.string().min(1, "Pilih jumlah setoran bulanan"),
+    depositTenorCode: z.string().min(1, "Pilih jangka waktu"),
     agreedToTerms: z.boolean().refine((val) => val === true, {
-      message: 'Anda harus menyetujui syarat dan ketentuan',
+      message: "Anda harus menyetujui syarat dan ketentuan",
     }),
   });
 
@@ -50,8 +65,8 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      depositAmountCode: '',
-      depositTenorCode: '',
+      depositAmountCode: "",
+      depositTenorCode: "",
       agreedToTerms: false,
     },
   });
@@ -70,7 +85,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
       // Then submit
       await depositService.submitDeposit(draftResult.deposit.id);
 
-      toast.success('Pengajuan tabungan deposito berhasil disubmit! ');
+      toast.success("Pengajuan tabungan deposito berhasil disubmit! ");
       onSuccess();
     } catch (error) {
       toast.error(handleApiError(error));
@@ -115,7 +130,8 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
           <Alert variant="destructive">
             <AlertTitle>Gagal memuat konfigurasi</AlertTitle>
             <AlertDescription>
-              Tidak dapat memuat opsi tabungan deposito. Silakan coba lagi nanti.
+              Tidak dapat memuat opsi tabungan deposito. Silakan coba lagi
+              nanti.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -126,9 +142,12 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
   return (
     <Card className="w-full max-w-5xl mx-auto">
       <CardHeader className="space-y-1 px-4 sm:px-6">
-        <CardTitle className="text-xl sm:text-2xl">Formulir Pengajuan Tabungan Deposito</CardTitle>
+        <CardTitle className="text-xl sm:text-2xl">
+          Formulir Pengajuan Tabungan Deposito
+        </CardTitle>
         <CardDescription className="text-sm">
-          Pilih jumlah setoran bulanan dan jangka waktu menabung.  Setoran akan dipotong otomatis dari gaji bulanan Anda.
+          Pilih jumlah setoran bulanan dan jangka waktu menabung. Setoran akan
+          dipotong otomatis dari gaji bulanan Anda.
         </CardDescription>
       </CardHeader>
       <CardContent className="px-4 sm:px-6">
@@ -141,7 +160,9 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <div className="flex flex-col">
-                    <FormLabel className="text-base font-semibold">Setoran Bulanan</FormLabel>
+                    <FormLabel className="text-base font-semibold">
+                      Setoran Bulanan
+                    </FormLabel>
                     <FormDescription className="text-xs sm:text-sm">
                       Jumlah uang yang akan dipotong dari gaji setiap bulan
                     </FormDescription>
@@ -164,8 +185,12 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                             className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-card hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 dark:peer-data-[state=checked]:bg-primary/10 cursor-pointer transition-all p-3 sm:p-4 h-20 sm:h-24"
                           >
                             <FaRupiahSign className="mb-1 sm:mb-2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground peer-data-[state=checked]:text-primary" />
-                            <span className="text-sm sm:text-base font-bold text-center leading-tight">{option.label}</span>
-                            <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">/bulan</span>
+                            <span className="text-sm sm:text-base font-bold text-center leading-tight">
+                              {option.label}
+                            </span>
+                            <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                              /bulan
+                            </span>
                           </label>
                         </div>
                       ))}
@@ -183,7 +208,9 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <div className="flex flex-col">
-                    <FormLabel className="text-base font-semibold">Jangka Waktu Menabung</FormLabel>
+                    <FormLabel className="text-base font-semibold">
+                      Jangka Waktu Menabung
+                    </FormLabel>
                     <FormDescription className="text-xs sm:text-sm">
                       Berapa bulan Anda akan menabung dengan setoran bulanan
                     </FormDescription>
@@ -206,7 +233,9 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                             className="flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-card hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 dark:peer-data-[state=checked]:bg-primary/10 cursor-pointer transition-all p-3 sm:p-4 h-20 sm:h-24"
                           >
                             <CalendarIcon className="mb-1 sm:mb-2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                            <span className="text-sm sm:text-base font-bold">{option.label}</span>
+                            <span className="text-sm sm:text-base font-bold">
+                              {option.label}
+                            </span>
                           </label>
                         </div>
                       ))}
@@ -226,15 +255,20 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 sm:p-4">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
                   <div className="space-y-1 leading-none flex-1">
                     <FormLabel className="text-xs sm:text-sm font-semibold">
-                      DENGAN INI SAYA MENGAJUKAN TABUNGAN DEPOSITO DAN BERSEDIA DIPOTONG GAJI
+                      DENGAN INI SAYA MENGAJUKAN TABUNGAN DEPOSITO DAN BERSEDIA
+                      DIPOTONG GAJI
                     </FormLabel>
                     <FormDescription className="text-xs">
-                      Saya menyetujui bahwa setoran deposito akan dipotong otomatis dari gaji bulanan saya
-                      sesuai jumlah dan jangka waktu yang dipilih.
+                      Saya menyetujui bahwa setoran deposito akan dipotong
+                      otomatis dari gaji bulanan saya sesuai jumlah dan jangka
+                      waktu yang dipilih.
                     </FormDescription>
                     <FormMessage />
                   </div>
@@ -245,24 +279,32 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
             {/* Info Box */}
             <Alert className="bg-muted/50 dark:bg-muted/20">
               <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle className="text-sm sm:text-base">Informasi Penting</AlertTitle>
+              <AlertTitle className="text-sm sm:text-base">
+                Informasi Penting
+              </AlertTitle>
               <AlertDescription className="text-xs sm:text-sm space-y-2 mt-2">
                 <ul className="list-disc list-inside space-y-1. 5">
                   <li>
-                    <strong>Setoran bulanan</strong> akan dipotong otomatis dari gaji setiap bulan
+                    <strong>Setoran bulanan</strong> akan dipotong otomatis dari
+                    gaji setiap bulan
                   </li>
                   <li>Pengajuan akan melalui 2 tahap approval: DSP → Ketua</li>
-                  <li>Setelah disetujui, pemotongan akan dimulai pada periode gaji berikutnya</li>
                   <li>
-                    Suku bunga: <strong>{config.interestRate}% per tahun</strong> (
-                    {config.calculationMethod === 'SIMPLE' ? 'Bunga Sederhana' : 'Bunga Majemuk'})
+                    Setelah disetujui, pemotongan akan dimulai pada periode gaji
+                    berikutnya
                   </li>
                   <li>
-                    Dana beserta bunga dapat dicairkan setelah <strong>jatuh tempo</strong>
+                    Suku bunga:{" "}
+                    <strong>{config.interestRate}% per tahun</strong>
                   </li>
                   <li>
-                    Perubahan setoran atau tenor hanya bisa dilakukan dengan mengajukan{' '}
-                    <strong>Perubahan Deposito</strong> (dikenakan biaya admin)
+                    Dana beserta bunga dapat dicairkan setelah{" "}
+                    <strong>jatuh tempo</strong>
+                  </li>
+                  <li>
+                    Perubahan setoran atau tenor hanya bisa dilakukan dengan
+                    mengajukan <strong>Perubahan Deposito</strong> (dikenakan
+                    biaya admin)
                   </li>
                 </ul>
               </AlertDescription>
@@ -286,7 +328,9 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                 disabled={isSubmitting}
                 className="w-full sm:flex-1 text-sm sm:text-base"
               >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Submit Pengajuan
               </Button>
             </div>

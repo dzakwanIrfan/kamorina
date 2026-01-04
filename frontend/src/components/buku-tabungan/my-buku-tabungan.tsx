@@ -147,7 +147,7 @@ export function MyBukuTabungan() {
               title="Saldo Pasif"
               value={formatCurrency(Number(tabungan.summary.saldoWajib) + Number(tabungan.summary.saldoPokok))}
               icon={<PiggyBank className="h-4 w-4" />}
-              description="Simpanan wajib"
+              description="Iuran wajib"
               colorClass="text-green-600"
             />
             <StatCard

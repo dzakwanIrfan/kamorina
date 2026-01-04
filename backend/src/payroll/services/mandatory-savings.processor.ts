@@ -23,7 +23,7 @@ export class MandatorySavingsProcessor {
     let totalAmount = new Prisma.Decimal(0);
     let processedCount = 0;
 
-    this.logger.log('Processing mandatory savings (Simpanan Wajib)...');
+    this.logger.log('Processing mandatory savings (Iuran Wajib)...');
 
     // Ambil semua member aktif
     const activeMembers = await tx.user.findMany({
@@ -86,7 +86,7 @@ export class MandatorySavingsProcessor {
           userName: user.name,
           type: 'IURAN_BULANAN',
           amount: monthlyFee,
-          description: 'Simpanan wajib bulanan',
+          description: 'Iuran wajib bulanan',
         });
       } catch (error) {
         errors.push({

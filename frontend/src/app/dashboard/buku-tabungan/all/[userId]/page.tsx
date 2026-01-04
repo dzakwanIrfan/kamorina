@@ -205,7 +205,7 @@ export default function AccountDetailPage({ params }: AccountDetailPageProps) {
                         <CardTitle>Ringkasan Transaksi</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                             <div className="text-center p-4 rounded-lg bg-muted/50">
                                 <p className="text-xs text-muted-foreground mb-1">
                                     Iuran Pendaftaran
@@ -236,14 +236,14 @@ export default function AccountDetailPage({ params }: AccountDetailPageProps) {
                                     )}
                                 </p>
                             </div>
-                            <div className="text-center p-4 rounded-lg bg-muted/50">
+                            {/* <div className="text-center p-4 rounded-lg bg-muted/50">
                                 <p className="text-xs text-muted-foreground mb-1">SHU</p>
                                 <p className="font-semibold text-green-600">
                                     {formatCurrency(
                                         toNumber(tabungan.transactionSummary.totalShu)
                                     )}
                                 </p>
-                            </div>
+                            </div> */}
                             <div className="text-center p-4 rounded-lg bg-muted/50">
                                 <p className="text-xs text-muted-foreground mb-1">Bunga</p>
                                 <p className="font-semibold text-green-600">

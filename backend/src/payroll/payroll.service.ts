@@ -165,7 +165,7 @@ export class PayrollService {
           context,
         );
 
-        // 2. Process mandatory savings (Simpanan Wajib)
+        // 2. Process mandatory savings (Iuran Wajib)
         mandatorySavingsResult = await this.mandatorySavingsProcessor.process(
           tx,
           context,

@@ -110,8 +110,8 @@ export function AllAccountsTable() {
                 "Golongan": account.user.employee.golongan.golonganName,
                 "Tipe": account.user.employee.employeeType,
                 "Simpanan Pokok": toNumber(account.saldoPokok),
-                "Simpanan Wajib": toNumber(account.saldoWajib),
-                "Simpanan Sukarela": toNumber(account.saldoSukarela),
+                "Simapan Wajib": toNumber(account.saldoWajib),
+                "Tabungan Deposito": toNumber(account.saldoSukarela),
                 "Bunga Deposito": toNumber(account.bungaDeposito),
                 "Total Saldo": toNumber(account.totalSaldo),
                 "Terdaftar": format(new Date(account.createdAt), "dd/MM/yyyy", {
@@ -205,7 +205,7 @@ export function AllAccountsTable() {
             },
             {
                 accessorKey: "saldoWajib",
-                header: "Simpanan Wajib",
+                header: "Iuran Wajib",
                 cell: ({ row }) => {
                     const value = toNumber(row.original.saldoWajib);
                     return (

@@ -1,28 +1,37 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import {
   MemberApplication,
   ApplicationStatus,
   ApprovalStep,
   ApprovalDecision,
-} from '@/types/member-application.types';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { CheckCircle2, XCircle, Clock, User, Building2, Calendar, Award, Loader2 } from 'lucide-react';
-import { memberApplicationService } from '@/services/member-application.service';
-import { toast } from 'sonner';
+} from "@/types/member-application.types";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  User,
+  Building2,
+  Calendar,
+  Award,
+  Loader2,
+} from "lucide-react";
+import { memberApplicationService } from "@/services/member-application.service";
+import { toast } from "sonner";
 
 interface ApplicationDetailDialogProps {
   application: MemberApplication | null;
@@ -33,14 +42,26 @@ interface ApplicationDetailDialogProps {
 }
 
 const statusMap = {
-  [ApplicationStatus.UNDER_REVIEW]: { label: 'Under Review', variant: 'default' as const, icon: Clock },
-  [ApplicationStatus.APPROVED]: { label: 'Approved', variant: 'default' as const, icon: CheckCircle2 },
-  [ApplicationStatus.REJECTED]: { label: 'Rejected', variant: 'destructive' as const, icon: XCircle },
+  [ApplicationStatus.UNDER_REVIEW]: {
+    label: "Under Review",
+    variant: "default" as const,
+    icon: Clock,
+  },
+  [ApplicationStatus.APPROVED]: {
+    label: "Approved",
+    variant: "default" as const,
+    icon: CheckCircle2,
+  },
+  [ApplicationStatus.REJECTED]: {
+    label: "Rejected",
+    variant: "destructive" as const,
+    icon: XCircle,
+  },
 };
 
 const stepMap = {
-  [ApprovalStep.DIVISI_SIMPAN_PINJAM]: 'Divisi Simpan Pinjam',
-  [ApprovalStep.KETUA]: 'Ketua',
+  [ApprovalStep.DIVISI_SIMPAN_PINJAM]: "Divisi Simpan Pinjam",
+  [ApprovalStep.KETUA]: "Ketua",
 };
 
 export function ApplicationDetailDialog({
@@ -50,8 +71,9 @@ export function ApplicationDetailDialog({
   onSuccess,
   canApprove = false,
 }: ApplicationDetailDialogProps) {
-  const [processingDecision, setProcessingDecision] = useState<ApprovalDecision | null>(null);
-  const [notes, setNotes] = useState('');
+  const [processingDecision, setProcessingDecision] =
+    useState<ApprovalDecision | null>(null);
+  const [notes, setNotes] = useState("");
 
   if (!application) return null;
 
@@ -70,15 +92,15 @@ export function ApplicationDetailDialog({
 
       toast.success(
         decision === ApprovalDecision.APPROVED
-          ? 'Pengajuan berhasil disetujui'
-          : 'Pengajuan berhasil ditolak'
+          ? "Pengajuan berhasil disetujui"
+          : "Pengajuan berhasil ditolak"
       );
 
       onSuccess?.();
       onOpenChange(false);
-      setNotes('');
+      setNotes("");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal memproses pengajuan');
+      toast.error(error.response?.data?.message || "Gagal memproses pengajuan");
     } finally {
       setProcessingDecision(null);
     }
@@ -114,7 +136,7 @@ export function ApplicationDetailDialog({
             <Separator />
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground">Nama</p>
+                <p className="text-muted-foreground">Nama Akun</p>
                 <p className="font-medium">{application.user?.name}</p>
               </div>
               <div>
@@ -122,23 +144,29 @@ export function ApplicationDetailDialog({
                 <p className="font-medium">{application.user?.email}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">No. Karyawan</p>
-                <p className="font-medium">{application.user?.employee.employeeNumber}</p>
-              </div>
-              <div>
                 <p className="text-muted-foreground">NIK</p>
-                <p className="font-medium">{application.user?.nik || '-'}</p>
+                <p className="font-medium">{application.user?.nik || "-"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">NPWP</p>
-                <p className="font-medium">{application.user?.npwp || '-'}</p>
+                <p className="font-medium">{application.user?.npwp || "-"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Tempat, Tanggal Lahir</p>
                 <p className="font-medium">
                   {application.user?.birthPlace}
                   {application.user?.dateOfBirth &&
-                    `, ${format(new Date(application.user.dateOfBirth), 'dd MMMM yyyy', { locale: id })}`}
+                    `, ${format(
+                      new Date(application.user.dateOfBirth),
+                      "dd MMMM yyyy",
+                      { locale: id }
+                    )}`}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Rencana Cicilan</p>
+                <p className="font-medium">
+                  {application.user?.installmentPlan || "-"}x per bulan
                 </p>
               </div>
             </div>
@@ -148,14 +176,27 @@ export function ApplicationDetailDialog({
           <div className="rounded-lg border p-4 space-y-3">
             <h3 className="font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Informasi Pekerjaan
+              Informasi Karyawan
             </h3>
             <Separator />
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
+                <p className="text-muted-foreground">Nama</p>
+                <p className="font-medium">
+                  {application.user?.employee?.fullName || "-"}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">No. Karyawan</p>
+                <p className="font-medium">
+                  {application.user?.employee.employeeNumber}
+                </p>
+              </div>
+              <div>
                 <p className="text-muted-foreground">Department</p>
                 <p className="font-medium">
-                  {application.user?.employee?.department?.departmentName || '-'}
+                  {application.user?.employee?.department?.departmentName ||
+                    "-"}
                 </p>
               </div>
               <div>
@@ -164,20 +205,22 @@ export function ApplicationDetailDialog({
                   Golongan
                 </p>
                 <p className="font-medium">
-                  {application.user?.employee?.golongan?.golonganName || '-'}
+                  {application.user?.employee?.golongan?.golonganName || "-"}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Tanggal Pegawai Tetap</p>
                 <p className="font-medium">
                   {application.user?.employee?.permanentEmployeeDate
-                    ? format(new Date(application.user.employee.permanentEmployeeDate), 'dd MMMM yyyy', { locale: id })
-                    : '-'}
+                    ? format(
+                        new Date(
+                          application.user.employee.permanentEmployeeDate
+                        ),
+                        "dd MMMM yyyy",
+                        { locale: id }
+                      )
+                    : "-"}
                 </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Rencana Cicilan</p>
-                <p className="font-medium">{application.user?.installmentPlan || '-'}x per bulan</p>
               </div>
             </div>
           </div>
@@ -194,12 +237,13 @@ export function ApplicationDetailDialog({
                 <div key={approval.id} className="flex gap-4">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`rounded-full p-2 ${approval.decision === ApprovalDecision.APPROVED
-                        ? 'bg-green-100 text-green-600'
-                        : approval.decision === ApprovalDecision.REJECTED
-                          ? 'bg-red-100 text-red-600'
-                          : 'bg-gray-100 text-gray-400'
-                        }`}
+                      className={`rounded-full p-2 ${
+                        approval.decision === ApprovalDecision.APPROVED
+                          ? "bg-green-100 text-green-600"
+                          : approval.decision === ApprovalDecision.REJECTED
+                          ? "bg-red-100 text-red-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
                     >
                       {approval.decision === ApprovalDecision.APPROVED ? (
                         <CheckCircle2 className="h-4 w-4" />
@@ -220,13 +264,13 @@ export function ApplicationDetailDialog({
                         <Badge
                           variant={
                             approval.decision === ApprovalDecision.APPROVED
-                              ? 'default'
-                              : 'destructive'
+                              ? "default"
+                              : "destructive"
                           }
                         >
                           {approval.decision === ApprovalDecision.APPROVED
-                            ? 'Approved'
-                            : 'Rejected'}
+                            ? "Approved"
+                            : "Rejected"}
                         </Badge>
                       )}
                     </div>
@@ -237,9 +281,13 @@ export function ApplicationDetailDialog({
                     )}
                     {approval.decidedAt && (
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(approval.decidedAt), 'dd MMM yyyy HH:mm', {
-                          locale: id,
-                        })}
+                        {format(
+                          new Date(approval.decidedAt),
+                          "dd MMM yyyy HH:mm",
+                          {
+                            locale: id,
+                          }
+                        )}
                       </p>
                     )}
                     {approval.notes && (
@@ -254,12 +302,15 @@ export function ApplicationDetailDialog({
           </div>
 
           {/* Rejection Reason */}
-          {application.status === ApplicationStatus.REJECTED && application.rejectionReason && (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
-              <h3 className="font-semibold text-destructive">Alasan Penolakan</h3>
-              <p className="text-sm">{application.rejectionReason}</p>
-            </div>
-          )}
+          {application.status === ApplicationStatus.REJECTED &&
+            application.rejectionReason && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
+                <h3 className="font-semibold text-destructive">
+                  Alasan Penolakan
+                </h3>
+                <p className="text-sm">{application.rejectionReason}</p>
+              </div>
+            )}
 
           {/* Action Buttons for Approvers */}
           {canApprove &&

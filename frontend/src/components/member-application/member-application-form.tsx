@@ -501,8 +501,7 @@ export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps)
                       dan akan dipotong langsung dari gaji.
                     </li>
                     <li>
-                      Membayar iuran anggota setiap bulannya sebesar{' '}
-                      <strong>{formatCurrency(monthlyMembershipFee)}</strong> dan akan
+                      Membayar iuran anggota setiap bulan sesuai ketentuan dan akan
                       dipotong langsung dari gaji.
                     </li>
                     <li>
@@ -514,8 +513,7 @@ export function MemberApplicationForm({ onSuccess }: MemberApplicationFormProps)
                     </li>
                   </ol>
                   <p className="mt-4 font-semibold text-center">
-                    DENGAN INI SAYA MENYETUJUI SYARAT-SYARAT DIATAS DAN MOHON UNTUK MENJADI
-                    ANGGOTA KOPERASI
+                    DENGAN INI SAYA MENGAJUKAN DIRI MENJADI ANGGOTA KOPERASI DAN MEMENUHI SEMUA SYARAT YANG DITETAPKAN
                   </p>
                 </AlertDescription>
               </Alert>
