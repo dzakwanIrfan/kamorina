@@ -1,4 +1,6 @@
-import { Decimal } from '@prisma/client/runtime/library';
+import { Prisma } from '@prisma/client';
+
+type Decimal = Prisma.Decimal;
 
 export interface SaldoSummary {
   saldoPokok: Decimal;
@@ -85,4 +87,3 @@ export interface BukuTabunganListItem {
   createdAt: Date;
   updatedAt: Date;
 }
-
