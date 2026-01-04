@@ -82,7 +82,7 @@ export function SaldoSummaryCard({
           color="text-green-600"
         />
         <SaldoItem
-          label="Saldo Wajib (Pasif)"
+          label="Iuran Wajib (Pasif)"
           value={summary.saldoWajib}
           icon={<PiggyBank className="h-4 w-4" />}
           color="text-green-600"

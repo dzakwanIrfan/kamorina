@@ -180,7 +180,7 @@ export function SavingsWithdrawalForm({ onSuccess, onCancel }: SavingsWithdrawal
                                     <p className="font-medium">{formatCurrency(Number(tabungan.summary.saldoPokok))}</p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">Saldo Wajib</p>
+                                    <p className="text-muted-foreground">Iuran Wajib</p>
                                     <p className="font-medium">{formatCurrency(Number(tabungan.summary.saldoWajib))}</p>
                                 </div>
                                 <div>
