@@ -54,11 +54,6 @@ export class LoanCrudService {
     // Validate tenor
     await this.validationService.validateLoanTenor(dto.loanTenor);
 
-    const bankAccount = dto.bankAccountNumber || user.bankAccountNumber;
-    if (!bankAccount) {
-      throw new BadRequestException('Nomor rekening wajib diisi');
-    }
-
     const loanNumber = await this.numberService.generateLoanNumber(dto.loanType);
     
     // Calculate loan details (skip for GOODS_PHONE)
@@ -89,7 +84,6 @@ export class LoanCrudService {
           loanNumber,
           userId,
           loanType: dto.loanType,
-          bankAccountNumber: bankAccount,
           loanAmount,
           loanTenor: dto.loanTenor,
           loanPurpose: dto.loanPurpose,
@@ -106,14 +100,6 @@ export class LoanCrudService {
 
       return loanApp;
     });
-
-    // Update user bank account if provided and different
-    if (dto.bankAccountNumber && dto.bankAccountNumber !== user.bankAccountNumber) {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { bankAccountNumber: dto.bankAccountNumber },
-      });
-    }
 
     // Fetch complete loan with relations
     const completeLoan = await this.prisma.loanApplication.findUnique({
@@ -179,7 +165,6 @@ export class LoanCrudService {
 
     const updateData: any = {};
 
-    if (dto.bankAccountNumber !== undefined) updateData.bankAccountNumber = dto.bankAccountNumber;
     if (dto.loanTenor !== undefined) updateData.loanTenor = dto.loanTenor;
     if (dto.loanPurpose !== undefined) updateData.loanPurpose = dto.loanPurpose;
     if (dto.attachments !== undefined) updateData.attachments = dto.attachments;

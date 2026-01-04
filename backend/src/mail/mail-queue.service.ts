@@ -555,7 +555,7 @@ export class MailQueueService {
                 applicantName,
                 withdrawalNumber,
                 withdrawalAmount,
-                bankAccountNumber,
+                bankAccountNumber,  
             },
         });
     }

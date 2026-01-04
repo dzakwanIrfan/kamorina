@@ -54,6 +54,8 @@ model Employee {
   golonganId String   @map("golongan_id")
   golongan   Golongan @relation(fields: [golonganId], references: [id])
 
+  bankAccountNumber String @map("bankAccountNumber")
+
   employeeType EmployeeType @map("employee_type")
 
   permanentEmployeeDate DateTime? @map("permanent_employee_date") @db.Date
@@ -74,7 +76,6 @@ model User {
   npwp              String? @unique
   password          String
   avatar            String?
-  bankAccountNumber String? @map("bank_account_number")
 
   employeeId String   @unique @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id])
@@ -374,7 +375,6 @@ model LoanApplication {
   loanType LoanType @default(CASH_LOAN) @map("loan_type")
 
   // Common fields for all loan types
-  bankAccountNumber String  @map("bank_account_number")
   loanAmount        Decimal @map("loan_amount") @db.Decimal(15, 2)
   loanTenor         Int     @map("loan_tenor")
   loanPurpose       String  @map("loan_purpose") @db.Text
@@ -566,7 +566,6 @@ model LoanHistory {
   loanAmount         Decimal    @db.Decimal(15, 2)
   loanTenor          Int
   loanPurpose        String     @db.Text
-  bankAccountNumber  String
   interestRate       Decimal?   @db.Decimal(5, 2)
   monthlyInstallment Decimal?   @db.Decimal(15, 2)
 
@@ -899,7 +898,6 @@ model SavingsWithdrawal {
 
   netAmount Decimal @map("net_amount") @db.Decimal(15, 2)
 
-  bankAccountNumber String? @map("bank_account_number")
   notes             String? @db.Text
 
   status      SavingsWithdrawalStatus @default(SUBMITTED)

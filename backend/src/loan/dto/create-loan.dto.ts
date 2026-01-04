@@ -21,12 +21,6 @@ export class CreateBaseLoanDto {
   @IsEnum(LoanType, { message: 'Tipe pinjaman tidak valid' })
   loanType: LoanType;
 
-  @IsString()
-  @IsOptional()
-  @Length(10, 20, { message: 'Nomor rekening harus antara 10-20 digit' })
-  @Matches(/^[0-9]+$/, { message: 'Nomor rekening harus berupa angka' })
-  bankAccountNumber?: string;
-
   @IsNumber()
   @IsPositive({ message: 'Lama pinjaman harus lebih dari 0' })
   @Min(1, { message: 'Minimal tenor 1 bulan' })

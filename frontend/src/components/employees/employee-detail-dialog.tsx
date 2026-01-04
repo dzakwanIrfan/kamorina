@@ -114,10 +114,8 @@ export function EmployeeDetailDialog({
                   <p className="font-medium">{employee.fullName}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <p className="font-medium">
-                    {employee.isActive ? 'Aktif' : 'Tidak Aktif'}
-                  </p>
+                  <p className="text-muted-foreground">Nomor Rekening Bank</p>
+                  <p className="font-medium">{employee.bank_account_number}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Tipe Karyawan</p>

@@ -167,7 +167,6 @@ export class SavingsWithdrawalService {
                 penaltyRate: penaltyCalc.penaltyRate,
                 penaltyAmount: penaltyCalc.penaltyAmount,
                 netAmount: penaltyCalc.netAmount,
-                bankAccountNumber: dto.bankAccountNumber || savingsAccount.user.bankAccountNumber,
                 notes: dto.notes,
                 status: SavingsWithdrawalStatus.SUBMITTED,
                 currentStep: SavingsWithdrawalStep.DIVISI_SIMPAN_PINJAM,
@@ -943,7 +942,7 @@ export class SavingsWithdrawalService {
                         withdrawal.user.name,
                         withdrawal.withdrawalNumber,
                         withdrawal.netAmount.toNumber(),
-                        withdrawal.bankAccountNumber || '',
+                        withdrawal.user.employee.bankAccountNumber,
                     );
                 } else if (step === SavingsWithdrawalStep.KETUA_AUTH) {
                     await this.mailQueueService.queueSavingsWithdrawalAuthorizationRequest(

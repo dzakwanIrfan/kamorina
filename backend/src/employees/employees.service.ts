@@ -53,6 +53,7 @@ export class EmployeeService {
           employeeType: createEmployeeDto.employeeType,
           isActive: true,
           permanentEmployeeDate: createEmployeeDto.permanentEmployeeDate,
+          bankAccountNumber: createEmployeeDto.bankAccountNumber,
         },
         include: {
           department: true,
@@ -417,6 +418,7 @@ export class EmployeeService {
               departmentId: department.id,
               golonganId: golongan.id,
               employeeType: employeeDto.employeeType as any,
+              bankAccountNumber: employeeDto.bankAccountNumber,
               isActive: employeeDto.isActive,
             },
           });
@@ -429,6 +431,7 @@ export class EmployeeService {
               departmentId: department.id,
               golonganId: golongan.id,
               employeeType: employeeDto.employeeType as any,
+              bankAccountNumber: employeeDto.bankAccountNumber,
               isActive: employeeDto.isActive,
             },
           });

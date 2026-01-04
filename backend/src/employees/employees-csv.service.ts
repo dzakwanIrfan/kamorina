@@ -8,6 +8,7 @@ export interface EmployeeCSVRow {
   golonganName: string;
   employeeType: string;
   permanentEmployeeDate?: string;
+  bankAccountNumber: string;
   isActive: string;
 }
 
@@ -26,11 +27,12 @@ export class EmployeeCsvService {
       permanentEmployeeDate: employee.permanentEmployeeDate
         ? new Date(employee.permanentEmployeeDate).toISOString().split('T')[0]
         : '',
+      bankAccountNumber: employee.bankAccountNumber,
       isActive: employee.isActive ? 'Aktif' : 'Tidak Aktif',
     }));
 
     const csv = unparse(csvData, {
-      columns: ['employeeNumber', 'fullName', 'departmentName', 'golonganName', 'employeeType', 'isActive'],
+      columns: ['employeeNumber', 'fullName', 'departmentName', 'golonganName', 'employeeType', 'bankAccountNumber', 'isActive'],
       header: true,
     });
 
@@ -49,6 +51,7 @@ export class EmployeeCsvService {
         golonganName: 'I',
         employeeType: 'Tetap',
         permanentEmployeeDate: '2021-01-01',
+        bankAccountNumber: '1234567890',
         isActive: 'Aktif',
       },
       {
@@ -58,6 +61,7 @@ export class EmployeeCsvService {
         golonganName: 'II',
         employeeType: 'Kontrak',
         permanentEmployeeDate: '',
+        bankAccountNumber: '0987654321',
         isActive: 'Aktif',
       },
     ];
@@ -102,6 +106,10 @@ export class EmployeeCsvService {
           'isactive': 'isActive',
           'is_active': 'isActive',
           'status': 'isActive',
+          'nomor_rekening_bank': 'bankAccountNumber',
+          'bankaccountnumber': 'bankAccountNumber',
+          'bank_account_number': 'bankAccountNumber',
+          'nomor rekening bank': 'bankAccountNumber',
         };
 
         const normalizedHeader = header.toLowerCase().trim();
@@ -185,6 +193,7 @@ export class EmployeeCsvService {
       departmentName: row.departmentName.trim(),
       golonganName: row.golonganName.trim(),
       employeeType: this.parseEmployeeType(row.employeeType),
+      bankAccountNumber: row.bankAccountNumber?.trim(),
       isActive,
     };
   }

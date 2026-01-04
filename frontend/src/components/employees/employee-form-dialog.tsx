@@ -42,7 +42,7 @@ import { Golongan } from '@/types/golongan.types';
 const formSchema = z.object({
   employeeNumber: z
     .string()
-    .length(10, 'Nomor Induk karyawan maksimal 10 digit')
+    .max(10, 'Nomor Induk karyawan maksimal 10 digit')
     .regex(/^[K]?[0-9]+$/, 'Nomor Induk Karyawan harus berupa angka'),
   fullName: z.string().min(1, 'Nama lengkap wajib diisi'),
   departmentId: z.string().min(1, 'Department wajib dipilih'),
@@ -51,6 +51,7 @@ const formSchema = z.object({
     error: () => ({ message: 'Tipe karyawan wajib dipilih' }),
   }),
   permanentEmployeeDate: z.string().optional(),
+  bank_account_number: z.string().min(1, 'Nomor Rekening Bank wajib diisi'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -89,6 +90,7 @@ export function EmployeeFormDialog({
       golonganId: '',
       employeeType: EmployeeType.TETAP,
       permanentEmployeeDate: '',
+      bank_account_number: '',
     },
   });
 
@@ -110,6 +112,7 @@ export function EmployeeFormDialog({
         permanentEmployeeDate: employee.permanentEmployeeDate 
           ? new Date(employee.permanentEmployeeDate).toISOString().split('T')[0]
           : '',
+        bank_account_number: employee.bank_account_number,
       });
     } else {
       form.reset({
@@ -119,6 +122,7 @@ export function EmployeeFormDialog({
         golonganId: '',
         employeeType: EmployeeType.TETAP,
         permanentEmployeeDate: '',
+        bank_account_number: '',
       });
     }
   }, [employee, form]);
@@ -155,7 +159,7 @@ export function EmployeeFormDialog({
         ...data,
         permanentEmployeeDate: data.permanentEmployeeDate 
           ? new Date(data.permanentEmployeeDate) 
-          : undefined,
+          : null,
       };
 
       if (isEdit && employee) {
@@ -201,10 +205,10 @@ export function EmployeeFormDialog({
                       placeholder="100000001"
                       maxLength={10}
                       {...field}
-                      disabled={isEdit || isSubmitting}
+                      // disabled={isEdit || isSubmitting}
                     />
                   </FormControl>
-                  <FormDescription>9 digit angka</FormDescription>
+                  <FormDescription>9/10 digit angka</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -218,6 +222,20 @@ export function EmployeeFormDialog({
                   <FormLabel>Nama Lengkap</FormLabel>
                   <FormControl>
                     <Input placeholder="John Doe" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="bank_account_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nomor Rekening Bank</FormLabel>
+                  <FormControl>
+                    <Input placeholder="1234567890" {...field} disabled={isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

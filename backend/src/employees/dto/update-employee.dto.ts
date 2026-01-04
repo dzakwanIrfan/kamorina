@@ -5,7 +5,7 @@ import {
   Length,
   Matches,
   IsEnum,
-  IsDateString,
+  IsDate,
 } from 'class-validator';
 
 export enum EmployeeType {
@@ -40,7 +40,12 @@ export class UpdateEmployeeDto {
   employeeType?: EmployeeType;
 
   @IsOptional()
+  @IsDate({ message: 'Tanggal karyawan tetap tidak valid' })
   permanentEmployeeDate?: Date;
+
+  @IsString({ message: 'Nomor rekening bank harus berupa string'})
+  @IsOptional()
+  bankAccountNumber?: string;
 
   @IsBoolean()
   @IsOptional()

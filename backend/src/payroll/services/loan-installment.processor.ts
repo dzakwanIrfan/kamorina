@@ -113,7 +113,6 @@ export class LoanInstallmentProcessor {
                             loanAmount: loan.loanAmount,
                             loanTenor: loan.loanTenor,
                             loanPurpose: loan.loanPurpose,
-                            bankAccountNumber: loan.bankAccountNumber,
                             interestRate: loan.interestRate,
                             monthlyInstallment: loan.monthlyInstallment,
                             action: 'COMPLETED',

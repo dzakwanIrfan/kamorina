@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, Length, Matches, IsEnum, IsDateString, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  Length,
+  Matches,
+  IsEnum,
+  IsDate,
+  IsOptional,
+} from 'class-validator';
 
 export enum EmployeeType {
   TETAP = 'TETAP',
@@ -8,7 +16,10 @@ export enum EmployeeType {
 export class CreateEmployeeDto {
   @IsString()
   @Length(9, 10, { message: 'Nomor karyawan harus 9-10 karakter' })
-  @Matches(/^[K]?[0-9]+$/, { message: 'Nomor karyawan harus berupa angka atau diawali huruf K diikuti angka' })
+  @Matches(/^[K]?[0-9]+$/, {
+    message:
+      'Nomor karyawan harus berupa angka atau diawali huruf K diikuti angka',
+  })
   @IsNotEmpty({ message: 'Nomor karyawan wajib diisi' })
   employeeNumber: string;
 
@@ -29,5 +40,10 @@ export class CreateEmployeeDto {
   employeeType: EmployeeType;
 
   @IsOptional()
+  @IsDate({ message: 'Tanggal karyawan tetap tidak valid' })
   permanentEmployeeDate?: Date;
+
+  @IsString({ message: 'Nomor rekening bank harus berupa string' })
+  @IsNotEmpty({ message: 'Nomor rekening bank wajib diisi' })
+  bankAccountNumber: string;
 }

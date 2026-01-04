@@ -80,7 +80,11 @@ export class LoanNotificationService {
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
       include: {
-        user: true,
+        user: {
+          include: {
+            employee: true,
+          },
+        },
       },
     });
 
@@ -107,7 +111,7 @@ export class LoanNotificationService {
           loan.user.name,
           loan.loanNumber,
           loan.loanAmount.toNumber(),
-          loan.bankAccountNumber,
+          loan.user.employee.bankAccountNumber,
         );
       } catch (error) {
         this.logger.error(
@@ -178,7 +182,11 @@ export class LoanNotificationService {
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
       include: {
-        user: true,
+        user: {
+          include: {
+            employee: true,
+          },
+        },
         approvals: {
           include: {
             approver: true,
@@ -206,7 +214,7 @@ export class LoanNotificationService {
         loan.user.name,
         loan.loanNumber,
         loan.loanAmount.toNumber(),
-        loan.bankAccountNumber,
+        loan.user.employee.bankAccountNumber,
       );
       this.logger.log(`Queued disbursed notification for applicant ${loan.user.email}`);
     } catch (error) {
