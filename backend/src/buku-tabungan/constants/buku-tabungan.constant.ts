@@ -30,6 +30,7 @@ export const DEFAULT_INCLUDE_ACCOUNT = {
               departmentName: true,
             },
           },
+          bankAccountNumber: true,
         },
       },
     },

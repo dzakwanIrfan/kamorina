@@ -1,3 +1,5 @@
+import { User } from "./auth.types";
+
 // Saldo types
 export interface SaldoSummary {
   saldoPokok: number | string;
@@ -17,26 +19,11 @@ export interface TransactionSummary {
   totalBunga: number | string;
 }
 
-// User info embedded in account
-export interface AccountUser {
-  id: string;
-  name: string;
-  email: string;
-  employee?: {
-    employeeNumber: string;
-    fullName: string;
-    department?: {
-      id: string;
-      departmentName: string;
-    };
-  };
-}
-
 // Savings Account
 export interface SavingsAccount {
   id: string;
   userId: string;
-  user: AccountUser;
+  user: User;
   saldoPokok: number | string;
   saldoWajib: number | string;
   saldoSukarela: number | string;

@@ -34,6 +34,7 @@ export interface BukuTabunganResponse {
           id: string;
           departmentName: string;
         };
+        bankAccountNumber: string;
       };
     };
     saldoPokok: Decimal;
