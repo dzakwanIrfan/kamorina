@@ -1,14 +1,23 @@
-import * as z from 'zod';
-import { LoanType, LoanEligibility } from '@/types/loan.types';
+import * as z from "zod";
+import { LoanType, LoanEligibility } from "@/types/loan.types";
 
-export function createLoanFormSchema(loanType: LoanType, eligibility: LoanEligibility) {
+export function createLoanFormSchema(
+  loanType: LoanType,
+  eligibility: LoanEligibility
+) {
   const baseSchema = {
     loanTenor: z
       .number()
-      .positive('Tenor harus lebih dari 0')
-      .min(1, 'Minimal tenor 1 bulan')
-      .max(eligibility.loanLimit.maxTenor, `Maksimal tenor ${eligibility.loanLimit.maxTenor} bulan`),
-    loanPurpose: z.string().min(10, 'Alasan peminjaman minimal 10 karakter'),
+      .positive("Tenor harus lebih dari 0")
+      .min(1, "Minimal tenor 1 bulan")
+      .max(
+        eligibility.loanLimit.maxTenor,
+        `Maksimal tenor ${eligibility.loanLimit.maxTenor} bulan`
+      ),
+    loanPurpose: z.string().min(10, "Alasan peminjaman minimal 10 karakter"),
+    isBankAccountVerified: z.boolean().refine((val) => val === true, {
+      message: "Anda harus memverifikasi nomor rekening",
+    }),
   };
 
   switch (loanType) {
@@ -17,14 +26,20 @@ export function createLoanFormSchema(loanType: LoanType, eligibility: LoanEligib
         ...baseSchema,
         loanAmount: z
           .number()
-          .positive('Jumlah pinjaman harus lebih dari 0')
+          .positive("Jumlah pinjaman harus lebih dari 0")
           .min(
             eligibility.loanLimit.minLoanAmount,
-            `Minimal ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(eligibility.loanLimit.minLoanAmount)}`
+            `Minimal ${new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+            }).format(eligibility.loanLimit.minLoanAmount)}`
           )
           .max(
             eligibility.loanLimit.maxLoanAmount,
-            `Maksimal ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(eligibility.loanLimit.maxLoanAmount)}`
+            `Maksimal ${new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+            }).format(eligibility.loanLimit.maxLoanAmount)}`
           ),
         notes: z.string().optional(),
       });
@@ -32,31 +47,34 @@ export function createLoanFormSchema(loanType: LoanType, eligibility: LoanEligib
     case LoanType.GOODS_REIMBURSE:
       return z.object({
         ...baseSchema,
-        itemName: z.string().min(3, 'Nama barang minimal 3 karakter'),
+        itemName: z.string().min(3, "Nama barang minimal 3 karakter"),
         itemPrice: z
           .number()
-          .positive('Harga barang harus lebih dari 0')
-          .max(15000000, 'Maksimal Rp 15.000.000'),
-        purchaseDate: z.string().min(1, 'Tanggal pembelian wajib diisi'),
+          .positive("Harga barang harus lebih dari 0")
+          .max(15000000, "Maksimal Rp 15.000.000"),
+        purchaseDate: z.string().min(1, "Tanggal pembelian wajib diisi"),
         notes: z.string().optional(),
       });
 
     case LoanType.GOODS_ONLINE:
       return z.object({
         ...baseSchema,
-        itemName: z.string().min(3, 'Nama barang minimal 3 karakter'),
+        itemName: z.string().min(3, "Nama barang minimal 3 karakter"),
         itemPrice: z
           .number()
-          .positive('Harga barang harus lebih dari 0')
-          .max(15000000, 'Maksimal Rp 15.000.000'),
-        itemUrl: z.string().url('URL tidak valid').min(1, 'Link barang wajib diisi'),
+          .positive("Harga barang harus lebih dari 0")
+          .max(15000000, "Maksimal Rp 15.000.000"),
+        itemUrl: z
+          .string()
+          .url("URL tidak valid")
+          .min(1, "Link barang wajib diisi"),
         notes: z.string().optional(),
       });
 
     case LoanType.GOODS_PHONE:
       return z.object({
         ...baseSchema,
-        itemName: z.string().min(5, 'Nama handphone minimal 5 karakter'),
+        itemName: z.string().min(5, "Nama handphone minimal 5 karakter"),
         notes: z.string().optional(),
       });
 
@@ -68,7 +86,8 @@ export function createLoanFormSchema(loanType: LoanType, eligibility: LoanEligib
 export function getDefaultFormValues(loanType: LoanType) {
   const baseValues = {
     loanTenor: 12,
-    loanPurpose: '',
+    loanPurpose: "",
+    isBankAccountVerified: false,
   };
 
   switch (loanType) {
@@ -76,32 +95,32 @@ export function getDefaultFormValues(loanType: LoanType) {
       return {
         ...baseValues,
         loanAmount: 0,
-        notes: '',
+        notes: "",
       };
 
     case LoanType.GOODS_REIMBURSE:
       return {
         ...baseValues,
-        itemName: '',
+        itemName: "",
         itemPrice: 0,
-        purchaseDate: '',
-        notes: '',
+        purchaseDate: "",
+        notes: "",
       };
 
     case LoanType.GOODS_ONLINE:
       return {
         ...baseValues,
-        itemName: '',
+        itemName: "",
         itemPrice: 0,
-        itemUrl: '',
-        notes: '',
+        itemUrl: "",
+        notes: "",
       };
 
     case LoanType.GOODS_PHONE:
       return {
         ...baseValues,
-        itemName: '',
-        notes: '',
+        itemName: "",
+        notes: "",
       };
 
     default:
