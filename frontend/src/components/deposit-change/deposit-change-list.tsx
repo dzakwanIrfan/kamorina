@@ -73,6 +73,7 @@ export function DepositChangeList({ defaultStatus, defaultStep }: DepositChangeL
 
   const getDefaultStatusFilter = () => {
     if (defaultStatus) return defaultStatus;
+    if (hasRole('ketua')) return DepositChangeStatus.UNDER_REVIEW_KETUA;
     return DepositChangeStatus.SUBMITTED;
   };
 

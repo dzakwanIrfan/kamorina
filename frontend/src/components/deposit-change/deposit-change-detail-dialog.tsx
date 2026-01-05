@@ -249,12 +249,12 @@ export function DepositChangeDetailDialog({
                       <p className="text-xs text-muted-foreground">Jumlah Setoran</p>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold">{formatCurrency(changeRequest.newAmountValue)}</p>
-                        {changeRequest.newAmountValue !== changeRequest.currentAmountValue && (
-                          <span className={`text-xs flex items-center ${changeRequest.newAmountValue > changeRequest.currentAmountValue
+                        {Number(changeRequest.newAmountValue) !== Number(changeRequest.currentAmountValue) && (
+                          <span className={`text-xs flex items-center ${Number(changeRequest.newAmountValue) > Number(changeRequest.currentAmountValue)
                               ? 'text-green-600'
                               : 'text-red-600'
                             }`}>
-                            {changeRequest.newAmountValue > changeRequest.currentAmountValue
+                            {Number(changeRequest.newAmountValue) > Number(changeRequest.currentAmountValue)
                               ? <TrendingUp className="h-3 w-3" />
                               : <TrendingDown className="h-3 w-3" />}
                           </span>
@@ -265,12 +265,12 @@ export function DepositChangeDetailDialog({
                       <p className="text-xs text-muted-foreground">Jangka Waktu</p>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold">{changeRequest.newTenorMonths} Bulan</p>
-                        {changeRequest.newTenorMonths !== changeRequest.currentTenorMonths && (
-                          <span className={`text-xs flex items-center ${changeRequest.newTenorMonths > changeRequest.currentTenorMonths
+                        {Number(changeRequest.newTenorMonths) !== Number(changeRequest.currentTenorMonths) && (
+                          <span className={`text-xs flex items-center ${Number(changeRequest.newTenorMonths) > Number(changeRequest.currentTenorMonths)
                               ? 'text-green-600'
                               : 'text-red-600'
                             }`}>
-                            {changeRequest.newTenorMonths > changeRequest.currentTenorMonths
+                            {Number(changeRequest.newTenorMonths) > Number(changeRequest.currentTenorMonths)
                               ? <TrendingUp className="h-3 w-3" />
                               : <TrendingDown className="h-3 w-3" />}
                           </span>
@@ -290,26 +290,26 @@ export function DepositChangeDetailDialog({
               {/* Difference Summary */}
               <div className="mt-4 pt-3 border-t">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                  {changeRequest.newAmountValue !== changeRequest.currentAmountValue && (
+                  {Number(changeRequest.newAmountValue) !== Number(changeRequest.currentAmountValue) && (
                     <div>
                       <p className="text-muted-foreground">Selisih Setoran</p>
-                      <p className={`font-semibold ${changeRequest.newAmountValue > changeRequest.currentAmountValue
+                      <p className={`font-semibold ${Number(changeRequest.newAmountValue) > Number(changeRequest.currentAmountValue)
                           ? 'text-green-600'
                           : 'text-red-600'
                         }`}>
-                        {formatDifference(changeRequest.newAmountValue - changeRequest.currentAmountValue)}
+                        {formatDifference(Number(changeRequest.newAmountValue) - Number(changeRequest.currentAmountValue))}
                       </p>
                     </div>
                   )}
-                  {changeRequest.newTenorMonths !== changeRequest.currentTenorMonths && (
+                  {Number(changeRequest.newTenorMonths) !== Number(changeRequest.currentTenorMonths) && (
                     <div>
                       <p className="text-muted-foreground">Selisih Tenor</p>
-                      <p className={`font-semibold ${changeRequest.newTenorMonths > changeRequest.currentTenorMonths
+                      <p className={`font-semibold ${Number(changeRequest.newTenorMonths) > Number(changeRequest.currentTenorMonths)
                           ? 'text-green-600'
                           : 'text-red-600'
                         }`}>
-                        {changeRequest.newTenorMonths > changeRequest.currentTenorMonths ? '+' : ''}
-                        {changeRequest.newTenorMonths - changeRequest.currentTenorMonths} Bulan
+                        {Number(changeRequest.newTenorMonths) > Number(changeRequest.currentTenorMonths) ? '+' : ''}
+                        {Number(changeRequest.newTenorMonths) - Number(changeRequest.currentTenorMonths)} Bulan
                       </p>
                     </div>
                   )}

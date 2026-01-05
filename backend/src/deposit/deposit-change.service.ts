@@ -31,7 +31,7 @@ export class DepositChangeService {
     private prisma: PrismaService,
     private mailQueueService: MailQueueService,
     private depositOptionService: DepositOptionService,
-  ) { }
+  ) {}
 
   /**
    * Generate change request number: CHG-YYYYMMDD-XXXX
@@ -77,7 +77,7 @@ export class DepositChangeService {
     });
 
     return {
-      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6
+      interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
     };
   }
 
@@ -311,9 +311,10 @@ export class DepositChangeService {
     let newTenorMonths = changeRequest.newTenorMonths;
 
     if (dto.newAmountCode !== undefined) {
-      const amountOption = await this.depositOptionService.findAmountOptionByCode(
-        dto.newAmountCode,
-      );
+      const amountOption =
+        await this.depositOptionService.findAmountOptionByCode(
+          dto.newAmountCode,
+        );
       if (!amountOption.isActive) {
         throw new BadRequestException('Opsi jumlah deposito tidak aktif');
       }
@@ -915,13 +916,18 @@ export class DepositChangeService {
       });
 
       // Map current step to corresponding "under review" status
-      const stepStatusMap: { [key in DepositChangeApprovalStep]?: DepositChangeStatus } = {
-        [DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM]: DepositChangeStatus.UNDER_REVIEW_KETUA,
+      const stepStatusMap: {
+        [key in DepositChangeApprovalStep]?: DepositChangeStatus;
+      } = {
+        [DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM]:
+          DepositChangeStatus.UNDER_REVIEW_KETUA,
       };
 
       const newStatus = isLastStep
         ? DepositChangeStatus.APPROVED
-        : stepStatusMap[changeRequest.currentStep as DepositChangeApprovalStep] ?? changeRequest.status;
+        : (stepStatusMap[
+            changeRequest.currentStep as DepositChangeApprovalStep
+          ] ?? changeRequest.status);
 
       // Update change request
       await tx.depositChangeRequest.update({
@@ -935,6 +941,14 @@ export class DepositChangeService {
           }),
         },
       });
+
+      // Get deposit application details
+      const depositApplication = await tx.depositApplication.findUnique({
+        where: { id: changeRequest.depositApplicationId },
+      });
+
+      // Get admin fee using existing method
+      const adminFee = await this.getAdminFee();
 
       // If final approval, update the actual deposit
       if (isLastStep) {
@@ -954,6 +968,48 @@ export class DepositChangeService {
             }),
           },
         });
+
+        // Update savings account - deduct from saldoSukarela
+        const savingsAccount = await tx.savingsAccount.findUnique({
+          where: { userId: depositApplication?.userId },
+        });
+
+        if (savingsAccount) {
+          const currentSaldoSukarela = new Prisma.Decimal(savingsAccount.saldoSukarela || 0);
+          const saldoSukarela = currentSaldoSukarela.sub(adminFee);
+
+          const totalBalance = new Prisma.Decimal(savingsAccount.saldoPokok || 0)
+            .add(savingsAccount.saldoWajib || 0)
+            .add(saldoSukarela);
+
+          const settings = await this.getDepositSettings();
+          const annualRate = settings.interestRate;
+          const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
+
+          // Hitung bunga bulanan
+          const monthlyInterest = totalBalance.mul(monthlyRate);
+
+          await tx.savingsAccount.update({
+            where: { userId: depositApplication?.userId },
+            data: {
+              saldoSukarela: {
+                decrement: adminFee,
+              },
+              bungaDeposito: monthlyInterest,
+            },
+          });
+
+          // Create savings transaction record (penarikan)
+          await tx.savingsTransaction.create({
+            data: {
+              savingsAccountId: savingsAccount.id,
+              penarikan: adminFee,
+              transactionDate: new Date(),
+              createdBy: approverId,
+              interestRate: annualRate,
+            },
+          });
+        }
       }
 
       // Save history
@@ -1109,7 +1165,7 @@ export class DepositChangeService {
     // Queue bulk approval request emails
     try {
       await this.mailQueueService.queueBulkDepositChangeApprovalRequests(
-        approvers.map(a => ({ email: a.email, approverName: a.name })),
+        approvers.map((a) => ({ email: a.email, approverName: a.name })),
         changeRequest.user.name,
         changeRequest.changeNumber,
         changeRequest.depositApplication.depositNumber,
@@ -1117,7 +1173,9 @@ export class DepositChangeService {
         changeRequest.newAmountValue.toNumber(),
         roleName,
       );
-      this.logger.log(`Queued ${approvers.length} deposit change approval request emails`);
+      this.logger.log(
+        `Queued ${approvers.length} deposit change approval request emails`,
+      );
     } catch (error) {
       this.logger.error('Failed to queue approval requests:', error);
     }
@@ -1184,6 +1242,8 @@ export class DepositChangeService {
       }
     }
 
-    this.logger.log(`Queued deposit change approved notifications for ${changeRequest.changeNumber}`);
+    this.logger.log(
+      `Queued deposit change approved notifications for ${changeRequest.changeNumber}`,
+    );
   }
 }

@@ -62,6 +62,19 @@ export class SavingsWithdrawalService {
         return setting ? parseFloat(setting.value) : 3;
     }
 
+    /**
+     * Get deposit settings (interest rate and calculation method)
+     */
+    private async getDepositSettings() {
+        const interestSetting = await this.prisma.cooperativeSetting.findUnique({
+            where: { key: 'deposit_interest_rate' },
+        });
+
+        return {
+            interestRate: interestSetting ? parseFloat(interestSetting.value) : 6,
+        };
+    }
+
     private async checkEarlyDepositPenalty(userId: string, withdrawalAmount: number) {
         const now = new Date();
         const penaltyRate = await this.getPenaltyRate();
@@ -807,12 +820,28 @@ export class SavingsWithdrawalService {
             });
 
             if (savingsAccount) {
+                // Calculate new balance after withdrawal
+                const currentSaldoSukarela = new Prisma.Decimal(savingsAccount.saldoSukarela || 0);
+                const newSaldoSukarela = currentSaldoSukarela.sub(withdrawal.withdrawalAmount.toNumber());
+
+                const totalBalance = new Prisma.Decimal(savingsAccount.saldoPokok || 0)
+                    .add(savingsAccount.saldoWajib || 0)
+                    .add(newSaldoSukarela);
+
+                const settings = await this.getDepositSettings();
+                const annualRate = settings.interestRate;
+                const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
+
+                // Hitung bunga bulanan berdasarkan saldo baru
+                const monthlyInterest = totalBalance.mul(monthlyRate);
+
                 await tx.savingsAccount.update({
                     where: { userId: withdrawal.userId },
                     data: {
                         saldoSukarela: {
                             decrement: withdrawal.withdrawalAmount.toNumber(),
                         },
+                        bungaDeposito: monthlyInterest,
                     },
                 });
 
