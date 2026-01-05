@@ -1,4 +1,3 @@
-// frontend/src/components/loan/loan-form.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -70,13 +69,13 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
 
   const form = useForm<any>({
     resolver: formSchema ? zodResolver(formSchema) : undefined,
-    defaultValues: selectedType ? getDefaultFormValues(selectedType, user?.bankAccountNumber) : {},
+    defaultValues: selectedType ? getDefaultFormValues(selectedType) : {},
   });
 
   useEffect(() => {
     if (selectedType) {
       checkEligibility(selectedType);
-      form.reset(getDefaultFormValues(selectedType, user?.bankAccountNumber));
+      form.reset(getDefaultFormValues(selectedType));
     }
   }, [selectedType]);
 
@@ -206,7 +205,6 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       const payload: CreateLoanDto = {
         loanType: selectedType,
         ...data,
-        bankAccountNumber: data.bankAccountNumber || undefined,
         attachments: uploadedFiles.length > 0 ? uploadedFiles : undefined,
       } as CreateLoanDto;
 
@@ -340,7 +338,6 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
             <CommonLoanFields
               form={form}
               eligibility={eligibility}
-              userBankAccount={user?.bankAccountNumber}
               isSubmitting={isSubmitting}
             />
 

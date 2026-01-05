@@ -51,7 +51,7 @@ const formSchema = z.object({
     error: () => ({ message: 'Tipe karyawan wajib dipilih' }),
   }),
   permanentEmployeeDate: z.string().optional(),
-  bank_account_number: z.string().min(1, 'Nomor Rekening Bank wajib diisi'),
+  bankAccountNumber: z.string().min(1, 'Nomor Rekening Bank wajib diisi'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -90,7 +90,7 @@ export function EmployeeFormDialog({
       golonganId: '',
       employeeType: EmployeeType.TETAP,
       permanentEmployeeDate: '',
-      bank_account_number: '',
+      bankAccountNumber: '',
     },
   });
 
@@ -112,7 +112,7 @@ export function EmployeeFormDialog({
         permanentEmployeeDate: employee.permanentEmployeeDate 
           ? new Date(employee.permanentEmployeeDate).toISOString().split('T')[0]
           : '',
-        bank_account_number: employee.bank_account_number,
+        bankAccountNumber: employee.bankAccountNumber,
       });
     } else {
       form.reset({
@@ -122,7 +122,7 @@ export function EmployeeFormDialog({
         golonganId: '',
         employeeType: EmployeeType.TETAP,
         permanentEmployeeDate: '',
-        bank_account_number: '',
+        bankAccountNumber: '',
       });
     }
   }, [employee, form]);
@@ -230,7 +230,7 @@ export function EmployeeFormDialog({
 
             <FormField
               control={form.control}
-              name="bank_account_number"
+              name="bankAccountNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nomor Rekening Bank</FormLabel>

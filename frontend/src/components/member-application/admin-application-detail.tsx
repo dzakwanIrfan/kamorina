@@ -60,7 +60,7 @@ export function AdminApplicationDetail({ applicationId }: AdminApplicationDetail
         <div>
           <h1 className="text-2xl font-bold">Detail Pengajuan</h1>
           <p className="text-muted-foreground">
-            {application.user?.name} • {application.user?.employee.employeeNumber}
+            {application.user?.name} • {application.user?.employee?.employeeNumber}
           </p>
         </div>
       </div>

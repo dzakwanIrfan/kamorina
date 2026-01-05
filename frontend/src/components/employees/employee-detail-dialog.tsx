@@ -115,7 +115,7 @@ export function EmployeeDetailDialog({
                 </div>
                 <div>
                   <p className="text-muted-foreground">Nomor Rekening Bank</p>
-                  <p className="font-medium">{employee.bank_account_number}</p>
+                  <p className="font-medium">{employee.bankAccountNumber}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Tipe Karyawan</p>

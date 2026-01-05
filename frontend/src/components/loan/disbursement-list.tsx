@@ -108,7 +108,7 @@ export function DisbursementList() {
         header: 'No. Karyawan',
         cell: ({ row }) => (
           <span className="font-medium">
-            {row.original.user?.employee.employeeNumber}
+            {row.original.user?.employee?.employeeNumber}
           </span>
         ),
       },
@@ -133,7 +133,7 @@ export function DisbursementList() {
         header: 'No. Rekening',
         cell: ({ row }) => (
           <span className="font-mono text-sm">
-            {row.original.bankAccountNumber}
+            {row.original.user?.employee?.bankAccountNumber}
           </span>
         ),
       },

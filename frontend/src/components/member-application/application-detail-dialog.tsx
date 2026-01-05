@@ -189,7 +189,7 @@ export function ApplicationDetailDialog({
               <div>
                 <p className="text-muted-foreground">No. Karyawan</p>
                 <p className="font-medium">
-                  {application.user?.employee.employeeNumber}
+                  {application.user?.employee?.employeeNumber}
                 </p>
               </div>
               <div>

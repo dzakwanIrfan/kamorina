@@ -1,3 +1,5 @@
+import { User } from "./auth.types";
+
 export enum LoanType {
   CASH_LOAN = 'CASH_LOAN',
   GOODS_REIMBURSE = 'GOODS_REIMBURSE',
@@ -114,7 +116,6 @@ export interface LoanHistory {
   loanAmount: number;
   loanTenor: number;
   loanPurpose: string;
-  bankAccountNumber: string;
   interestRate: number | null;
   monthlyInstallment: number | null;
   action: string;
@@ -171,7 +172,6 @@ export interface LoanApplication {
   loanNumber: string;
   userId: string;
   loanType: LoanType;
-  bankAccountNumber: string;
   loanAmount: number;
   loanTenor: number;
   loanPurpose: string;
@@ -192,25 +192,7 @@ export interface LoanApplication {
   revisionNotes: string | null;
   createdAt: string;
   updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    bankAccountNumber: string | null;
-    employee: {
-      id: string;
-      employeeNumber: string;
-      fullName: string;
-      department?: {
-        id: string;
-        departmentName: string;
-      };
-      golongan?: {
-        id: string;
-        golonganName: string;
-      };
-    };
-  };
+  user?: User;
   approvals: LoanApproval[];
   history?: LoanHistory[];
   disbursement?: LoanDisbursement | null;
@@ -225,7 +207,6 @@ export interface LoanApplication {
 // Create DTOs
 export interface CreateCashLoanDto {
   loanType: LoanType.CASH_LOAN;
-  bankAccountNumber?: string;
   loanAmount: number;
   loanTenor: number;
   loanPurpose: string;
@@ -235,7 +216,6 @@ export interface CreateCashLoanDto {
 
 export interface CreateGoodsReimburseDto {
   loanType: LoanType.GOODS_REIMBURSE;
-  bankAccountNumber?: string;
   itemName: string;
   itemPrice: number;
   purchaseDate: string;
@@ -247,7 +227,6 @@ export interface CreateGoodsReimburseDto {
 
 export interface CreateGoodsOnlineDto {
   loanType: LoanType.GOODS_ONLINE;
-  bankAccountNumber?: string;
   itemName: string;
   itemPrice: number;
   itemUrl: string;
@@ -259,7 +238,6 @@ export interface CreateGoodsOnlineDto {
 
 export interface CreateGoodsPhoneDto {
   loanType: LoanType.GOODS_PHONE;
-  bankAccountNumber?: string;
   itemName: string;
   loanTenor: number;
   loanPurpose: string;

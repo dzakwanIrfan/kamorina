@@ -124,7 +124,7 @@ export function SavingsWithdrawalAuthorizationDialog({
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">No. Rekening</p>
-                                    <p className="font-mono">{withdrawal.bankAccountNumber || withdrawal.user?.bankAccountNumber || '-'}</p>
+                                    <p className="font-mono">{withdrawal.user?.employee?.bankAccountNumber || '-'}</p>
                                 </div>
                             </div>
                         </div>

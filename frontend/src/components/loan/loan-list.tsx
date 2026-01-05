@@ -261,7 +261,7 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
         header: 'No. Karyawan',
         cell: ({ row }) => (
           <span className="font-medium">
-            {row.original.user?.employee.employeeNumber}
+            {row.original.user?.employee?.employeeNumber}
           </span>
         ),
       },
@@ -273,7 +273,7 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
       {
         accessorKey: 'user.department.departmentName',
         header: 'Department',
-        cell: ({ row }) => row.original.user?.employee.department?.departmentName || '-',
+        cell: ({ row }) => row.original.user?.employee?.department?.departmentName || '-',
       },
       {
         accessorKey: 'loanAmount',
@@ -370,8 +370,8 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
         'Nomor Pinjaman': loan.loanNumber,
         'Jenis Pinjaman': getLoanTypeLabel(loan.loanType),
         'Nama': loan.user?.name || '-',
-        'No. Karyawan': loan.user?.employee.employeeNumber || '-',
-        'Department': loan.user?.employee.department?.departmentName || '-',
+        'No. Karyawan': loan.user?.employee?.employeeNumber || '-',
+        'Department': loan.user?.employee?.department?.departmentName || '-',
         'Jumlah Pinjaman': loan.loanAmount,
         'Tenor (Bulan)': loan.loanTenor,
         'Bunga (%)': loan.interestRate || 0,

@@ -130,7 +130,7 @@ export function SavingsWithdrawalDisbursementDialog({
                             </div>
                             <div>
                                 <p className="text-muted-foreground">No. Rekening Tujuan</p>
-                                <p className="font-mono text-lg font-medium">{withdrawal.bankAccountNumber || withdrawal.user?.bankAccountNumber || '-'}</p>
+                                <p className="font-mono text-lg font-medium">{withdrawal.user?.employee?.bankAccountNumber || '-'}</p>
                             </div>
                         </div>
                     </div>

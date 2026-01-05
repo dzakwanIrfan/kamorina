@@ -260,8 +260,8 @@ export function SavingsWithdrawalApprovalList({
             const exportData = data.map((withdrawal) => ({
                 'Nomor Penarikan': withdrawal.withdrawalNumber,
                 'Nama': withdrawal.user?.name || '-',
-                'No. Karyawan': withdrawal.user?.employee.employeeNumber || '-',
-                'Department': withdrawal.user?.employee.department?.departmentName || '-',
+                'No. Karyawan': withdrawal.user?.employee?.employeeNumber || '-',
+                'Department': withdrawal.user?.employee?.department?.departmentName || '-',
                 'Jumlah Penarikan': withdrawal.withdrawalAmount,
                 'Pinalti': withdrawal.penaltyAmount,
                 'Diterima': withdrawal.netAmount,
@@ -302,7 +302,7 @@ export function SavingsWithdrawalApprovalList({
                 header: 'No. Karyawan',
                 cell: ({ row }) => (
                     <span className="font-medium">
-                        {row.original.user?.employee.employeeNumber}
+                        {row.original.user?.employee?.employeeNumber}
                     </span>
                 ),
             },

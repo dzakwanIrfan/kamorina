@@ -110,7 +110,7 @@ export function AuthorizationList() {
         header: 'No. Karyawan',
         cell: ({ row }) => (
           <span className="font-medium">
-            {row.original.user?.employee.employeeNumber}
+            {row.original.user?.employee?.employeeNumber}
           </span>
         ),
       },

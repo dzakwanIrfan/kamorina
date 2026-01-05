@@ -3,13 +3,6 @@ import { LoanType, LoanEligibility } from '@/types/loan.types';
 
 export function createLoanFormSchema(loanType: LoanType, eligibility: LoanEligibility) {
   const baseSchema = {
-    bankAccountNumber: z
-      .string()
-      .min(10, 'Nomor rekening minimal 10 digit')
-      .max(20, 'Nomor rekening maksimal 20 digit')
-      .regex(/^[0-9]+$/, 'Nomor rekening harus berupa angka')
-      .optional()
-      .or(z.literal('')),
     loanTenor: z
       .number()
       .positive('Tenor harus lebih dari 0')
@@ -72,9 +65,8 @@ export function createLoanFormSchema(loanType: LoanType, eligibility: LoanEligib
   }
 }
 
-export function getDefaultFormValues(loanType: LoanType, userBankAccount?: string) {
+export function getDefaultFormValues(loanType: LoanType) {
   const baseValues = {
-    bankAccountNumber: userBankAccount || '',
     loanTenor: 12,
     loanPurpose: '',
   };

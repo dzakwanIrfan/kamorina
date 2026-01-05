@@ -273,7 +273,7 @@ export function MyApplicationDetail() {
                     <div>
                       <p className="text-sm text-muted-foreground">Tanggal Pegawai Tetap</p>
                       <p className="font-medium">
-                        {application.user?.employee.permanentEmployeeDate 
+                        {application.user?.employee?.permanentEmployeeDate 
                           ? format(new Date(application.user.employee.permanentEmployeeDate), 'dd MMMM yyyy', { locale: id })
                           : '-'
                         }
@@ -290,18 +290,18 @@ export function MyApplicationDetail() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">Nomor Karyawan</p>
-                      <p className="font-medium">{application.user?.employee.employeeNumber}</p>
+                      <p className="font-medium">{application.user?.employee?.employeeNumber}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Departemen</p>
                       <p className="font-medium">
-                        {application.user?.employee.department?.departmentName || '-'}
+                        {application.user?.employee?.department?.departmentName || '-'}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Golongan</p>
                       <p className="font-medium">
-                        {application.user?.employee.golongan?.golonganName || '-'}
+                        {application.user?.employee?.golongan?.golonganName || '-'}
                       </p>
                     </div>
                     <div>

@@ -237,7 +237,7 @@ export function LoanDetailDialog({
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Nama</p>
-                    <p className="font-medium">{loan.user?.employee.fullName}</p>
+                    <p className="font-medium">{loan.user?.employee?.fullName}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Email</p>
@@ -245,12 +245,12 @@ export function LoanDetailDialog({
                   </div>
                   <div>
                     <p className="text-muted-foreground">No. Karyawan</p>
-                    <p className="font-medium">{loan.user?.employee.employeeNumber}</p>
+                    <p className="font-medium">{loan.user?.employee?.employeeNumber}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Department</p>
                     <p className="font-medium">
-                      {loan.user?.employee.department?.departmentName || '-'}
+                      {loan.user?.employee?.department?.departmentName || '-'}
                     </p>
                   </div>
                 </div>
@@ -340,7 +340,7 @@ export function LoanDetailDialog({
                 <Separator />
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Nomor Rekening BCA</p>
-                  <p className="text-lg font-mono font-medium">{loan.bankAccountNumber}</p>
+                  <p className="text-lg font-mono font-medium">{loan.user?.employee?.bankAccountNumber}</p>
                 </div>
               </div>
 

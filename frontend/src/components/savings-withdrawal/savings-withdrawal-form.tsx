@@ -113,7 +113,6 @@ export function SavingsWithdrawalForm({ onSuccess, onCancel }: SavingsWithdrawal
 
             const result = await savingsWithdrawalService.createWithdrawal({
                 withdrawalAmount,
-                bankAccountNumber: data.bankAccountNumber || undefined,
                 notes: data.notes || undefined,
             });
 

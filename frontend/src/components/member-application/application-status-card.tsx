@@ -270,8 +270,8 @@ export function ApplicationStatusCard({ application }: ApplicationStatusCardProp
                 <span>Pegawai Tetap Sejak</span>
               </div>
               <p className="font-medium">
-                {application.user?.permanentEmployeeDate
-                  ? format(new Date(application.user.permanentEmployeeDate), 'dd MMMM yyyy', {
+                {application.user?.employee?.permanentEmployeeDate
+                  ? format(new Date(application.user.employee.permanentEmployeeDate), 'dd MMMM yyyy', {
                       locale: localeId,
                     })
                   : '-'}

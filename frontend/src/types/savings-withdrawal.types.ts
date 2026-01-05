@@ -1,3 +1,5 @@
+import { User } from "./auth.types";
+
 export enum SavingsWithdrawalStatus {
     SUBMITTED = 'SUBMITTED',
     UNDER_REVIEW_DSP = 'UNDER_REVIEW_DSP',
@@ -65,7 +67,6 @@ export interface SavingsWithdrawal {
     penaltyRate: number;
     penaltyAmount: number;
     netAmount: number;
-    bankAccountNumber: string | null;
     notes: string | null;
     status: SavingsWithdrawalStatus;
     currentStep: SavingsWithdrawalStep | null;
@@ -75,21 +76,7 @@ export interface SavingsWithdrawal {
     rejectionReason: string | null;
     createdAt: string;
     updatedAt: string;
-    user?: {
-        id: string;
-        name: string;
-        email: string;
-        employee: {
-            id: string;
-            employeeNumber: string;
-            fullName: string;
-            department?: {
-                id: string;
-                departmentName: string;
-            };
-        };
-        bankAccountNumber: string | null;
-    };
+    user?: User;
     approvals: SavingsWithdrawalApproval[];
     disbursement?: SavingsWithdrawalDisbursement;
     authorization?: SavingsWithdrawalAuthorization;
@@ -97,7 +84,6 @@ export interface SavingsWithdrawal {
 
 export interface CreateSavingsWithdrawalDto {
     withdrawalAmount: number;
-    bankAccountNumber?: string;
     notes?: string;
 }
 

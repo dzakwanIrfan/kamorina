@@ -12,6 +12,8 @@ export interface Employee {
     id: string;
     golonganName: string;
   };
+  bankAccountNumber: string;
+  permanentEmployeeDate?: Date;
 }
 
 export interface User {
@@ -19,13 +21,14 @@ export interface User {
   name: string;
   email: string;
   nik?: string;
+  npwp?: string;
   avatar?: string;
-  bankAccountNumber?: string;
   emailVerified: boolean;
   emailVerifiedAt?: Date;
   memberVerified: boolean;
   dateOfBirth?: Date;
   birthPlace?: string;
+  installmentPlan?: number;
   departmentId?: string;
   employee?: Employee;
   department?: {

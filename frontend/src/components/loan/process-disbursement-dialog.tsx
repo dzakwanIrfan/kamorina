@@ -129,7 +129,7 @@ export function ProcessDisbursementDialog({
             </div>
             <div>
               <p className="text-muted-foreground">No. Rekening</p>
-              <p className="font-mono">{loan.bankAccountNumber}</p>
+              <p className="font-mono">{loan.user?.employee?.bankAccountNumber}</p>
             </div>
           </div>
         </div>

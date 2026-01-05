@@ -23,7 +23,7 @@ export interface Employee {
   golonganId: string;
   golongan?: Golongan;
   employeeType: EmployeeType;
-  bank_account_number: string;
+  bankAccountNumber: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -46,6 +46,7 @@ export interface CreateEmployeeRequest {
   golonganId: string;
   employeeType: EmployeeType;
   permanentEmployeeDate?: Date | null;
+  bankAccountNumber: string;
 }
 
 export interface UpdateEmployeeRequest {
@@ -56,6 +57,7 @@ export interface UpdateEmployeeRequest {
   employeeType?: EmployeeType;
   isActive?: boolean;
   permanentEmployeeDate?: Date | null;
+  bankAccountNumber?: string;
 }
 
 export interface QueryEmployeeParams {

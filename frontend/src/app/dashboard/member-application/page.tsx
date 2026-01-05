@@ -218,7 +218,7 @@ export default function MemberApplicationsPage() {
         header: 'No. Karyawan',
         cell: ({ row }) => (
           <span className="font-medium">
-            {row.original.user?.employee.employeeNumber}
+            {row.original.user?.employee?.employeeNumber}
           </span>
         ),
       },
@@ -239,7 +239,7 @@ export default function MemberApplicationsPage() {
       {
         accessorKey: 'user.department.departmentName',
         header: 'Department',
-        cell: ({ row }) => row.original.user?.employee.department?.departmentName || '-',
+        cell: ({ row }) => row.original.user?.employee?.department?.departmentName || '-',
       },
       {
         accessorKey: 'status',

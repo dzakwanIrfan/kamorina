@@ -198,12 +198,12 @@ export function SavingsWithdrawalDetailDialog({
                                     </div>
                                     <div>
                                         <p className="text-muted-foreground">No. Karyawan</p>
-                                        <p className="font-medium">{withdrawal.user.employee.employeeNumber}</p>
+                                        <p className="font-medium">{withdrawal.user?.employee?.employeeNumber}</p>
                                     </div>
                                     <div>
                                         <p className="text-muted-foreground">Department</p>
                                         <p className="font-medium">
-                                            {withdrawal.user.employee.department?.departmentName || '-'}
+                                            {withdrawal.user?.employee?.department?.departmentName || '-'}
                                         </p>
                                     </div>
                                 </div>
@@ -248,11 +248,11 @@ export function SavingsWithdrawalDetailDialog({
                                     </span>
                                 </div>
 
-                                {withdrawal.bankAccountNumber && (
+                                {withdrawal.user?.employee?.bankAccountNumber && (
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Rekening Tujuan:</span>
                                         <span className="font-mono font-medium">
-                                            {withdrawal.bankAccountNumber}
+                                            {withdrawal.user.employee.bankAccountNumber}
                                         </span>
                                     </div>
                                 )}

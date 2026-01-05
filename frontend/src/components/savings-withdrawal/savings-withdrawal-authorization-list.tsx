@@ -137,7 +137,7 @@ export function SavingsWithdrawalAuthorizationList() {
                 cell: ({ row }) => (
                     <div className="flex flex-col">
                         <span className="font-medium">{row.original.user?.name}</span>
-                        <span className="text-xs text-muted-foreground">{row.original.user?.employee.employeeNumber}</span>
+                        <span className="text-xs text-muted-foreground">{row.original.user?.employee?.employeeNumber}</span>
                     </div>
                 ),
             },

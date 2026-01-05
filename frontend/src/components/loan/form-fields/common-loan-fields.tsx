@@ -10,42 +10,16 @@ import { LoanEligibility } from '@/types/loan.types';
 interface CommonLoanFieldsProps {
   form: UseFormReturn<any>;
   eligibility: LoanEligibility;
-  userBankAccount?: string;
   isSubmitting: boolean;
 }
 
 export function CommonLoanFields({ 
   form, 
   eligibility, 
-  userBankAccount,
   isSubmitting 
 }: CommonLoanFieldsProps) {
   return (
     <>
-      <FormField
-        control={form.control}
-        name="bankAccountNumber"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nomor Rekening BCA</FormLabel>
-            <FormControl>
-              <Input
-                placeholder="1234567890"
-                maxLength={20}
-                {...field}
-                disabled={isSubmitting}
-              />
-            </FormControl>
-            <FormDescription>
-              {userBankAccount
-                ? 'Gunakan nomor rekening yang sudah tersimpan atau masukkan yang baru'
-                : 'Masukkan nomor rekening BCA untuk pencairan pinjaman'}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <FormField
         control={form.control}
         name="loanTenor"

@@ -1,3 +1,5 @@
+import { User } from "./auth.types";
+
 export enum ApplicationStatus {
   UNDER_REVIEW = 'UNDER_REVIEW',
   APPROVED = 'APPROVED',
@@ -63,31 +65,7 @@ export interface MemberApplication {
   lastSubmittedAt: string | null;
   createdAt: string;
   updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    nik: string | null;
-    npwp: string | null;
-    dateOfBirth: string | null;
-    birthPlace: string | null;
-    permanentEmployeeDate: string | null;
-    installmentPlan: number | null;
-    employee: {
-      id: string;
-      employeeNumber: string;
-      fullName: string;
-      department?: {
-        id: string;
-        departmentName: string;
-      };
-      golongan?: {
-        id: string;
-        golonganName: string;
-      };
-      permanentEmployeeDate: string | null;
-    };
-  };
+  user?: User;
   approvals: ApplicationApproval[];
   history?: ApplicationHistory[];
 }

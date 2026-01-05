@@ -121,8 +121,8 @@ export function SavingsWithdrawalDisbursementList() {
             const exportData = data.map((withdrawal) => ({
                 'Nomor Penarikan': withdrawal.withdrawalNumber,
                 'Nama': withdrawal.user?.name || '-',
-                'No. Karyawan': withdrawal.user?.employee.employeeNumber || '-',
-                'Bank': withdrawal.bankAccountNumber || withdrawal.user?.bankAccountNumber || '-',
+                'No. Karyawan': withdrawal.user?.employee?.employeeNumber || '-',
+                'Bank': withdrawal.user?.employee?.bankAccountNumber || '-',
                 'Jumlah Transfer': withdrawal.netAmount,
                 'Tanggal Approval': withdrawal.approvals.find(a => a.step === 'SHOPKEEPER')?.decidedAt
                     ? format(new Date(withdrawal.approvals.find(a => a.step === 'SHOPKEEPER')!.decidedAt!), 'dd/MM/yyyy HH:mm')
@@ -159,14 +159,14 @@ export function SavingsWithdrawalDisbursementList() {
                 cell: ({ row }) => (
                     <div className="flex flex-col">
                         <span className="font-medium">{row.original.user?.name}</span>
-                        <span className="text-xs text-muted-foreground">{row.original.user?.employee.employeeNumber}</span>
+                        <span className="text-xs text-muted-foreground">{row.original.user?.employee?.employeeNumber}</span>
                     </div>
                 ),
             },
             {
                 accessorKey: 'bankAccountNumber',
                 header: 'Rekening',
-                cell: ({ row }) => row.original.bankAccountNumber || row.original.user?.bankAccountNumber || '-',
+                cell: ({ row }) => row.original.user?.employee?.bankAccountNumber || '-',
             },
             {
                 accessorKey: 'netAmount',
