@@ -39,7 +39,7 @@ export class LoanCalculationService {
     }
 
     // Calculate total interest based on loan type
-    const totalInterest = amount * (annualRate / 100) * (tenor / 12);
+    const totalInterest = Math.round((amount * (annualRate / 100) * (tenor / 12)) * 100) / 100;
     
     let totalRepayment: number;
     
@@ -48,26 +48,26 @@ export class LoanCalculationService {
       case LoanType.GOODS_REIMBURSE:
       case LoanType.GOODS_PHONE:
         // totalRepayment = loanAmount + interestRate
-        totalRepayment = amount + totalInterest;
+        totalRepayment = Math.round((amount + totalInterest) * 100) / 100;
         break;
       
       case LoanType.GOODS_ONLINE:
         // totalRepayment = loanAmount + (loanAmount * shop_margin_rate) + interestRate
-        const marginAmount = amount * (shopMarginRate / 100);
-        totalRepayment = amount + marginAmount + totalInterest;
+        const marginAmount = Math.round((amount * (shopMarginRate / 100)) * 100) / 100;
+        totalRepayment = Math.round((amount + marginAmount + totalInterest) * 100) / 100;
         break;
       
       default:
-        totalRepayment = amount + totalInterest;
+        totalRepayment = Math.round((amount + totalInterest) * 100) / 100;
     }
 
-    const monthlyInstallment = totalRepayment / tenor;
+    const monthlyInstallment = Math.round((totalRepayment / tenor) * 100) / 100;
 
     return {
       interestRate: annualRate,
       shopMarginRate: loanType === LoanType.GOODS_ONLINE ? shopMarginRate : null,
-      monthlyInstallment: Math.round(monthlyInstallment),
-      totalRepayment: Math.round(totalRepayment),
+      monthlyInstallment: monthlyInstallment,
+      totalRepayment: totalRepayment,
     };
   }
 }

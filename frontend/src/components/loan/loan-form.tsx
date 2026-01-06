@@ -98,7 +98,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     if (!eligibility || !amount || !tenor) return null;
 
     const annualRate = eligibility.loanLimit.interestRate / 100;
-    const totalInterest = amount * annualRate * (tenor / 12);
+    const totalInterest = Math.round((amount * annualRate * (tenor / 12)) * 100) / 100;
     
     let shopMargin = 0;
     let totalRepayment = 0;
@@ -107,19 +107,19 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       case LoanType.CASH_LOAN:
       case LoanType.GOODS_REIMBURSE:
       case LoanType.GOODS_PHONE:
-        totalRepayment = amount + totalInterest;
+        totalRepayment = Math.round((amount + totalInterest) * 100) / 100;
         break;
 
       case LoanType.GOODS_ONLINE:
-        shopMargin = amount * (shopMarginRate / 100);
-        totalRepayment = amount + shopMargin + totalInterest;
+        shopMargin = Math.round((amount * (shopMarginRate / 100)) * 100) / 100;
+        totalRepayment = Math.round((amount + shopMargin + totalInterest) * 100) / 100;
         break;
 
       default:
-        totalRepayment = amount + totalInterest;
+        totalRepayment = Math.round((amount + totalInterest) * 100) / 100;
     }
 
-    const monthlyInstallment = totalRepayment / tenor;
+    const monthlyInstallment = Math.round((totalRepayment / tenor) * 100) / 100;
 
     return {
       totalInterest,

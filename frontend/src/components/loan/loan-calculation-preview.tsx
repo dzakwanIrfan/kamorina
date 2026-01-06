@@ -34,7 +34,7 @@ export function LoanCalculationPreview({
           
           <div className="space-y-2 text-sm">
             {/* Interest */}
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4">
               <span className="text-muted-foreground">
                 Bunga ({interestRate}% per tahun)
               </span>
@@ -46,7 +46,7 @@ export function LoanCalculationPreview({
             {/* Shop Margin (only for GOODS_ONLINE) */}
             {loanType === LoanType.GOODS_ONLINE && calculations.shopMargin && shopMarginRate && (
               <>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-4">
                   <span className="text-muted-foreground">
                     Margin Toko ({shopMarginRate}%)
                   </span>
@@ -59,7 +59,7 @@ export function LoanCalculationPreview({
             )}
 
             {/* Total Repayment */}
-            <div className="flex justify-between items-center bg-muted/50 p-2 rounded">
+            <div className="flex justify-between items-center bg-muted/50 p-2 rounded gap-4">
               <span className="font-semibold">Total Pembayaran</span>
               <span className="font-bold text-lg">
                 {formatCurrency(calculations.totalRepayment)}
@@ -67,7 +67,7 @@ export function LoanCalculationPreview({
             </div>
 
             {/* Monthly Installment */}
-            <div className="flex justify-between items-center bg-primary/5 p-2 rounded">
+            <div className="flex justify-between items-center bg-primary/5 p-2 rounded gap-4">
               <span className="font-semibold text-primary">Cicilan per Bulan</span>
               <span className="font-bold text-xl text-primary">
                 {formatCurrency(calculations.monthlyInstallment)}
