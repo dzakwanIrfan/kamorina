@@ -169,14 +169,13 @@ export function SavingsWithdrawalDisbursementList() {
   };
 
   const handleCopyAccountNumber = async (
-    accountNumber: string,
-    withdrawalId: string
+    accountNumber: string
   ) => {
     if (accountNumber === "-") return;
 
     try {
       await navigator.clipboard.writeText(accountNumber);
-      setCopiedAccountNumber(withdrawalId);
+      setCopiedAccountNumber(accountNumber);
       toast.success("Nomor rekening berhasil disalin");
 
       // Reset the copied state after 2 seconds
@@ -220,7 +219,7 @@ export function SavingsWithdrawalDisbursementList() {
           const accountNumber =
             row.original.user?.employee?.bankAccountNumber || "-";
           const isClickable = accountNumber !== "-";
-          const isCopied = copiedAccountNumber === row.original.id;
+          const isCopied = copiedAccountNumber === accountNumber;
 
           return (
             <div className="flex items-center gap-2">
@@ -235,7 +234,7 @@ export function SavingsWithdrawalDisbursementList() {
                 onClick={
                   isClickable
                     ? () =>
-                        handleCopyAccountNumber(accountNumber, row.original.id)
+                        handleCopyAccountNumber(accountNumber)
                     : undefined
                 }
                 disabled={!isClickable}
@@ -311,7 +310,7 @@ export function SavingsWithdrawalDisbursementList() {
         ),
       },
     ],
-    []
+    [copiedAccountNumber]
   );
 
   const tableConfig: DataTableConfig<SavingsWithdrawal> = {
