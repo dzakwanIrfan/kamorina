@@ -37,9 +37,9 @@ export class LoanNumberService {
   private getPrefix(loanType: LoanType): string {
     const prefixMap = {
       [LoanType.CASH_LOAN]: 'LOAN',
-      [LoanType.GOODS_REIMBURSE]: 'REIMB',
-      [LoanType.GOODS_ONLINE]: 'ONLINE',
-      [LoanType.GOODS_PHONE]: 'PHONE',
+      [LoanType.GOODS_REIMBURSE]: 'REIM',
+      [LoanType.GOODS_ONLINE]: 'ONLN',
+      [LoanType.GOODS_PHONE]: 'PHNE',
     };
     return prefixMap[loanType];
   }

@@ -34,7 +34,7 @@ export class DepositChangeService {
   ) {}
 
   /**
-   * Generate change request number: CHG-YYYYMMDD-XXXX
+   * Generate change request number: CHDP-YYYYMMDD-XXXX
    */
   private async generateChangeNumber(): Promise<string> {
     const today = new Date();
@@ -43,7 +43,7 @@ export class DepositChangeService {
     const lastChange = await this.prisma.depositChangeRequest.findFirst({
       where: {
         changeNumber: {
-          startsWith: `CHG-${dateStr}`,
+          startsWith: `CHDP-${dateStr}`,
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -55,7 +55,7 @@ export class DepositChangeService {
       sequence = lastSequence + 1;
     }
 
-    return `CHG-${dateStr}-${sequence.toString().padStart(4, '0')}`;
+    return `CHDP-${dateStr}-${sequence.toString().padStart(4, '0')}`;
   }
 
   /**

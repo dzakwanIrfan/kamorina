@@ -32,7 +32,7 @@ export class DepositService {
   ) { }
 
   /**
-   * Generate deposit number: DEP-YYYYMMDD-XXXX
+   * Generate deposit number: DEPO-YYYYMMDD-XXXX
    */
   private async generateDepositNumber(): Promise<string> {
     const today = new Date();
@@ -41,7 +41,7 @@ export class DepositService {
     const lastDeposit = await this.prisma.depositApplication.findFirst({
       where: {
         depositNumber: {
-          startsWith: `DEP-${dateStr}`,
+          startsWith: `DEPO-${dateStr}`,
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -53,7 +53,7 @@ export class DepositService {
       sequence = lastSequence + 1;
     }
 
-    return `DEP-${dateStr}-${sequence.toString().padStart(4, '0')}`;
+    return `DEPO-${dateStr}-${sequence.toString().padStart(4, '0')}`;
   }
 
   /**

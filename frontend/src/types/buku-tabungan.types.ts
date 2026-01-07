@@ -76,7 +76,7 @@ export interface QueryTransactionParams {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   startDate?: string;
   endDate?: string;
   payrollPeriodId?: string;
@@ -85,7 +85,7 @@ export interface QueryTransactionParams {
 }
 
 // Employee type enum
-export type EmployeeType = 'TETAP' | 'KONTRAK';
+export type EmployeeType = "TETAP" | "KONTRAK";
 
 // Extended user info for list view (includes full employee details)
 export interface AccountListUser {
@@ -127,8 +127,9 @@ export interface QueryAllAccountsParams {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   departmentId?: string;
   employeeType?: EmployeeType;
   includeTransactionSummary?: boolean;
+  isExport?: boolean;
 }

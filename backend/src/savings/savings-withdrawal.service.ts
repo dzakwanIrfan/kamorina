@@ -40,7 +40,7 @@ export class SavingsWithdrawalService {
         const lastWithdrawal = await this.prisma.savingsWithdrawal.findFirst({
             where: {
                 withdrawalNumber: {
-                    startsWith: `SW-${dateStr}`,
+                    startsWith: `SVWD-${dateStr}`,
                 },
             },
             orderBy: { createdAt: 'desc' },

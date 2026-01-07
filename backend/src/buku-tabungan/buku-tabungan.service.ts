@@ -35,9 +35,11 @@ export class BukuTabunganService {
       sortOrder = 'desc',
       departmentId,
       employeeType,
+      isExport,
     } = query;
 
-    const skip = (page - 1) * limit;
+    const skip = isExport ? undefined : (page - 1) * limit;
+    const take = isExport ? undefined : limit;
 
     // Build employee filter
     const employeeFilter: Prisma.EmployeeWhereInput = {};
@@ -56,7 +58,11 @@ export class BukuTabunganService {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
           { employee: { fullName: { contains: search, mode: 'insensitive' } } },
-          { employee: { employeeNumber: { contains: search, mode: 'insensitive' } } },
+          {
+            employee: {
+              employeeNumber: { contains: search, mode: 'insensitive' },
+            },
+          },
         ],
       };
     }
@@ -72,7 +78,6 @@ export class BukuTabunganService {
       }
     }
 
-
     const orderBy: Prisma.SavingsAccountOrderByWithRelationInput = {
       [sortBy]: sortOrder,
     };
@@ -81,7 +86,7 @@ export class BukuTabunganService {
       this.prisma.savingsAccount.findMany({
         where,
         skip,
-        take: limit,
+        take,
         orderBy,
         include: DEFAULT_INCLUDE_ACCOUNT_LIST,
       }),
@@ -102,7 +107,7 @@ export class BukuTabunganService {
       } as BukuTabunganListItem;
     });
 
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = isExport ? 1 : Math.ceil(total / limit);
 
     return {
       data: transformedData,
@@ -116,8 +121,6 @@ export class BukuTabunganService {
       },
     };
   }
-
-
 
   /**
    * Get savings account by user ID with optional transaction summary
