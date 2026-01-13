@@ -18,6 +18,7 @@ import { DepositModule } from './deposit/deposit.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { BukuTabunganModule } from './buku-tabungan/buku-tabungan.module';
 import { SavingsModule } from './savings/savings.module';
+import { LoanRepaymentModule } from './loan-repayment/loan-repayment.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { SavingsModule } from './savings/savings.module';
     PayrollModule,
     BukuTabunganModule,
     SavingsModule,
+    LoanRepaymentModule,
   ],
 })
 export class AppModule {}
