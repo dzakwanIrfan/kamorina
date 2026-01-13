@@ -105,7 +105,7 @@ export class LoanRepaymentController {
   /**
    * Process approval (single)
    */
-  @Post(': id/approve')
+  @Post(':id/approve')
   @UseGuards(RolesGuard)
   @Roles('ketua', 'divisi_simpan_pinjam')
   @HttpCode(HttpStatus.OK)

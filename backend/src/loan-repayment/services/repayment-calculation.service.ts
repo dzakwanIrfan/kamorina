@@ -11,9 +11,11 @@ export class RepaymentCalculationService {
    * Total amount = Total repayment - Sum of paid installments
    */
   async calculateRepaymentAmount(loanApplicationId: string): Promise<{
+    loanId: string;
     totalLoanAmount: Decimal;
     totalPaid: Decimal;
     remainingAmount: Decimal;
+    remainingInstallments: number;
     paidInstallments: number;
     totalInstallments: number;
   }> {
@@ -40,11 +42,14 @@ export class RepaymentCalculationService {
     );
 
     const remainingAmount = totalLoanAmount.minus(totalPaid);
+    const remainingInstallments = Number(loan.loanInstallments.length) - paidInstallments.length;
 
     return {
+      loanId: loan.id,
       totalLoanAmount,
       totalPaid,
       remainingAmount,
+      remainingInstallments,
       paidInstallments: paidInstallments.length,
       totalInstallments: loan.loanInstallments.length,
     };

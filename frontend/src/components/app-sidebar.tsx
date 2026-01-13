@@ -90,6 +90,12 @@ const menuItems = [
     href: "/dashboard/loans",
     requiresMemberVerified: true,
   },
+  {
+    title: "Pelunasan Pinjaman",
+    icon: CheckCircle2,
+    href: "/dashboard/loan-repayments",
+    requiresMemberVerified: true,
+  },
 ];
 
 const managementGroups = [
@@ -162,6 +168,13 @@ const managementGroups = [
         icon: CheckCircle2,
         href: "/dashboard/loans/approvals",
         roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Approval Pelunasan",
+        icon: CheckCircle2,
+        href: "/dashboard/loan-repayments/approvals",
+        roles: ["ketua", "divisi_simpan_pinjam"],
         requiresMemberVerified: true,
       },
       {
@@ -342,7 +355,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           {/* Disabled badges are hidden or optional here */}
                         </div>
                       ) : (
-                        <Link href={item.href} className="flex items-center gap-3 w-full pr-2">
+                        <Link
+                          href={item.href}
+                          className="flex items-center gap-3 w-full pr-2"
+                        >
                           <item.icon className="size-4" />
                           <span>{item.title}</span>
                           {badgeCount !== undefined && badgeCount > 0 && (
@@ -350,7 +366,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               variant="secondary"
                               className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20"
                             >
-                              {badgeCount > 99 ? '99+' : badgeCount}
+                              {badgeCount > 99 ? "99+" : badgeCount}
                             </Badge>
                           )}
                         </Link>
@@ -386,7 +402,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       return (
                         <SidebarMenuItem key={item.href}>
                           <SidebarMenuButton asChild isActive={isActive}>
-                            <Link href={item.href} className="flex items-center gap-3 w-full pr-2">
+                            <Link
+                              href={item.href}
+                              className="flex items-center gap-3 w-full pr-2"
+                            >
                               <item.icon className="size-4" />
                               <span>{item.title}</span>
                               {badgeCount !== undefined && badgeCount > 0 && (
@@ -394,7 +413,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                   variant="secondary"
                                   className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
                                 >
-                                  {badgeCount > 99 ? '99+' : badgeCount}
+                                  {badgeCount > 99 ? "99+" : badgeCount}
                                 </Badge>
                               )}
                             </Link>
