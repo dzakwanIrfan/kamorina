@@ -52,7 +52,7 @@ export class SavingsWithdrawalService {
             sequence = lastSequence + 1;
         }
 
-        return `SW-${dateStr}-${sequence.toString().padStart(4, '0')}`;
+        return `SVWD-${dateStr}-${sequence.toString().padStart(4, '0')}`;
     }
 
     private async getPenaltyRate(): Promise<number> {

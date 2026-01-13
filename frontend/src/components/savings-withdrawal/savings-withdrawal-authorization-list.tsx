@@ -223,7 +223,7 @@ export function SavingsWithdrawalAuthorizationList() {
       },
       {
         accessorKey: "withdrawalAmount",
-        header: "Jumlah Pinjaman",
+        header: "Jumlah Penarikan",
         cell: ({ row }) => (
           <div className="space-y-0.5">
             <div className="font-semibold text-lg">
