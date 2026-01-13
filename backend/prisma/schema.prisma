@@ -69,13 +69,13 @@ model Employee {
 }
 
 model User {
-  id                String  @id @default(uuid())
-  name              String
-  email             String  @unique
-  nik               String? @unique
-  npwp              String? @unique
-  password          String
-  avatar            String?
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  nik      String? @unique
+  npwp     String? @unique
+  password String
+  avatar   String?
 
   employeeId String   @unique @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id])
@@ -132,6 +132,8 @@ model User {
   savingsWithdrawalApprovals      SavingsWithdrawalApproval[]      @relation("savings_withdrawal_approver")
   savingsWithdrawalDisbursements  SavingsWithdrawalDisbursement[]  @relation("savings_withdrawal_processor")
   savingsWithdrawalAuthorizations SavingsWithdrawalAuthorization[] @relation("savings_withdrawal_authorizer")
+  loanRepayments                  LoanRepayment[]                  @relation("user_repayments")
+  repaymentApprovals              RepaymentApproval[]              @relation("repayment_approver")
 
   @@map("users")
 }
@@ -375,10 +377,10 @@ model LoanApplication {
   loanType LoanType @default(CASH_LOAN) @map("loan_type")
 
   // Common fields for all loan types
-  loanAmount        Decimal @map("loan_amount") @db.Decimal(15, 2)
-  loanTenor         Int     @map("loan_tenor")
-  loanPurpose       String  @map("loan_purpose") @db.Text
-  attachments       Json? // Array of file URLs
+  loanAmount  Decimal @map("loan_amount") @db.Decimal(15, 2)
+  loanTenor   Int     @map("loan_tenor")
+  loanPurpose String  @map("loan_purpose") @db.Text
+  attachments Json? // Array of file URLs
 
   // Calculated fields (set by DSP during approval)
   interestRate       Decimal? @map("interest_rate") @db.Decimal(5, 2)
@@ -417,6 +419,7 @@ model LoanApplication {
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
   loanInstallments LoanInstallment[]
+  loanRepayments   LoanRepayment[]
 
   @@index([userId])
   @@index([loanType])
@@ -617,6 +620,73 @@ model LoanAuthorization {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("loan_authorizations")
+}
+
+enum RepaymentStatus {
+  UNDER_REVIEW_DSP
+  UNDER_REVIEW_KETUA
+  APPROVED
+  REJECTED
+}
+
+enum RepaymentApprovalStep {
+  DIVISI_SIMPAN_PINJAM
+  KETUA
+}
+
+model LoanRepayment {
+  id              String @id @default(uuid())
+  repaymentNumber String @unique @map("repayment_number")
+
+  loanApplicationId String          @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id")
+  user   User   @relation("user_repayments", fields: [userId], references: [id])
+
+  // Detail finansial saat pelunasan diajukan
+  totalAmount Decimal @map("total_amount") @db.Decimal(15, 2)
+
+  // Status & Workflow
+  status      RepaymentStatus        @default(UNDER_REVIEW_DSP)
+  currentStep RepaymentApprovalStep? @map("current_step")
+
+  // Persetujuan Digital
+  isAgreedByMember Boolean   @default(true) @map("is_agreed_by_member")
+  agreedAt         DateTime? @default(now()) @map("agreed_at")
+
+  submittedAt     DateTime? @map("submitted_at")
+  approvedAt      DateTime? @map("approved_at")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectionReason String?   @map("rejection_reason") @db.Text
+
+  approvals RepaymentApproval[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([loanApplicationId])
+  @@index([userId])
+  @@map("loan_repayments")
+}
+
+model RepaymentApproval {
+  id          String        @id @default(uuid())
+  repaymentId String        @map("repayment_id")
+  repayment   LoanRepayment @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
+
+  step       RepaymentApprovalStep
+  decision   ApprovalDecision? // Re-use dari enum yang sudah ada
+  decidedAt  DateTime?             @map("decided_at")
+  approverId String?               @map("approver_id")
+  approver   User?                 @relation("repayment_approver", fields: [approverId], references: [id])
+  notes      String?               @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String?
+
+  @@index([repaymentId])
+  @@map("repayment_approvals")
 }
 
 model DepositAmountOption {
@@ -898,7 +968,7 @@ model SavingsWithdrawal {
 
   netAmount Decimal @map("net_amount") @db.Decimal(15, 2)
 
-  notes             String? @db.Text
+  notes String? @db.Text
 
   status      SavingsWithdrawalStatus @default(SUBMITTED)
   currentStep SavingsWithdrawalStep?  @map("current_step")

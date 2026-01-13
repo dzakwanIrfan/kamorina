@@ -268,7 +268,7 @@ export function LoanList({ defaultStatus, defaultStep }: LoanListProps) {
       {
         accessorKey: 'user.name',
         header: 'Nama',
-        cell: ({ row }) => row.original.user?.name || '-',
+        cell: ({ row }) => row.original.user?.employee?.fullName || '-',
       },
       {
         accessorKey: 'user.department.departmentName',
