@@ -181,10 +181,10 @@ export class PayrollService {
         );
 
         // 4. Process savings withdrawal (Penarikan Tabungan)
-        savingsWithdrawalResult = await this.savingsWithdrawalProcessor.process(
-          tx,
-          context,
-        );
+        // savingsWithdrawalResult = await this.savingsWithdrawalProcessor.process(
+        //   tx,
+        //   context,
+        // );
 
         // 5. Process loan installment & repayment
         loanRepaymentResult = await this.loanRepaymentProcessor.process(

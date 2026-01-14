@@ -1007,6 +1007,7 @@ export class DepositChangeService {
               transactionDate: new Date(),
               createdBy: approverId,
               interestRate: annualRate,
+              note: 'Biaya admin perubahan deposito', 
             },
           });
         }

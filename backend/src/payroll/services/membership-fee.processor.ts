@@ -62,6 +62,10 @@ export class MembershipFeeProcessor {
           continue;
         }
 
+        const note = `Setoran koperasi dari potongan gaji periode ${context.cutoffStart.format(
+          'DD MMMM YYYY',
+        )} s/d ${context.cutoffEnd.format('DD MMMM YYYY')}`;
+
         // Upsert transaction
         await tx.savingsTransaction.upsert({
           where: {
@@ -72,12 +76,14 @@ export class MembershipFeeProcessor {
           },
           update: {
             iuranPendaftaran: { increment: deduction },
+            note,
           },
           create: {
             savingsAccountId: app.user.savingsAccount.id,
             payrollPeriodId: context.payrollPeriodId,
             interestRate: context.settings.depositInterestRate,
             iuranPendaftaran: deduction,
+            note,
           },
         });
 

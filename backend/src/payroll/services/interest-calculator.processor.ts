@@ -66,6 +66,10 @@ export class InterestCalculatorProcessor {
         // Check if transaction exists for this period
         const existingTransaction = account.transactions[0];
 
+        const note = `Setoran koperasi dari potongan gaji periode ${context.cutoffStart.format(
+          'DD MMMM YYYY',
+        )} s/d ${context.cutoffEnd.format('DD MMMM YYYY')}`;
+
         if (existingTransaction) {
           // Update existing transaction dengan bunga
           const previousJumlahBunga =
@@ -76,6 +80,7 @@ export class InterestCalculatorProcessor {
             data: {
               bunga: monthlyInterest,
               jumlahBunga: previousJumlahBunga.add(monthlyInterest),
+              note,
             },
           });
         } else {
@@ -87,6 +92,7 @@ export class InterestCalculatorProcessor {
               interestRate: annualRate,
               bunga: monthlyInterest,
               jumlahBunga: monthlyInterest,
+              note,
             },
           });
         }

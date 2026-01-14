@@ -66,6 +66,10 @@ export class DepositSavingsProcessor {
 
         const deduction = deposit.amountValue;
 
+        const note = `Setoran koperasi dari potongan gaji periode ${context.cutoffStart.format(
+          'DD MMMM YYYY',
+        )} s/d ${context.cutoffEnd.format('DD MMMM YYYY')}`;
+
         // Upsert transaction
         await tx.savingsTransaction.upsert({
           where: {
@@ -76,12 +80,14 @@ export class DepositSavingsProcessor {
           },
           update: {
             tabunganDeposito: { increment: deduction },
+            note,
           },
           create: {
             savingsAccountId: deposit.user.savingsAccount.id,
             payrollPeriodId: context.payrollPeriodId,
             interestRate: context.settings.depositInterestRate,
             tabunganDeposito: deduction,
+            note,
           },
         });
 

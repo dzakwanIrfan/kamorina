@@ -176,6 +176,19 @@ export function TransactionDetailDialog({
               </div>
             </>
           )}
+
+          {/* Note */}
+          {transaction.note && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-semibold mb-1">Catatan</h4>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {transaction.note}
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

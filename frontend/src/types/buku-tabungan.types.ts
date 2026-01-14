@@ -54,6 +54,7 @@ export interface SavingsTransaction {
   payrollPeriodId: string;
   payrollPeriod?: PayrollPeriod;
   transactionDate: string;
+  note?: string;
   iuranPendaftaran: number | string;
   iuranBulanan: number | string;
   tabunganDeposito: number | string;

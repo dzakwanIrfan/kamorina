@@ -51,6 +51,10 @@ export class MandatorySavingsProcessor {
           continue;
         }
 
+        const note = `Setoran koperasi dari potongan gaji periode ${context.cutoffStart.format(
+          'DD MMMM YYYY',
+        )} s/d ${context.cutoffEnd.format('DD MMMM YYYY')}`;
+
         // Upsert transaction
         await tx.savingsTransaction.upsert({
           where: {
@@ -61,12 +65,14 @@ export class MandatorySavingsProcessor {
           },
           update: {
             iuranBulanan: monthlyFee,
+            note,
           },
           create: {
             savingsAccountId: user.savingsAccount.id,
             payrollPeriodId: context.payrollPeriodId,
             interestRate: context.settings.depositInterestRate,
             iuranBulanan: monthlyFee,
+            note,
           },
         });
 
