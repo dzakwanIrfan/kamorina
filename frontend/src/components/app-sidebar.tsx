@@ -22,6 +22,7 @@ import {
   Edit,
   BookOpen,
   TrendingDown,
+  Loader2,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 import { useSidebarBadges } from "@/hooks/use-sidebar-badges";
@@ -258,7 +259,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
-  const { badges } = useSidebarBadges();
+  const { badges, loading } = useSidebarBadges();
 
   const handleLogout = () => {
     logout();
@@ -361,13 +362,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         >
                           <item.icon className="size-4" />
                           <span>{item.title}</span>
-                          {badgeCount !== undefined && badgeCount > 0 && (
-                            <Badge
-                              variant="secondary"
-                              className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20"
-                            >
-                              {badgeCount > 99 ? "99+" : badgeCount}
-                            </Badge>
+                          {loading ? (
+                            <div className="ml-auto h-5 min-w-5 px-1.5 flex items-center justify-center">
+                              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : (
+                            badgeCount !== undefined && badgeCount > 0 && (
+                              <Badge
+                                variant="secondary"
+                                className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20"
+                              >
+                                {badgeCount > 99 ? "99+" : badgeCount}
+                              </Badge>
+                            )
                           )}
                         </Link>
                       )}
@@ -380,7 +387,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {/* Only show management menu if member is verified */}
-        {/* Management Menus - Grouped */}
+        {/* Management Menus */}
         {isMemberVerified &&
           isAdmin &&
           managementGroups.map((group) => {
@@ -408,13 +415,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             >
                               <item.icon className="size-4" />
                               <span>{item.title}</span>
-                              {badgeCount !== undefined && badgeCount > 0 && (
-                                <Badge
-                                  variant="secondary"
-                                  className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
-                                >
-                                  {badgeCount > 99 ? "99+" : badgeCount}
-                                </Badge>
+                              {loading ? (
+                                <div className="ml-auto h-5 min-w-5 px-1.5 flex items-center justify-center">
+                                  <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                                </div>
+                              ) : (
+                                badgeCount !== undefined && badgeCount > 0 && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
+                                  >
+                                    {badgeCount > 99 ? "99+" : badgeCount}
+                                  </Badge>
+                                )
                               )}
                             </Link>
                           </SidebarMenuButton>

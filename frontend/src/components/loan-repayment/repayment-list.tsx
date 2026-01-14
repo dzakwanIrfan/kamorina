@@ -214,7 +214,7 @@ export function RepaymentList({
       const exportData = data.map((repayment) => ({
         "Nomor Pelunasan": repayment.repaymentNumber,
         "Nomor Pinjaman": repayment.loanApplication?.loanNumber || "-",
-        "Nama Peminjam":
+        "Nama":
           repayment.loanApplication?.user?.employee?.fullName || "-",
         "No. Karyawan":
           repayment.loanApplication?.user?.employee?.employeeNumber || "-",
@@ -281,21 +281,11 @@ export function RepaymentList({
       },
       {
         accessorKey: "loanApplication.user.name",
-        header: "Nama Peminjam",
+        header: "Nama",
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={row.original.loanApplication?.user?.avatar} />
-              <AvatarFallback className="text-[10px]">
-                {row.original.loanApplication?.user?.name
-                  ?.slice(0, 2)
-                  .toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
             <span className="text-sm font-medium">
-              {row.original.loanApplication?.user?.employee?.fullName ||
-                row.original.loanApplication?.user?.name ||
-                "-"}
+              {row.original.loanApplication?.user?.employee?.fullName || "-"}
             </span>
           </div>
         ),
