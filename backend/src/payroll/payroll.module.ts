@@ -7,6 +7,7 @@ import { DepositSavingsProcessor } from './services/deposit-savings.processor';
 import { SavingsWithdrawalProcessor } from './services/savings-withdrawal.processor';
 import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
 import { LoanInstallmentProcessor } from './services/loan-installment.processor';
+import { LoanRepaymentProcessor } from './services/loan-repayment.processor';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
@@ -19,8 +20,9 @@ import { PrismaModule } from 'src/prisma/prisma.module';
     DepositSavingsProcessor,
     SavingsWithdrawalProcessor,
     InterestCalculatorProcessor,
+    LoanRepaymentProcessor,
     LoanInstallmentProcessor,
   ],
   exports: [PayrollService],
 })
-export class PayrollModule { }
+export class PayrollModule {}

@@ -47,6 +47,7 @@ export type TransactionType =
   | 'ANGSURAN_PINJAMAN'
   | 'BUNGA_SIMPANAN'
   | 'PENARIKAN'
+  | 'PELUNASAN_PINJAMAN'
   | 'SHU';
 
 export interface PayrollSummary {
@@ -57,6 +58,7 @@ export interface PayrollSummary {
   mandatorySavings: ProcessorResult;
   depositSavings: ProcessorResult;
   savingsWithdrawal: ProcessorResult;
+  loanRepayment: ProcessorResult;
   loanInstallment: ProcessorResult;
   interest: ProcessorResult;
   grandTotal: Prisma.Decimal;

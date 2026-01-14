@@ -248,30 +248,6 @@ export class RepaymentApprovalService {
           ...(isLast && { approvedAt: new Date() }),
         },
       });
-
-      // If approved completely, mark all unpaid installments as paid and update loan status
-      if (isLast) {
-        // Get all unpaid installments first
-        const unpaidInstallments = await tx.loanInstallment.findMany({
-          where: {
-            loanApplicationId: repayment.loanApplicationId,
-            isPaid: false,
-          },
-        });
-
-        // Update each installment individually
-        for (const installment of unpaidInstallments) {
-          await tx.loanInstallment.update({
-            where: { id: installment.id },
-            data: {
-              isPaid: true,
-              paidAt: new Date(),
-              paidAmount: installment.amount,
-              notes: `Dilunasi melalui pengajuan pelunasan ${repayment.repaymentNumber}`,
-            },
-          });
-        }
-      }
     });
 
     if (isLast) {

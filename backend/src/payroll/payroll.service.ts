@@ -20,6 +20,7 @@ import { SavingsWithdrawalProcessor } from './services/savings-withdrawal.proces
 import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
 import { ManualPayrollDto } from './dto/payroll.dto';
 import { LoanInstallmentProcessor } from './services/loan-installment.processor';
+import { LoanRepaymentProcessor } from './services/loan-repayment.processor';
 
 @Injectable()
 export class PayrollService {
@@ -33,7 +34,8 @@ export class PayrollService {
     private savingsWithdrawalProcessor: SavingsWithdrawalProcessor,
     private interestCalculatorProcessor: InterestCalculatorProcessor,
     private loanInstallmentProcessor: LoanInstallmentProcessor,
-  ) { }
+    private loanRepaymentProcessor: LoanRepaymentProcessor,
+  ) {}
 
   /**
    * Cron job berjalan setiap hari jam 00:01
@@ -154,6 +156,7 @@ export class PayrollService {
     let depositSavingsResult: ProcessorResult = this.emptyResult();
     let savingsWithdrawalResult: ProcessorResult = this.emptyResult();
     let loanInstallmentResult: ProcessorResult = this.emptyResult();
+    let loanRepaymentResult: ProcessorResult = this.emptyResult();
     let interestResult: ProcessorResult = this.emptyResult();
 
     // Process dalam transaction
@@ -183,7 +186,12 @@ export class PayrollService {
           context,
         );
 
-        // 5. Process loan installments (Angsuran Pinjaman)
+        // 5. Process loan installment & repayment
+        loanRepaymentResult = await this.loanRepaymentProcessor.process(
+          tx,
+          context,
+        );
+
         loanInstallmentResult = await this.loanInstallmentProcessor.process(
           tx,
           context,
@@ -199,6 +207,7 @@ export class PayrollService {
         const grandTotal = membershipResult.totalAmount
           .add(mandatorySavingsResult.totalAmount)
           .add(depositSavingsResult.totalAmount)
+          .add(loanRepaymentResult.totalAmount)
           .add(loanInstallmentResult.totalAmount)
           .sub(savingsWithdrawalResult.totalAmount);
 
@@ -221,6 +230,7 @@ export class PayrollService {
     const grandTotal = membershipResult.totalAmount
       .add(mandatorySavingsResult.totalAmount)
       .add(depositSavingsResult.totalAmount)
+      .add(loanRepaymentResult.totalAmount)
       .add(loanInstallmentResult.totalAmount)
       .sub(savingsWithdrawalResult.totalAmount);
 
@@ -232,6 +242,7 @@ export class PayrollService {
       mandatorySavings: mandatorySavingsResult,
       depositSavings: depositSavingsResult,
       savingsWithdrawal: savingsWithdrawalResult,
+      loanRepayment: loanRepaymentResult,
       loanInstallment: loanInstallmentResult,
       interest: interestResult,
       grandTotal,
