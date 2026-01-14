@@ -1070,6 +1070,8 @@ model SavingsTransaction {
   account          SavingsAccount @relation(fields: [savingsAccountId], references: [id], onDelete: Cascade)
   interestRate     Decimal        @map("interest_rate") @db.Decimal(5, 2)
 
+  note String? @db.Text
+
   iuranPendaftaran Decimal @default(0) @map("iuran_pendaftaran") @db.Decimal(15, 2)
   iuranBulanan     Decimal @default(0) @map("iuran_bulanan") @db.Decimal(15, 2)
   tabunganDeposito Decimal @default(0) @map("tabungan_deposito") @db.Decimal(15, 2)
