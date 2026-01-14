@@ -67,7 +67,7 @@ export class RepaymentNotificationService {
             <ul>
               <li><strong>Nomor Pelunasan:</strong> ${repayment.repaymentNumber}</li>
               <li><strong>Nomor Pinjaman:</strong> ${repayment.loanApplication.loanNumber}</li>
-              <li><strong>Pemohon:</strong> ${repayment.loanApplication.user.name}</li>
+              <li><strong>Pemohon:</strong> ${repayment.loanApplication.user.employee.fullName}</li>
               <li><strong>Jumlah Pelunasan:</strong> Rp ${Number(repayment.totalAmount).toLocaleString('id-ID')}</li>
             </ul>
             <br>

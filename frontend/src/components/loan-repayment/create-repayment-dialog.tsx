@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, AlertCircle, Check } from "lucide-react";
+import { Loader2, AlertCircle, Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +38,20 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 import { loanService } from "@/services/loan.service";
 import { loanRepaymentService } from "@/services/loan-repayment.service";
@@ -78,6 +94,7 @@ export function CreateRepaymentDialog({
   );
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInstallmentsOpen, setIsInstallmentsOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -99,10 +116,9 @@ export function CreateRepaymentDialog({
   const fetchActiveLoans = async () => {
     try {
       setIsLoadingLoans(true);
-      // Fetch DISBURSED loans (active loans)
       const response = await loanService.getMyLoans({
         status: LoanStatus.DISBURSED,
-        limit: 100, // Fetch enough
+        limit: 100,
       });
       setLoans(response.data);
     } catch (error) {
@@ -119,7 +135,6 @@ export function CreateRepaymentDialog({
       try {
         setIsCalculating(true);
         const calc = await loanRepaymentService.getRepaymentCalculation(loanId);
-        console.log(calc)
         setCalculation(calc);
       } catch (error) {
         console.error("Error calculating repayment:", error);
@@ -155,7 +170,7 @@ export function CreateRepaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ajukan Pelunasan Pinjaman</DialogTitle>
           <DialogDescription>
@@ -209,56 +224,159 @@ export function CreateRepaymentDialog({
             {isCalculating && (
               <div className="flex items-center justify-center py-4 text-muted-foreground">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Menghitung estimasi pelunasan...
+                Mengambil informasi pelunasan...
               </div>
             )}
 
             {calculation && selectedLoan && (
-              <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
-                <h4 className="font-semibold text-sm flex items-center">
-                  <span className="bg-primary/10 text-primary p-1 rounded mr-2">
-                    <Check className="h-4 w-4" />
-                  </span>
-                  Ringkasan Informasi Pelunasan
-                </h4>
+              <>
+                {/* Accordion untuk Tabel Cicilan */}
+                {selectedLoan.loanInstallments &&
+                  selectedLoan.loanInstallments.length > 0 && (
+                    <Collapsible
+                      open={isInstallmentsOpen}
+                      onOpenChange={setIsInstallmentsOpen}
+                      className="space-y-2"
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between"
+                          type="button"
+                        >
+                          <span className="font-semibold">
+                            Informasi Cicilan (
+                            {selectedLoan.loanInstallments.length} bulan)
+                          </span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${
+                              isInstallmentsOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-2">
+                        <div className="rounded-md border overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-[50px] text-center">
+                                  No
+                                </TableHead>
+                                <TableHead>Jatuh Tempo</TableHead>
+                                <TableHead className="text-right">
+                                  Jumlah
+                                </TableHead>
+                                <TableHead className="text-center">
+                                  Status
+                                </TableHead>
+                                <TableHead>Tanggal Bayar</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {selectedLoan.loanInstallments.map(
+                                (installment) => (
+                                  <TableRow key={installment.id}>
+                                    <TableCell className="text-center font-medium">
+                                      {installment.installmentNumber}
+                                    </TableCell>
+                                    <TableCell className="text-sm">
+                                      {format(
+                                        new Date(installment.dueDate),
+                                        "dd MMMM yyyy",
+                                        { locale: id }
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-sm">
+                                      {formatIDR(installment.amount)}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      {installment.isPaid ? (
+                                        <Badge
+                                          variant="default"
+                                          className="bg-green-600 hover:bg-green-700"
+                                        >
+                                          Lunas
+                                        </Badge>
+                                      ) : (
+                                        <Badge
+                                          variant="outline"
+                                          className="text-muted-foreground"
+                                        >
+                                          Belum Lunas
+                                        </Badge>
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-sm">
+                                      {installment.paidAt ? (
+                                        <span className="text-muted-foreground">
+                                          {format(
+                                            new Date(installment.paidAt),
+                                            "dd MMM yyyy HH:mm",
+                                            { locale: id }
+                                          )}
+                                        </span>
+                                      ) : (
+                                        "-"
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                )
+                              )}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground block">
-                      Total Pinjaman
+                {/* Ringkasan Informasi Pelunasan */}
+                <div className="space-y-4 rounded-lg border p-4 bg-muted/50">
+                  <h4 className="font-semibold text-sm flex items-center">
+                    <span className="bg-primary/10 text-primary p-1 rounded mr-2">
+                      <Check className="h-4 w-4" />
                     </span>
-                    <span className="font-medium">
-                      {formatIDR(calculation.totalLoanAmount)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block">
-                      Total Terbayar
-                    </span>
-                    <span className="font-medium">
-                      {calculation.totalPaid !== null || NaN
-                        ? formatIDR(calculation.totalPaid)
-                        : "-"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block">
-                      Sisa Angsuran
-                    </span>
-                    <span className="font-medium">
-                      {calculation.remainingInstallments} bulan
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block">
-                      Total Yang Harus Dibayar
-                    </span>
-                    <span className="font-bold text-lg text-primary">
-                      {formatIDR(calculation.remainingAmount)}
-                    </span>
+                    Ringkasan Informasi Pelunasan
+                  </h4>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground block">
+                        Total Pinjaman
+                      </span>
+                      <span className="font-medium">
+                        {formatIDR(calculation.totalLoanAmount)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">
+                        Total Terbayar
+                      </span>
+                      <span className="font-medium">
+                        {calculation.totalPaid !== null || NaN
+                          ? formatIDR(calculation.totalPaid)
+                          : "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">
+                        Sisa Angsuran
+                      </span>
+                      <span className="font-medium">
+                        {calculation.remainingInstallments} bulan
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block">
+                        Total Yang Harus Dibayar
+                      </span>
+                      <span className="font-bold text-lg text-primary">
+                        {formatIDR(calculation.remainingAmount)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             {calculation && (
@@ -279,7 +397,9 @@ export function CreateRepaymentDialog({
                         Saya menyetujui jumlah pelunasan ini
                       </FormLabel>
                       <FormDescription>
-                        Dengan mencentang ini, saya mengajukan permohonan pelunasan pinjaman dan jika disetujui proses pelunasan saya bersedia melunasi dengan potong gaji.
+                        Dengan mencentang ini, saya mengajukan permohonan
+                        pelunasan pinjaman dan jika disetujui proses pelunasan
+                        saya bersedia melunasi dengan potong gaji.
                       </FormDescription>
                       <FormMessage />
                     </div>

@@ -56,7 +56,6 @@ export class LoanController {
     @CurrentUser() user: ICurrentUser,
     @Param('loanType') loanType: LoanType,
   ) {
-    console.log('Checking loan eligibility for user:', user.id, 'and loan type:', loanType);
     return this.loanService.getLoanEligibility(user.id, loanType);
   }
 

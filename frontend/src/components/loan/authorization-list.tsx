@@ -60,7 +60,6 @@ export function AuthorizationList() {
         sortBy: "disbursedAt",
         sortOrder: "asc",
       });
-      console.log("Response: ", response);
       setData(response.data);
       setMeta(response.meta);
     } catch (error: any) {
@@ -151,7 +150,6 @@ export function AuthorizationList() {
             row.original.user?.employee?.bankAccountNumber || "-";
           const isClickable = accountNumber !== "-";
           const isCopied = copiedAccountNumber === accountNumber;
-          console.log({ copiedAccountNumber, isCopied, accountNumber });
 
           return (
             <div className="flex items-center gap-2">

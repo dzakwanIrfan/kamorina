@@ -77,19 +77,14 @@ export function MyRepayments() {
   };
 
   const handleViewDetail = async (repayment: LoanRepayment) => {
-    // If details are incomplete, fetch full detail
-    if (!repayment.loanApplication) {
-      try {
-        const fullDetail = await loanRepaymentService.getMyRepaymentById(
-          repayment.id
-        );
-        setSelectedRepayment(fullDetail);
-      } catch (error) {
-        toast.error("Gagal memuat detail pelunasan");
-        return;
-      }
-    } else {
-      setSelectedRepayment(repayment);
+    try {
+      const fullDetail = await loanRepaymentService.getMyRepaymentById(
+        repayment.id
+      );
+      setSelectedRepayment(fullDetail);
+    } catch (error) {
+      toast.error("Gagal memuat detail pelunasan");
+      return;
     }
     setDetailDialogOpen(true);
   };

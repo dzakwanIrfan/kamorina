@@ -1,36 +1,37 @@
 import { User } from "./auth.types";
 
 export enum LoanType {
-  CASH_LOAN = 'CASH_LOAN',
-  GOODS_REIMBURSE = 'GOODS_REIMBURSE',
-  GOODS_ONLINE = 'GOODS_ONLINE',
-  GOODS_PHONE = 'GOODS_PHONE',
+  CASH_LOAN = "CASH_LOAN",
+  GOODS_REIMBURSE = "GOODS_REIMBURSE",
+  GOODS_ONLINE = "GOODS_ONLINE",
+  GOODS_PHONE = "GOODS_PHONE",
 }
 
 export enum LoanStatus {
-  DRAFT = 'DRAFT',
-  SUBMITTED = 'SUBMITTED',
-  UNDER_REVIEW_DSP = 'UNDER_REVIEW_DSP',
-  UNDER_REVIEW_KETUA = 'UNDER_REVIEW_KETUA',
-  UNDER_REVIEW_PENGAWAS = 'UNDER_REVIEW_PENGAWAS',
-  APPROVED_PENDING_DISBURSEMENT = 'APPROVED_PENDING_DISBURSEMENT',
-  DISBURSEMENT_IN_PROGRESS = 'DISBURSEMENT_IN_PROGRESS',
-  PENDING_AUTHORIZATION = 'PENDING_AUTHORIZATION',
-  DISBURSED = 'DISBURSED',
-  REJECTED = 'REJECTED',
-  CANCELLED = 'CANCELLED',
+  DRAFT = "DRAFT",
+  SUBMITTED = "SUBMITTED",
+  UNDER_REVIEW_DSP = "UNDER_REVIEW_DSP",
+  UNDER_REVIEW_KETUA = "UNDER_REVIEW_KETUA",
+  UNDER_REVIEW_PENGAWAS = "UNDER_REVIEW_PENGAWAS",
+  APPROVED_PENDING_DISBURSEMENT = "APPROVED_PENDING_DISBURSEMENT",
+  DISBURSEMENT_IN_PROGRESS = "DISBURSEMENT_IN_PROGRESS",
+  PENDING_AUTHORIZATION = "PENDING_AUTHORIZATION",
+  DISBURSED = "DISBURSED",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED",
 }
 
 export enum LoanApprovalStep {
-  DIVISI_SIMPAN_PINJAM = 'DIVISI_SIMPAN_PINJAM',
-  KETUA = 'KETUA',
-  PENGAWAS = 'PENGAWAS',
+  DIVISI_SIMPAN_PINJAM = "DIVISI_SIMPAN_PINJAM",
+  KETUA = "KETUA",
+  PENGAWAS = "PENGAWAS",
 }
 
 export enum LoanApprovalDecision {
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  REVISED = 'REVISED',
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+  REVISED = "REVISED",
 }
 
 // Type-specific details interfaces
@@ -81,7 +82,7 @@ export interface LoanEligibility {
   employee: {
     employeeNumber: string;
     fullName: string;
-    employeeType: 'TETAP' | 'KONTRAK';
+    employeeType: "TETAP" | "KONTRAK";
     department: string;
     golongan: string;
   };
@@ -252,10 +253,16 @@ export type CreateLoanDto =
   | CreateGoodsPhoneDto;
 
 // Update DTOs
-export type UpdateCashLoanDto = Partial<Omit<CreateCashLoanDto, 'loanType'>>;
-export type UpdateGoodsReimburseDto = Partial<Omit<CreateGoodsReimburseDto, 'loanType'>>;
-export type UpdateGoodsOnlineDto = Partial<Omit<CreateGoodsOnlineDto, 'loanType'>>;
-export type UpdateGoodsPhoneDto = Partial<Omit<CreateGoodsPhoneDto, 'loanType'>>;
+export type UpdateCashLoanDto = Partial<Omit<CreateCashLoanDto, "loanType">>;
+export type UpdateGoodsReimburseDto = Partial<
+  Omit<CreateGoodsReimburseDto, "loanType">
+>;
+export type UpdateGoodsOnlineDto = Partial<
+  Omit<CreateGoodsOnlineDto, "loanType">
+>;
+export type UpdateGoodsPhoneDto = Partial<
+  Omit<CreateGoodsPhoneDto, "loanType">
+>;
 
 export type UpdateLoanDto =
   | UpdateCashLoanDto
@@ -337,7 +344,7 @@ export interface QueryLoanParams {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   status?: LoanStatus;
   step?: LoanApprovalStep;
   loanType?: LoanType;

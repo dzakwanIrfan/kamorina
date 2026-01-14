@@ -41,7 +41,6 @@ export class DepositController {
     @CurrentUser() user: ICurrentUser,
     @Body() createDepositDto: CreateDepositDto,
   ) {
-    console.log('Creating draft deposit for user:', user.id, 'with data:', createDepositDto);
     return this.depositService.createDraft(user.id, createDepositDto);
   }
 

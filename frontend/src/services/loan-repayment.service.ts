@@ -20,9 +20,7 @@ export const loanRepaymentService = {
     return response.data;
   },
 
-  async createRepayment(
-    data: CreateRepaymentDto
-  ): Promise<{
+  async createRepayment(data: CreateRepaymentDto): Promise<{
     message: string;
     repayment: LoanRepayment;
     calculation: RepaymentCalculation;

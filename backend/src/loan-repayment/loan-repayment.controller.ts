@@ -95,8 +95,7 @@ export class LoanRepaymentController {
    * Get repayment by ID (for approvers)
    */
   @Get(':id')
-  @UseGuards(RolesGuard)
-  @Roles('ketua', 'divisi_simpan_pinjam')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async getRepaymentById(@Param('id') id: string) {
     return this.repaymentService.getRepaymentById(id);

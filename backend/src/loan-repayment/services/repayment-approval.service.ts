@@ -271,14 +271,6 @@ export class RepaymentApprovalService {
             },
           });
         }
-
-        // Update loan status to COMPLETED
-        await tx.loanApplication.update({
-          where: { id: repayment.loanApplicationId },
-          data: {
-            status: LoanStatus.COMPLETED,
-          },
-        });
       }
     });
 
