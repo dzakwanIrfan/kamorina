@@ -131,6 +131,10 @@ export function ProcessAuthorizationDialog({
               <p className="text-muted-foreground">No. Rekening</p>
               <p className="font-mono">{loan.user?.employee?.bankAccountNumber}</p>
             </div>
+            <div>
+              <p className="text-muted-foreground">Nama Bank</p>
+              <p className="font-mono">{loan.user?.employee?.bankAccountName}</p>
+            </div>
           </div>
         </div>
 

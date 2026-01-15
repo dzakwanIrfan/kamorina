@@ -114,6 +114,7 @@ export async function seedEmployees(ctx: SeederContext): Promise<void> {
         isActive: emp.isActive,
         permanentEmployeeDate: emp.permanentEmployeeDate,
         bankAccountNumber: '5556667778',
+        bankAccountName: 'BCA',
       },
     });
   }
@@ -138,6 +139,7 @@ export async function seedEmployees(ctx: SeederContext): Promise<void> {
       employeeType: randomType,
       isActive: true,
       bankAccountNumber: `555${i.toString().padStart(7, '0')}`,
+      bankAccountName: 'BCA',
     };
 
     if (randomType === EmployeeType.TETAP) {

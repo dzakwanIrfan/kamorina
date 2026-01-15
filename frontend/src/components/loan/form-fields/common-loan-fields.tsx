@@ -93,8 +93,7 @@ export function CommonLoanFields({
                 Rekening Penerima
               </FormLabel>
               <CardDescription>
-                Dana akan ditransfer ke nomor rekening yang terdaftar di
-                perusahaan
+                Dana akan ditransfer ke nomor rekening yang terdaftar di perusahaan
               </CardDescription>
             </div>
 
@@ -105,7 +104,7 @@ export function CommonLoanFields({
                   Nomor Rekening
                 </p>
                 <p className="text-lg font-bold tracking-wide">
-                  {user?.employee?.bankAccountNumber || "-"}
+                  {user?.employee?.bankAccountNumber || "-"} ({user?.employee?.bankAccountName})
                 </p>
               </div>
             </div>

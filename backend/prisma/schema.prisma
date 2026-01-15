@@ -55,6 +55,7 @@ model Employee {
   golongan   Golongan @relation(fields: [golonganId], references: [id])
 
   bankAccountNumber String @map("bankAccountNumber")
+  bankAccountName   String @map("bankAccountName")
 
   employeeType EmployeeType @map("employee_type")
 

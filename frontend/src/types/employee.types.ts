@@ -24,6 +24,7 @@ export interface Employee {
   golongan?: Golongan;
   employeeType: EmployeeType;
   bankAccountNumber: string;
+  bankAccountName: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

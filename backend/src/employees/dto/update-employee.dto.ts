@@ -47,6 +47,10 @@ export class UpdateEmployeeDto {
   @IsOptional()
   bankAccountNumber?: string;
 
+  @IsString({ message: 'Nama rekening bank harus berupa string'})
+  @IsOptional()
+  bankAccountName?: string;
+
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;

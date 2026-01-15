@@ -414,12 +414,20 @@ export function LoanDetailDialog({
                   Informasi Rekening
                 </h3>
                 <Separator />
-                <div>
+                <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground mb-1">
-                    Nomor Rekening BCA
+                    Nomor Rekening
                   </p>
                   <p className="text-lg font-mono font-medium">
                     {loan.user?.employee?.bankAccountNumber}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Nama Bank
+                  </p>
+                  <p className="text-lg font-mono font-medium">
+                    {loan.user?.employee?.bankAccountName}
                   </p>
                 </div>
               </div>

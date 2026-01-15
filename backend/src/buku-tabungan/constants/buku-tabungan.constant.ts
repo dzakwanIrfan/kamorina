@@ -31,6 +31,7 @@ export const DEFAULT_INCLUDE_ACCOUNT = {
             },
           },
           bankAccountNumber: true,
+          bankAccountName: true,
         },
       },
     },

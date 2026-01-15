@@ -52,6 +52,7 @@ const formSchema = z.object({
   }),
   permanentEmployeeDate: z.string().optional(),
   bankAccountNumber: z.string().min(1, 'Nomor Rekening Bank wajib diisi'),
+  bankAccountName: z.string().min(1, 'Nama Rekening Bank wajib diisi'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -113,6 +114,7 @@ export function EmployeeFormDialog({
           ? new Date(employee.permanentEmployeeDate).toISOString().split('T')[0]
           : '',
         bankAccountNumber: employee.bankAccountNumber,
+        bankAccountName: employee.bankAccountName,
       });
     } else {
       form.reset({
@@ -123,6 +125,7 @@ export function EmployeeFormDialog({
         employeeType: EmployeeType.TETAP,
         permanentEmployeeDate: '',
         bankAccountNumber: '',
+        bankAccountName: '',
       });
     }
   }, [employee, form]);
@@ -236,6 +239,20 @@ export function EmployeeFormDialog({
                   <FormLabel>Nomor Rekening Bank</FormLabel>
                   <FormControl>
                     <Input placeholder="1234567890" {...field} disabled={isSubmitting} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="bankAccountName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nama Rekening Bank</FormLabel>
+                  <FormControl>
+                    <Input placeholder="BCA" {...field} disabled={isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

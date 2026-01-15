@@ -281,7 +281,7 @@ export function SavingsWithdrawalForm({
                       </p>
                       <p className="text-lg font-bold tracking-wide">
                         {tabungan.account.user.employee?.bankAccountNumber ||
-                          "-"}
+                          "-"} ({tabungan.account.user.employee?.bankAccountName})
                       </p>
                     </div>
                   </div>

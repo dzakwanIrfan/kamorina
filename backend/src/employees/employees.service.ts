@@ -54,6 +54,7 @@ export class EmployeeService {
           isActive: true,
           permanentEmployeeDate: createEmployeeDto.permanentEmployeeDate,
           bankAccountNumber: createEmployeeDto.bankAccountNumber,
+          bankAccountName: createEmployeeDto.bankAccountName,
         },
         include: {
           department: true,
@@ -99,7 +100,7 @@ export class EmployeeService {
     if (isActive !== undefined && isActive !== null) {
       const rawValue: any = isActive;
       let boolValue: boolean;
-      
+
       if (typeof rawValue === 'boolean') {
         boolValue = rawValue;
       } else if (typeof rawValue === 'string') {
@@ -107,7 +108,7 @@ export class EmployeeService {
       } else {
         boolValue = Boolean(rawValue);
       }
-      
+
       where.isActive = boolValue;
     }
 
@@ -147,8 +148,14 @@ export class EmployeeService {
       where.OR = [
         { employeeNumber: { contains: search, mode: 'insensitive' } },
         { fullName: { contains: search, mode: 'insensitive' } },
-        { department: { departmentName: { contains: search, mode: 'insensitive' } } },
-        { golongan: { golonganName: { contains: search, mode: 'insensitive' } } },
+        {
+          department: {
+            departmentName: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          golongan: { golonganName: { contains: search, mode: 'insensitive' } },
+        },
       ];
     }
 
@@ -362,11 +369,18 @@ export class EmployeeService {
   /**
    * Import employees from CSV
    */
-  async importFromCSV(csvData: EmployeeCSVRow[], csvService: EmployeeCsvService) {
+  async importFromCSV(
+    csvData: EmployeeCSVRow[],
+    csvService: EmployeeCsvService,
+  ) {
     const results = {
       success: 0,
       failed: 0,
-      errors: [] as Array<{ row: number; employeeNumber: string; error: string }>,
+      errors: [] as Array<{
+        row: number;
+        employeeNumber: string;
+        error: string;
+      }>,
     };
 
     for (let i = 0; i < csvData.length; i++) {
@@ -387,7 +401,9 @@ export class EmployeeService {
         });
 
         if (!department) {
-          throw new Error(`Department "${employeeDto.departmentName}" tidak ditemukan`);
+          throw new Error(
+            `Department "${employeeDto.departmentName}" tidak ditemukan`,
+          );
         }
 
         // Find golongan by name
@@ -401,7 +417,9 @@ export class EmployeeService {
         });
 
         if (!golongan) {
-          throw new Error(`Golongan "${employeeDto.golonganName}" tidak ditemukan`);
+          throw new Error(
+            `Golongan "${employeeDto.golonganName}" tidak ditemukan`,
+          );
         }
 
         // Check if employee already exists
@@ -418,7 +436,11 @@ export class EmployeeService {
               departmentId: department.id,
               golonganId: golongan.id,
               employeeType: employeeDto.employeeType as any,
+              permanentEmployeeDate: employeeDto.permanentEmployeeDate
+                ? new Date(employeeDto.permanentEmployeeDate)
+                : null,
               bankAccountNumber: employeeDto.bankAccountNumber,
+              bankAccountName: employeeDto.bankAccountName,
               isActive: employeeDto.isActive,
             },
           });
@@ -431,7 +453,11 @@ export class EmployeeService {
               departmentId: department.id,
               golonganId: golongan.id,
               employeeType: employeeDto.employeeType as any,
+              permanentEmployeeDate: employeeDto.permanentEmployeeDate
+                ? new Date(employeeDto.permanentEmployeeDate)
+                : undefined,
               bankAccountNumber: employeeDto.bankAccountNumber,
+              bankAccountName: employeeDto.bankAccountName,
               isActive: employeeDto.isActive,
             },
           });

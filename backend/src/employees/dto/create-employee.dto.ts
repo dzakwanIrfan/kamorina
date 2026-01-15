@@ -7,6 +7,7 @@ import {
   IsDate,
   IsOptional,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum EmployeeType {
   TETAP = 'TETAP',
@@ -40,10 +41,15 @@ export class CreateEmployeeDto {
   employeeType: EmployeeType;
 
   @IsOptional()
+  @Type(() => Date)
   @IsDate({ message: 'Tanggal karyawan tetap tidak valid' })
   permanentEmployeeDate?: Date;
 
   @IsString({ message: 'Nomor rekening bank harus berupa string' })
   @IsNotEmpty({ message: 'Nomor rekening bank wajib diisi' })
   bankAccountNumber: string;
+
+  @IsString({ message: 'Nama rekening bank harus berupa string' })
+  @IsNotEmpty({ message: 'Nama rekening bank wajib diisi' })
+  bankAccountName: string;
 }

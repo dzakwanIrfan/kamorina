@@ -1,8 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
-import { Upload, Download, FileSpreadsheet, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState, useRef } from "react";
+import {
+  Upload,
+  Download,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -11,14 +18,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { employeeService } from '@/services/employee.service';
+import { employeeService } from "@/services/employee.service";
 
 interface EmployeeImportDialogProps {
   open: boolean;
@@ -45,8 +52,11 @@ export function EmployeeImportDialog({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
-        toast.error('File harus berformat CSV');
+      if (
+        selectedFile.type !== "text/csv" &&
+        !selectedFile.name.endsWith(".csv")
+      ) {
+        toast.error("File harus berformat CSV");
         return;
       }
       setFile(selectedFile);
@@ -59,22 +69,22 @@ export function EmployeeImportDialog({
     try {
       const blob = await employeeService.downloadTemplate();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'employee-template.csv';
+      a.download = "employee-template.csv";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success('Template berhasil diunduh');
+      toast.success("Template berhasil diunduh");
     } catch (error: any) {
-      toast.error('Gagal mengunduh template');
+      toast.error("Gagal mengunduh template");
     }
   };
 
   const handleImport = async () => {
     if (!file) {
-      toast.error('Pilih file CSV terlebih dahulu');
+      toast.error("Pilih file CSV terlebih dahulu");
       return;
     }
 
@@ -102,11 +112,11 @@ export function EmployeeImportDialog({
       if (!result.success) {
         // Validation errors
         setValidationErrors(result.errors || []);
-        toast.error('Validasi CSV gagal');
+        toast.error("Validasi CSV gagal");
       } else if (result.data) {
         // Import completed
         setImportResult(result.data);
-        
+
         if (result.data.failed === 0) {
           toast.success(`Berhasil mengimport ${result.data.success} karyawan`);
           onSuccess();
@@ -121,7 +131,7 @@ export function EmployeeImportDialog({
         }
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Gagal mengimport data');
+      toast.error(error.response?.data?.message || "Gagal mengimport data");
     } finally {
       setIsUploading(false);
     }
@@ -133,7 +143,7 @@ export function EmployeeImportDialog({
     setValidationErrors([]);
     setUploadProgress(0);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -162,9 +172,35 @@ export function EmployeeImportDialog({
             <AlertDescription className="space-y-2">
               <p>File CSV harus memiliki kolom berikut:</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li><strong>employeeNumber</strong>: Nomor Induk Karyawan (Maksimal 10 digit)</li>
-                <li><strong>fullName</strong>: Nama lengkap karyawan</li>
-                <li><strong>isActive</strong>: Status (Aktif / Tidak Aktif)</li>
+                <li>
+                  <strong>employeeNumber</strong>: Nomor Induk Karyawan
+                  (Maksimal 10 digit)
+                </li>
+                <li>
+                  <strong>fullName</strong>: Nama lengkap karyawan
+                </li>
+                <li>
+                  <strong>departmentName</strong>: Nama Departemen
+                </li>
+                <li>
+                  <strong>golonganName</strong>: Nama Golongan
+                </li>
+                <li>
+                  <strong>employeeType</strong>: Tipe Karyawan (Tetap / Kontrak)
+                </li>
+                <li>
+                  <strong>permanentEmployeeDate</strong>: Tanggal Permanen
+                  (Format: YYYY-MM-DD, opsional)
+                </li>
+                <li>
+                  <strong>isActive</strong>: Status (Aktif / Tidak Aktif)
+                </li>
+                <li>
+                  <strong>bankAccountNumber</strong>: Nomor Rekening Bank
+                </li>
+                <li>
+                  <strong>bankAccountName</strong>: Nama Rekening Bank
+                </li>
               </ul>
               <Button
                 variant="outline"
@@ -203,7 +239,8 @@ export function EmployeeImportDialog({
             </div>
             {file && (
               <p className="text-sm text-muted-foreground">
-                File dipilih: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(2)} KB)
+                File dipilih: <strong>{file.name}</strong> (
+                {(file.size / 1024).toFixed(2)} KB)
               </p>
             )}
           </div>
@@ -239,7 +276,9 @@ export function EmployeeImportDialog({
           {/* Import Results */}
           {importResult && (
             <div className="space-y-3">
-              <Alert variant={importResult.failed === 0 ? 'default' : 'destructive'}>
+              <Alert
+                variant={importResult.failed === 0 ? "default" : "destructive"}
+              >
                 {importResult.failed === 0 ? (
                   <CheckCircle2 className="h-4 w-4" />
                 ) : (
@@ -265,8 +304,8 @@ export function EmployeeImportDialog({
                     <div className="space-y-2">
                       {importResult.errors.map((error, index) => (
                         <div key={index} className="text-sm">
-                          <span className="font-medium">Baris {error.row}</span> 
-                          {' '}({error.employeeNumber}): {error.error}
+                          <span className="font-medium">Baris {error.row}</span>{" "}
+                          ({error.employeeNumber}): {error.error}
                         </div>
                       ))}
                     </div>
@@ -283,15 +322,12 @@ export function EmployeeImportDialog({
             onClick={handleClose}
             disabled={isUploading}
           >
-            {importResult ? 'Tutup' : 'Batal'}
+            {importResult ? "Tutup" : "Batal"}
           </Button>
           {!importResult && (
-            <Button
-              onClick={handleImport}
-              disabled={!file || isUploading}
-            >
+            <Button onClick={handleImport} disabled={!file || isUploading}>
               <Upload className="mr-2 h-4 w-4" />
-              {isUploading ? 'Mengimport...' : 'Import'}
+              {isUploading ? "Mengimport..." : "Import"}
             </Button>
           )}
         </DialogFooter>

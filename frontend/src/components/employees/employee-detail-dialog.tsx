@@ -118,6 +118,10 @@ export function EmployeeDetailDialog({
                   <p className="font-medium">{employee.bankAccountNumber}</p>
                 </div>
                 <div>
+                  <p className="text-muted-foreground">Nama Rekening Bank</p>
+                  <p className="font-medium">{employee.bankAccountName}</p>
+                </div>
+                <div>
                   <p className="text-muted-foreground">Tipe Karyawan</p>
                   <p className="font-medium">{employeeTypeLabels[employee.employeeType]}</p>
                 </div>

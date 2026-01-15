@@ -1,20 +1,4 @@
-export interface Employee {
-  id: string;
-  employeeNumber: string;
-  fullName: string;
-  employeeType: string;
-  isActive: boolean;
-  department?: {
-    id: string;
-    departmentName: string;
-  };
-  golongan?: {
-    id: string;
-    golonganName: string;
-  };
-  bankAccountNumber: string;
-  permanentEmployeeDate?: Date;
-}
+import { Employee } from "./employee.types";
 
 export interface User {
   id: string;
