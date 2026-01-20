@@ -15,6 +15,7 @@ import { LevelsService } from './levels.service';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
 import { QueryLevelDto } from './dto/query-level.dto';
+import { AssignUserDto } from './dto/assign-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -53,5 +54,18 @@ export class LevelsController {
   @Roles('ketua')
   remove(@Param('id') id: string) {
     return this.levelsService.remove(id);
+  }
+
+  @Post(':id/users')
+  @Roles('ketua')
+  @HttpCode(HttpStatus.OK)
+  assignUser(@Param('id') id: string, @Body() assignUserDto: AssignUserDto) {
+    return this.levelsService.assignUser(id, assignUserDto);
+  }
+
+  @Delete(':id/users/:userId')
+  @Roles('ketua')
+  removeUser(@Param('id') id: string, @Param('userId') userId: string) {
+    return this.levelsService.removeUser(id, userId);
   }
 }

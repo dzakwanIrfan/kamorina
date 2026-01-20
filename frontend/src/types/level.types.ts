@@ -1,3 +1,5 @@
+import { User } from "./auth.types";
+
 export interface Level {
   id: string;
   levelName: string;
@@ -25,18 +27,17 @@ export interface QueryLevelParams {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   startDate?: string;
   endDate?: string;
   levelName?: string;
 }
 
-interface UserRole {
+export interface UserRole {
   id: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    nik?: string;
-  };
+  user: User;
+}
+
+export interface AssignUserRequest {
+  userId: string;
 }

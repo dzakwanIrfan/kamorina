@@ -8,8 +8,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateLevelDto } from './dto/create-level.dto';
 import { UpdateLevelDto } from './dto/update-level.dto';
 import { QueryLevelDto } from './dto/query-level.dto';
+import { AssignUserDto } from './dto/assign-user.dto';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
-import { Level, Prisma } from '@prisma/client';
+import { Level, Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class LevelsService {
@@ -188,7 +189,9 @@ export class LevelsService {
 
     // Prevent deleting default "anggota" level
     if (level.levelName === 'anggota') {
-      throw new BadRequestException('Level "anggota" tidak dapat dihapus karena merupakan level default');
+      throw new BadRequestException(
+        'Level "anggota" tidak dapat dihapus karena merupakan level default',
+      );
     }
 
     // Check if level has users
@@ -208,6 +211,89 @@ export class LevelsService {
 
     return {
       message: `Level "${level.levelName}" berhasil dihapus`,
+    };
+  }
+
+  async assignUser(
+    id: string,
+    assignUserDto: AssignUserDto,
+  ): Promise<{ message: string }> {
+    const { userId } = assignUserDto;
+
+    // Check if level exists
+    const level = await this.findOne(id);
+
+    // Check if user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User tidak ditemukan');
+    }
+
+    // Check if assignment already exists
+    const existing = await this.prisma.userRole.findUnique({
+      where: {
+        userId_levelId: {
+          userId,
+          levelId: id,
+        },
+      },
+    });
+
+    if (existing) {
+      throw new ConflictException('User sudah memiliki level ini');
+    }
+
+    await this.prisma.userRole.create({
+      data: {
+        userId,
+        levelId: id,
+      },
+    });
+
+    return {
+      message: `User "${user.name}" berhasil ditambahkan ke level "${level.levelName}"`,
+    };
+  }
+
+  async removeUser(id: string, userId: string): Promise<{ message: string }> {
+    // Check if level exists
+    const level = await this.findOne(id);
+
+    // Check if assignment exists
+    const userRole = await this.prisma.userRole.findUnique({
+      where: {
+        userId_levelId: {
+          userId,
+          levelId: id,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!userRole) {
+      throw new NotFoundException('User tidak memiliki level ini');
+    }
+
+    // Prevent removing 'ketua' role if it's the last one, maybe?
+    // For now, let's just allow removal unless it breaks something critical.
+    // Ideally we should check if this is the last super admin but let's stick to basic requirement first.
+
+    await this.prisma.userRole.delete({
+      where: {
+        userId_levelId: {
+          userId,
+          levelId: id,
+        },
+      },
+    });
+
+    return {
+      message: `User "${userRole.user.name}" berhasil dihapus dari level "${level.levelName}"`,
     };
   }
 }

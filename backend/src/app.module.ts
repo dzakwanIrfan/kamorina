@@ -19,6 +19,7 @@ import { PayrollModule } from './payroll/payroll.module';
 import { BukuTabunganModule } from './buku-tabungan/buku-tabungan.module';
 import { SavingsModule } from './savings/savings.module';
 import { LoanRepaymentModule } from './loan-repayment/loan-repayment.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { LoanRepaymentModule } from './loan-repayment/loan-repayment.module';
     BukuTabunganModule,
     SavingsModule,
     LoanRepaymentModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

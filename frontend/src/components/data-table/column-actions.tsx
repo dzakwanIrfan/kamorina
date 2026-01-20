@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 interface ColumnActionsProps {
   onView?: () => void;
@@ -17,6 +17,12 @@ interface ColumnActionsProps {
   onDelete?: () => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  extraActions?: {
+    label: string;
+    icon?: React.ElementType;
+    onClick: () => void;
+    className?: string;
+  }[];
 }
 
 export function ColumnActions({
@@ -25,6 +31,7 @@ export function ColumnActions({
   onDelete,
   canEdit = true,
   canDelete = true,
+  extraActions = [],
 }: ColumnActionsProps) {
   return (
     <DropdownMenu>
@@ -55,6 +62,20 @@ export function ColumnActions({
             Delete
           </DropdownMenuItem>
         )}
+        {extraActions.length > 0 && <DropdownMenuSeparator />}
+        {extraActions.map((action, index) => {
+          const Icon = action.icon;
+          return (
+            <DropdownMenuItem
+              key={index}
+              onClick={action.onClick}
+              className={action.className}
+            >
+              {Icon && <Icon className="mr-2 h-4 w-4" />}
+              {action.label}
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );

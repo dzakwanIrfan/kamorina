@@ -1,15 +1,16 @@
-import { apiClient } from '@/lib/axios';
+import { apiClient } from "@/lib/axios";
 import {
   Level,
   CreateLevelRequest,
   UpdateLevelRequest,
   QueryLevelParams,
-} from '@/types/level.types';
-import { PaginatedResponse } from '@/types/pagination.types';
+  AssignUserRequest,
+} from "@/types/level.types";
+import { PaginatedResponse } from "@/types/pagination.types";
 
 export const levelService = {
   async getAll(params?: QueryLevelParams): Promise<PaginatedResponse<Level>> {
-    const response = await apiClient.get('/levels', { params });
+    const response = await apiClient.get("/levels", { params });
     return response.data;
   },
 
@@ -19,7 +20,7 @@ export const levelService = {
   },
 
   async create(data: CreateLevelRequest): Promise<Level> {
-    const response = await apiClient.post('/levels', data);
+    const response = await apiClient.post("/levels", data);
     return response.data;
   },
 
@@ -30,6 +31,19 @@ export const levelService = {
 
   async delete(id: string): Promise<{ message: string }> {
     const response = await apiClient.delete(`/levels/${id}`);
+    return response.data;
+  },
+
+  async assignUser(
+    id: string,
+    data: AssignUserRequest
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post(`/levels/${id}/users`, data);
+    return response.data;
+  },
+
+  async removeUser(id: string, userId: string): Promise<{ message: string }> {
+    const response = await apiClient.delete(`/levels/${id}/users/${userId}`);
     return response.data;
   },
 };
