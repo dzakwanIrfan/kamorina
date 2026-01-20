@@ -26,7 +26,7 @@ import type { ICurrentUser } from 'src/auth/interfaces/current-user.interface';
 @Controller('deposits')
 @UseGuards(JwtAuthGuard)
 export class DepositController {
-  constructor(private readonly depositService: DepositService) { }
+  constructor(private readonly depositService: DepositService) {}
 
   /**
    * MEMBER ENDPOINTS
@@ -62,7 +62,10 @@ export class DepositController {
    */
   @Post(':id/submit')
   @HttpCode(HttpStatus.OK)
-  async submitDeposit(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
+  async submitDeposit(
+    @CurrentUser() user: ICurrentUser,
+    @Param('id') id: string,
+  ) {
     return this.depositService.submitDeposit(user.id, id);
   }
 
@@ -71,7 +74,10 @@ export class DepositController {
    */
   @Delete('draft/:id')
   @HttpCode(HttpStatus.OK)
-  async deleteDraft(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
+  async deleteDraft(
+    @CurrentUser() user: ICurrentUser,
+    @Param('id') id: string,
+  ) {
     return this.depositService.deleteDraft(user.id, id);
   }
 
@@ -92,7 +98,10 @@ export class DepositController {
    */
   @Get('my-deposits/:id')
   @HttpCode(HttpStatus.OK)
-  async getMyDepositById(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
+  async getMyDepositById(
+    @CurrentUser() user: ICurrentUser,
+    @Param('id') id: string,
+  ) {
     return this.depositService.getDepositById(id, user.id);
   }
 
@@ -105,7 +114,7 @@ export class DepositController {
    */
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('ketua', 'divisi_simpan_pinjam')
+  @Roles('ketua', 'divisi_simpan_pinjam', 'payroll')
   @HttpCode(HttpStatus.OK)
   async getAllDeposits(@Query() query: QueryDepositDto) {
     return this.depositService.getAllDeposits(query);

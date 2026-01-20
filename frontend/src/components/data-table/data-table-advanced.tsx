@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
   RowSelectionState,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 
 import {
   Table,
@@ -22,19 +22,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { PaginationMeta } from '@/types/pagination.types';
-import { DataTableConfig } from '@/types/data-table.types';
-import { DataTableToolbar } from './data-table-toolbar';
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PaginationMeta } from "@/types/pagination.types";
+import { DataTableConfig } from "@/types/data-table.types";
+import { DataTableToolbar } from "./data-table-toolbar";
 
 interface DataTableAdvancedProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -45,8 +45,10 @@ interface DataTableAdvancedProps<TData, TValue> {
   onPageSizeChange?: (pageSize: number) => void;
   onSearch?: (search: string) => void;
   onFiltersChange?: (filters: Record<string, any>) => void;
-  onResetFilters?: () => void; 
+  onResetFilters?: () => void;
   isLoading?: boolean;
+  dateRange?: { from?: Date; to?: Date };
+  onDateRangeChange?: (range: { from?: Date; to?: Date }) => void;
 }
 
 export function DataTableAdvanced<TData, TValue>({
@@ -58,14 +60,19 @@ export function DataTableAdvanced<TData, TValue>({
   onPageSizeChange,
   onSearch,
   onFiltersChange,
-  onResetFilters, 
+  onResetFilters,
   isLoading = false,
+  dateRange,
+  onDateRangeChange,
 }: DataTableAdvancedProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
-  const [searchValue, setSearchValue] = React.useState('');
+  const [searchValue, setSearchValue] = React.useState("");
   const [filters, setFilters] = React.useState<Record<string, any>>({});
 
   // Add selection column if selectable
@@ -73,14 +80,16 @@ export function DataTableAdvanced<TData, TValue>({
     if (config?.selectable) {
       return [
         {
-          id: 'select',
+          id: "select",
           header: ({ table }) => (
             <Checkbox
               checked={
                 table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && 'indeterminate')
+                (table.getIsSomePageRowsSelected() && "indeterminate")
               }
-              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+              onCheckedChange={(value) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
               aria-label="Select all"
               className="translate-y-0.5"
             />
@@ -140,9 +149,9 @@ export function DataTableAdvanced<TData, TValue>({
 
   const handleResetFilters = () => {
     // Reset local state
-    setSearchValue('');
+    setSearchValue("");
     setFilters({});
-    
+
     // Call parent reset handler
     onResetFilters?.();
   };
@@ -158,6 +167,8 @@ export function DataTableAdvanced<TData, TValue>({
         filters={filters}
         onFiltersChange={handleFiltersChange}
         onResetFilters={handleResetFilters} // Pass it down
+        dateRange={dateRange}
+        onDateRangeChange={onDateRangeChange}
       />
 
       {/* Table */}
@@ -171,7 +182,10 @@ export function DataTableAdvanced<TData, TValue>({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
                   );
                 })}
@@ -181,26 +195,40 @@ export function DataTableAdvanced<TData, TValue>({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   <div className="flex items-center justify-center">
                     <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      Loading...
+                    </span>
                   </div>
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && 'selected'}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   Tidak ada data.
                 </TableCell>
               </TableRow>
@@ -214,8 +242,9 @@ export function DataTableAdvanced<TData, TValue>({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center space-x-2">
             <p className="text-sm text-muted-foreground">
-              Showing {((meta.page - 1) * meta.limit) + 1} to{' '}
-              {Math.min(meta.page * meta.limit, meta.total)} of {meta.total} results
+              Showing {(meta.page - 1) * meta.limit + 1} to{" "}
+              {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}{" "}
+              results
             </p>
             {config?.selectable && Object.keys(rowSelection).length > 0 && (
               <p className="text-sm font-medium text-primary">

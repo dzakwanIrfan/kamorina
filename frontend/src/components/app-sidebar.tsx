@@ -118,6 +118,13 @@ const managementGroups = [
         requiresMemberVerified: true,
       },
       {
+        title: "Semua Deposito",
+        icon: PiggyBank,
+        href: "/dashboard/deposits/all",
+        roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
+        requiresMemberVerified: true,
+      },
+      {
         title: "Approval Penarikan",
         icon: TrendingDown,
         href: "/dashboard/savings-withdrawals/approvals",
@@ -367,7 +374,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                             </div>
                           ) : (
-                            badgeCount !== undefined && badgeCount > 0 && (
+                            badgeCount !== undefined &&
+                            badgeCount > 0 && (
                               <Badge
                                 variant="secondary"
                                 className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-primary/10 text-primary hover:bg-primary/20"
@@ -420,7 +428,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                   <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                                 </div>
                               ) : (
-                                badgeCount !== undefined && badgeCount > 0 && (
+                                badgeCount !== undefined &&
+                                badgeCount > 0 && (
                                   <Badge
                                     variant="secondary"
                                     className="ml-auto text-[10px] h-5 min-w-5 px-1.5 flex items-center justify-center bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
