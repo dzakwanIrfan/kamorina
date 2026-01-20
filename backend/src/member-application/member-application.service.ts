@@ -17,6 +17,7 @@ import {
   ApprovalStep,
   ApprovalDecision,
   Prisma,
+  EmployeeType,
 } from '@prisma/client';
 import { PaginatedResult } from '../common/interfaces/pagination.interface';
 
@@ -46,9 +47,15 @@ export class MemberApplicationService {
       throw new NotFoundException('User tidak ditemukan');
     }
 
+    if (user.employee?.employeeType !== EmployeeType.TETAP) {
+      throw new BadRequestException(
+        'Karyawan kontrak tidak dapat mengajukan sebagai anggota koperasi',
+      );
+    }
+
     // Check if already member
     if (user.memberVerified) {
-      throw new BadRequestException('Anda sudah menjadi member');
+      throw new BadRequestException('Anda sudah menjadi anggota koperasi');
     }
 
     // Check if NIK already used by another user

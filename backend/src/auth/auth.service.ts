@@ -69,7 +69,9 @@ export class AuthService {
     const { name, email, password, confPassword, employeeNumber } = registerDto;
 
     if (password !== confPassword) {
-      throw new BadRequestException('Password dan konfirmasi password tidak cocok');
+      throw new BadRequestException(
+        'Password dan konfirmasi password tidak cocok',
+      );
     }
 
     const employee = await this.prisma.employee.findUnique({
@@ -187,7 +189,8 @@ export class AuthService {
       }
 
       return {
-        message: 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi.',
+        message:
+          'Registrasi berhasil. Silakan cek email Anda untuk verifikasi.',
         email: user.email,
       };
     } catch (error) {
@@ -214,7 +217,9 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new NotFoundException('Token verifikasi tidak ditemukan atau sudah digunakan');
+      throw new NotFoundException(
+        'Token verifikasi tidak ditemukan atau sudah digunakan',
+      );
     }
 
     if (user.emailVerified) {
@@ -242,10 +247,14 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { emailOrNik, password } = loginDto;
+    const trimmedInput = emailOrNik.trim();
 
     const user = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: emailOrNik }, { nik: emailOrNik }],
+        OR: [
+          { email: { equals: trimmedInput, mode: 'insensitive' } },
+          { employee: { employeeNumber: trimmedInput } },
+        ],
       },
       include: {
         roles: {
@@ -368,7 +377,9 @@ export class AuthService {
       }
 
       console.error('Forgot password error:', error);
-      throw new BadRequestException('Terjadi kesalahan saat memproses permintaan');
+      throw new BadRequestException(
+        'Terjadi kesalahan saat memproses permintaan',
+      );
     }
   }
 
@@ -376,7 +387,9 @@ export class AuthService {
     const { token, password, confPassword } = resetPasswordDto;
 
     if (password !== confPassword) {
-      throw new BadRequestException('Password dan konfirmasi password tidak cocok');
+      throw new BadRequestException(
+        'Password dan konfirmasi password tidak cocok',
+      );
     }
 
     const user = await this.prisma.user.findFirst({
@@ -407,7 +420,8 @@ export class AuthService {
       });
 
       return {
-        message: 'Password berhasil direset. Silakan login dengan password baru Anda.',
+        message:
+          'Password berhasil direset. Silakan login dengan password baru Anda.',
       };
     } catch (error) {
       console.error('Reset password error:', error);

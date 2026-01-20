@@ -8,13 +8,18 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAuthStore } from '@/store/auth.store';
 import { MemberApplicationForm } from '@/components/member-application/member-application-form';
 import { MyApplicationDetail } from '@/components/member-application/my-application-detail';
 import { memberApplicationService } from '@/services/member-application.service';
 import { handleApiError } from '@/lib/axios';
 import { MemberApplication, ApplicationStatus } from '@/types/member-application.types';
-import Image from 'next/image';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -320,10 +325,28 @@ export default function DashboardPage() {
           </Alert>
 
           {/* CTA Button */}
-          <Button size="lg" onClick={() => setShowForm(true)} className="gap-2">
-            <UserPlus className="h-5 w-5" />
-            Daftar Sebagai Anggota Koperasi
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    size="lg"
+                    onClick={() => setShowForm(true)}
+                    className="gap-2"
+                    disabled={user?.employee?.employeeType !== 'TETAP'}
+                  >
+                    <UserPlus className="h-5 w-5" />
+                    Daftar Sebagai Anggota Koperasi
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              {user?.employee?.employeeType !== 'TETAP' && (
+                <TooltipContent>
+                  <p>Anda bukan karyawan tetap</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>
