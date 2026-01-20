@@ -9,8 +9,11 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  PiggyBank,
   MoreHorizontal,
+  Banknote,
+  AlertCircle,
+  Shield,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,7 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DepositDetailDialog } from "@/components/deposit/deposit-detail-dialog";
+import { LoanDetailDialog } from "@/components/loan/loan-detail-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,55 +35,86 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { depositService } from "@/services/deposit.service";
-import { DepositApplication, DepositStatus } from "@/types/deposit.types";
+import { loanService } from "@/services/loan.service";
+import { LoanApplication, LoanStatus, LoanType } from "@/types/loan.types";
 import { DataTableConfig } from "@/types/data-table.types";
-import { usePermissions } from "@/hooks/use-permission";
 
 const statusMap = {
-  [DepositStatus.UNDER_REVIEW_DSP]: {
+  [LoanStatus.DRAFT]: {
+    label: "Draft",
+    variant: "secondary" as const,
+    icon: Clock,
+  },
+  [LoanStatus.SUBMITTED]: {
+    label: "Submitted",
+    variant: "secondary" as const,
+    icon: Clock,
+  },
+  [LoanStatus.UNDER_REVIEW_DSP]: {
     label: "Review DSP",
     variant: "secondary" as const,
     icon: Clock,
   },
-  [DepositStatus.UNDER_REVIEW_KETUA]: {
+  [LoanStatus.UNDER_REVIEW_KETUA]: {
     label: "Review Ketua",
     variant: "secondary" as const,
     icon: Clock,
   },
-  [DepositStatus.APPROVED]: {
-    label: "Disetujui",
+  [LoanStatus.UNDER_REVIEW_PENGAWAS]: {
+    label: "Review Pengawas",
+    variant: "secondary" as const,
+    icon: Clock,
+  },
+  [LoanStatus.APPROVED_PENDING_DISBURSEMENT]: {
+    label: "Menunggu Pencairan",
+    variant: "outline" as const,
+    icon: Banknote,
+  },
+  [LoanStatus.DISBURSEMENT_IN_PROGRESS]: {
+    label: "Pencairan Diproses",
+    variant: "outline" as const,
+    icon: Banknote,
+  },
+  [LoanStatus.PENDING_AUTHORIZATION]: {
+    label: "Menunggu Otorisasi",
+    variant: "outline" as const,
+    icon: Shield,
+  },
+  [LoanStatus.DISBURSED]: {
+    label: "Dicairkan",
     variant: "default" as const,
     icon: CheckCircle2,
   },
-  [DepositStatus.ACTIVE]: {
-    label: "Aktif",
+  [LoanStatus.COMPLETED]: {
+    label: "Lunas",
     variant: "default" as const,
     icon: CheckCircle2,
   },
-  [DepositStatus.COMPLETED]: {
-    label: "Selesai",
-    variant: "default" as const,
-    icon: CheckCircle2,
-  },
-  [DepositStatus.REJECTED]: {
+  [LoanStatus.REJECTED]: {
     label: "Ditolak",
     variant: "destructive" as const,
     icon: XCircle,
   },
-  [DepositStatus.CANCELLED]: {
+  [LoanStatus.CANCELLED]: {
     label: "Dibatalkan",
     variant: "destructive" as const,
     icon: XCircle,
   },
 };
 
-export function AllDeposits() {
-  const [data, setData] = useState<DepositApplication[]>([]);
-  const { hasRole } = usePermissions();
+const loanTypeMap = {
+  [LoanType.CASH_LOAN]: "Pinjaman Tunai",
+  [LoanType.GOODS_REIMBURSE]: "Reimburse Barang",
+  [LoanType.GOODS_ONLINE]: "Barang Online",
+  [LoanType.GOODS_PHONE]: "Kredit HP",
+};
+
+export function AllLoans() {
+  const [data, setData] = useState<LoanApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDeposit, setSelectedDeposit] =
-    useState<DepositApplication | null>(null);
+  const [selectedLoan, setSelectedLoan] = useState<LoanApplication | null>(
+    null
+  );
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   const [meta, setMeta] = useState({
@@ -100,16 +134,15 @@ export function AllDeposits() {
     fetchData();
   }, [meta.page, meta.limit, searchValue, filters, dateRange]);
 
-  const canApprove = hasRole('ketua') || hasRole('divisi_simpan_pinjam');
-
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const response = await depositService.getAllDeposits({
+      const response = await loanService.getAllLoans({
         page: meta.page,
         limit: meta.limit,
         search: searchValue || undefined,
         status: filters.status || undefined,
+        loanType: filters.loanType || undefined,
         startDate: dateRange.from
           ? format(dateRange.from, "yyyy-MM-dd")
           : undefined,
@@ -135,20 +168,20 @@ export function AllDeposits() {
     }).format(amount);
   };
 
-  const handleViewDetail = (deposit: DepositApplication) => {
-    setSelectedDeposit(deposit);
+  const handleViewDetail = (loan: LoanApplication) => {
+    setSelectedLoan(loan);
     setDetailDialogOpen(true);
   };
 
-  const columns: ColumnDef<DepositApplication>[] = useMemo(
+  const columns: ColumnDef<LoanApplication>[] = useMemo(
     () => [
       {
-        accessorKey: "depositNumber",
-        header: "No. Deposito",
+        accessorKey: "loanNumber",
+        header: "No. Pinjaman",
         cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="font-mono font-medium text-sm">
-              {row.original.depositNumber}
+              {row.original.loanNumber}
             </span>
             <span className="text-xs text-muted-foreground">
               {format(new Date(row.original.createdAt), "dd MMM yyyy", {
@@ -164,7 +197,7 @@ export function AllDeposits() {
         cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="font-medium text-sm">
-              {row.original.user?.employee.fullName}
+              {row.original.user?.employee?.fullName}
             </span>
             <span className="text-xs text-muted-foreground">
               {row.original.user?.employee?.employeeNumber}
@@ -173,21 +206,28 @@ export function AllDeposits() {
         ),
       },
       {
-        accessorKey: "amountValue",
+        accessorKey: "loanType",
+        header: "Jenis",
+        cell: ({ row }) => (
+          <span className="text-sm">{loanTypeMap[row.original.loanType]}</span>
+        ),
+      },
+      {
+        accessorKey: "loanAmount",
         header: "Jumlah",
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
             <span className="font-semibold text-primary">
-              {formatCurrency(row.original.amountValue)}
+              {formatCurrency(row.original.loanAmount)}
             </span>
           </div>
         ),
       },
       {
-        accessorKey: "tenorMonths",
+        accessorKey: "loanTenor",
         header: "Tenor",
         cell: ({ row }) => (
-          <span className="text-sm">{row.original.tenorMonths} Bulan</span>
+          <span className="text-sm">{row.original.loanTenor} Bulan</span>
         ),
       },
       {
@@ -195,29 +235,15 @@ export function AllDeposits() {
         header: "Status",
         cell: ({ row }) => {
           const status = statusMap[row.original.status];
-          const StatusIcon = status.icon;
+          const StatusIcon = status?.icon || AlertCircle;
           return (
             <Badge
-              variant={status.variant}
+              variant={status?.variant || "outline"}
               className="flex items-center gap-1 w-fit"
             >
               <StatusIcon className="h-3 w-3" />
-              {status.label}
+              {status?.label || row.original.status}
             </Badge>
-          );
-        },
-      },
-      {
-        accessorKey: "maturityDate",
-        header: "Jatuh Tempo",
-        cell: ({ row }) => {
-          if (!row.original.maturityDate) return "-";
-          return (
-            <span className="text-sm">
-              {format(new Date(row.original.maturityDate), "dd MMM yyyy", {
-                locale: id,
-              })}
-            </span>
           );
         },
       },
@@ -243,11 +269,10 @@ export function AllDeposits() {
     []
   );
 
-  const tableConfig: DataTableConfig<DepositApplication> = {
+  const tableConfig: DataTableConfig<LoanApplication> = {
     searchable: true,
-    searchPlaceholder: "Cari no. deposito atau nama member...",
+    searchPlaceholder: "Cari no. pinjaman atau nama...",
     filterable: true,
-
     dateRangeFilter: true,
     selectable: false,
     filterFields: [
@@ -258,11 +283,36 @@ export function AllDeposits() {
         placeholder: "Semua Status",
         options: [
           { label: "Semua Status", value: "all" },
-          { label: "Disetujui", value: DepositStatus.APPROVED },
-          { label: "Aktif", value: DepositStatus.ACTIVE },
-          { label: "Selesai", value: DepositStatus.COMPLETED },
-          { label: "Ditolak", value: DepositStatus.REJECTED },
-          { label: "Dibatalkan", value: DepositStatus.CANCELLED },
+          { label: "Draft", value: LoanStatus.DRAFT },
+          { label: "Submitted", value: LoanStatus.SUBMITTED },
+          { label: "Review DSP", value: LoanStatus.UNDER_REVIEW_DSP },
+          { label: "Review Ketua", value: LoanStatus.UNDER_REVIEW_KETUA },
+          { label: "Review Pengawas", value: LoanStatus.UNDER_REVIEW_PENGAWAS },
+          {
+            label: "Menunggu Pencairan",
+            value: LoanStatus.APPROVED_PENDING_DISBURSEMENT,
+          },
+          {
+            label: "Menunggu Otorisasi",
+            value: LoanStatus.PENDING_AUTHORIZATION,
+          },
+          { label: "Dicairkan", value: LoanStatus.DISBURSED },
+          { label: "Lunas", value: LoanStatus.COMPLETED },
+          { label: "Ditolak", value: LoanStatus.REJECTED },
+          { label: "Dibatalkan", value: LoanStatus.CANCELLED },
+        ],
+      },
+      {
+        id: "loanType",
+        label: "Jenis Pinjaman",
+        type: "select",
+        placeholder: "Semua Jenis",
+        options: [
+          { label: "Semua Jenis", value: "all" },
+          { label: "Pinjaman Tunai", value: LoanType.CASH_LOAN },
+          { label: "Reimburse Barang", value: LoanType.GOODS_REIMBURSE },
+          { label: "Barang Online", value: LoanType.GOODS_ONLINE },
+          { label: "Kredit HP", value: LoanType.GOODS_PHONE },
         ],
       },
     ],
@@ -272,9 +322,9 @@ export function AllDeposits() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Semua Data Deposito</CardTitle>
+          <CardTitle>Semua Data Pinjaman</CardTitle>
           <CardDescription>
-            Menampilkan seluruh data deposito anggota koperasi dari semua status
+            Menampilkan seluruh data pinjaman anggota koperasi dari semua status
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -300,17 +350,11 @@ export function AllDeposits() {
         </CardContent>
       </Card>
 
-      <DepositDetailDialog
-        deposit={selectedDeposit}
+      <LoanDetailDialog
+        loan={selectedLoan}
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
         onSuccess={fetchData}
-        canApprove={
-          canApprove &&
-          selectedDeposit?.status !== DepositStatus.APPROVED &&
-          selectedDeposit?.status !== DepositStatus.REJECTED &&
-          selectedDeposit?.currentStep !== null
-        }
       />
     </div>
   );

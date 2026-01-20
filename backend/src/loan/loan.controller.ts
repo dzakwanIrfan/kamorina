@@ -41,7 +41,7 @@ export class LoanController {
     private readonly loanService: LoanService,
     private readonly uploadService: UploadService,
     private readonly installmentService: LoanInstallmentService,
-  ) { }
+  ) {}
 
   /**
    * MEMBER ENDPOINTS
@@ -89,10 +89,7 @@ export class LoanController {
    */
   @Post(':id/submit')
   @HttpCode(HttpStatus.OK)
-  async submitLoan(
-    @CurrentUser() user: ICurrentUser,
-    @Param('id') id: string,
-  ) {
+  async submitLoan(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
     return this.loanService.submitLoan(user.id, id);
   }
 
@@ -138,9 +135,7 @@ export class LoanController {
   @Post('attachments/upload')
   @UseInterceptors(FilesInterceptor('files', 5)) // Max 5 files
   @HttpCode(HttpStatus.OK)
-  async uploadAttachments(
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
+  async uploadAttachments(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new Error('No files uploaded');
     }
@@ -160,7 +155,9 @@ export class LoanController {
       ];
 
       if (!allowedMimeTypes.includes(file.mimetype)) {
-        throw new Error('Invalid file type. Only PDF, DOC, DOCX, XLS, XLSX, JPG, PNG allowed');
+        throw new Error(
+          'Invalid file type. Only PDF, DOC, DOCX, XLS, XLSX, JPG, PNG allowed',
+        );
       }
 
       // Max 10MB per file
@@ -169,7 +166,9 @@ export class LoanController {
       }
     }
 
-    const fileUrls = files.map((file) => this.uploadService.getFileUrl(file.filename));
+    const fileUrls = files.map((file) =>
+      this.uploadService.getFileUrl(file.filename),
+    );
 
     return {
       message: 'Files uploaded successfully',
@@ -186,7 +185,7 @@ export class LoanController {
    */
   @Get()
   @UseGuards(RolesGuard)
-  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas', 'payroll')
   @HttpCode(HttpStatus.OK)
   async getAllLoans(@Query() query: QueryLoanDto) {
     return this.loanService.getAllLoans(query);
@@ -230,12 +229,7 @@ export class LoanController {
     @CurrentUser() user: ICurrentUser,
     @Body() dto: ApproveLoanDto,
   ) {
-    return this.loanService.processApproval(
-      id,
-      user.id,
-      user.roles,
-      dto,
-    );
+    return this.loanService.processApproval(id, user.id, user.roles, dto);
   }
 
   /**
@@ -249,11 +243,7 @@ export class LoanController {
     @CurrentUser() user: ICurrentUser,
     @Body() dto: BulkApproveLoanDto,
   ) {
-    return this.loanService.bulkProcessApproval(
-      user.id,
-      user.roles,
-      dto,
-    );
+    return this.loanService.bulkProcessApproval(user.id, user.roles, dto);
   }
 
   /**
@@ -351,8 +341,8 @@ export class LoanController {
   }
 
   /**
- * Get loan installment schedule
- */
+   * Get loan installment schedule
+   */
   @Get(':id/installments')
   @HttpCode(HttpStatus.OK)
   async getLoanInstallments(@Param('id') id: string) {

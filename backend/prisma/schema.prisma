@@ -718,8 +718,6 @@ model DepositTenorOption {
 }
 
 enum DepositStatus {
-  DRAFT
-  SUBMITTED
   UNDER_REVIEW_DSP
   UNDER_REVIEW_KETUA
   APPROVED
@@ -879,7 +877,7 @@ model DepositApplication {
 
   agreedToTerms Boolean @default(false) @map("agreed_to_terms")
 
-  status      DepositStatus        @default(DRAFT)
+  status      DepositStatus        @default(UNDER_REVIEW_DSP)
   currentStep DepositApprovalStep? @map("current_step")
 
   submittedAt     DateTime? @map("submitted_at")

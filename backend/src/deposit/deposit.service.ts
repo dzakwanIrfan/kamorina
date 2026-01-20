@@ -255,7 +255,7 @@ export class DepositService {
       const updated = await tx.depositApplication.update({
         where: { id: depositId },
         data: {
-          status: DepositStatus.SUBMITTED,
+          status: DepositStatus.UNDER_REVIEW_DSP,
           currentStep: DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
           submittedAt: new Date(),
         },
@@ -714,7 +714,7 @@ export class DepositService {
         });
 
         // Tentukan Status Baru
-        const newStatus = isLastStep ? DepositStatus.APPROVED : deposit.status;
+        const newStatus = isLastStep ? DepositStatus.APPROVED : DepositStatus.UNDER_REVIEW_KETUA;
 
         // Update Aplikasi Utama
         await tx.depositApplication.update({

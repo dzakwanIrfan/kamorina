@@ -27,8 +27,6 @@ import { DataTableConfig } from '@/types/data-table.types';
 import { useBukuTabungan } from '@/hooks/use-buku-tabungan';
 
 const statusMap = {
-  [DepositStatus.DRAFT]: { label: 'Draft', variant: 'secondary' as const, icon: Clock },
-  [DepositStatus.SUBMITTED]: { label: 'Submitted', variant: 'default' as const, icon: Clock },
   [DepositStatus.UNDER_REVIEW_DSP]: { label: 'Review DSP', variant: 'default' as const, icon: Clock },
   [DepositStatus. UNDER_REVIEW_KETUA]: { label: 'Review Ketua', variant: 'default' as const, icon: Clock },
   [DepositStatus.APPROVED]: { label: 'Disetujui', variant: 'default' as const, icon: CheckCircle2 },
@@ -212,8 +210,6 @@ export function MyDeposits() {
         placeholder: 'Semua Status',
         options: [
           { label: 'Semua Status', value: 'all' },
-          { label: 'Draft', value: DepositStatus.DRAFT },
-          { label: 'Submitted', value: DepositStatus. SUBMITTED },
           { label: 'Disetujui', value: DepositStatus.APPROVED },
           { label: 'Aktif', value: DepositStatus. ACTIVE },
           { label: 'Selesai', value: DepositStatus.COMPLETED },

@@ -104,6 +104,13 @@ const managementGroups = [
     label: "Manajemen Tabungan",
     items: [
       {
+        title: "Semua Deposito",
+        icon: PiggyBank,
+        href: "/dashboard/deposits/all",
+        roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
+        requiresMemberVerified: true,
+      },
+      {
         title: "Approval Deposito",
         icon: PiggyBank,
         href: "/dashboard/deposits/approvals",
@@ -115,13 +122,6 @@ const managementGroups = [
         icon: Edit,
         href: "/dashboard/deposit-changes/approvals",
         roles: ["ketua", "divisi_simpan_pinjam"],
-        requiresMemberVerified: true,
-      },
-      {
-        title: "Semua Deposito",
-        icon: PiggyBank,
-        href: "/dashboard/deposits/all",
-        roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
         requiresMemberVerified: true,
       },
       {
@@ -171,6 +171,13 @@ const managementGroups = [
   {
     label: "Manajemen Pinjaman",
     items: [
+      {
+        title: "Semua Pinjaman",
+        icon: FaRupiahSign,
+        href: "/dashboard/loans/all",
+        roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
+        requiresMemberVerified: true,
+      },
       {
         title: "Approval Pinjaman",
         icon: CheckCircle2,

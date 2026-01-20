@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { useState } from "react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CheckCircle2,
   XCircle,
@@ -24,9 +24,9 @@ import {
   History,
   Calendar,
   Loader2,
-} from 'lucide-react';
+} from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 import {
   DepositApplication,
@@ -34,13 +34,15 @@ import {
   DepositApprovalStep,
   DepositApprovalDecision,
   ApproveDepositDto,
-} from '@/types/deposit.types';
-import { depositService } from '@/services/deposit.service';
-import { handleApiError } from '@/lib/axios';
-import { DepositCalculation } from '@/types/deposit-option.types';
+} from "@/types/deposit.types";
+import { depositService } from "@/services/deposit.service";
+import { handleApiError } from "@/lib/axios";
+import { DepositCalculation } from "@/types/deposit-option.types";
 
 interface DepositDetailDialogProps {
-  deposit: (DepositApplication & { calculationBreakdown?: DepositCalculation }) | null;
+  deposit:
+    | (DepositApplication & { calculationBreakdown?: DepositCalculation })
+    | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
@@ -48,20 +50,46 @@ interface DepositDetailDialogProps {
 }
 
 const statusMap = {
-  [DepositStatus.DRAFT]: { label: 'Draft', variant: 'secondary' as const, icon: Clock },
-  [DepositStatus.SUBMITTED]: { label: 'Submitted', variant: 'default' as const, icon: Clock },
-  [DepositStatus.UNDER_REVIEW_DSP]: { label: 'Review DSP', variant: 'default' as const, icon: Clock },
-  [DepositStatus.UNDER_REVIEW_KETUA]: { label: 'Review Ketua', variant: 'default' as const, icon: Clock },
-  [DepositStatus.APPROVED]: { label: 'Disetujui', variant: 'default' as const, icon: CheckCircle2 },
-  [DepositStatus.ACTIVE]: { label: 'Aktif', variant: 'default' as const, icon: CheckCircle2 },
-  [DepositStatus.COMPLETED]: { label: 'Selesai', variant: 'default' as const, icon: CheckCircle2 },
-  [DepositStatus.REJECTED]: { label: 'Ditolak', variant: 'destructive' as const, icon: XCircle },
-  [DepositStatus.CANCELLED]: { label: 'Dibatalkan', variant: 'destructive' as const, icon: XCircle },
+  [DepositStatus.UNDER_REVIEW_DSP]: {
+    label: "Review DSP",
+    variant: "default" as const,
+    icon: Clock,
+  },
+  [DepositStatus.UNDER_REVIEW_KETUA]: {
+    label: "Review Ketua",
+    variant: "default" as const,
+    icon: Clock,
+  },
+  [DepositStatus.APPROVED]: {
+    label: "Disetujui",
+    variant: "default" as const,
+    icon: CheckCircle2,
+  },
+  [DepositStatus.ACTIVE]: {
+    label: "Aktif",
+    variant: "default" as const,
+    icon: CheckCircle2,
+  },
+  [DepositStatus.COMPLETED]: {
+    label: "Selesai",
+    variant: "default" as const,
+    icon: CheckCircle2,
+  },
+  [DepositStatus.REJECTED]: {
+    label: "Ditolak",
+    variant: "destructive" as const,
+    icon: XCircle,
+  },
+  [DepositStatus.CANCELLED]: {
+    label: "Dibatalkan",
+    variant: "destructive" as const,
+    icon: XCircle,
+  },
 };
 
 const stepMap = {
-  [DepositApprovalStep.DIVISI_SIMPAN_PINJAM]: 'Divisi Simpan Pinjam',
-  [DepositApprovalStep.KETUA]: 'Ketua',
+  [DepositApprovalStep.DIVISI_SIMPAN_PINJAM]: "Divisi Simpan Pinjam",
+  [DepositApprovalStep.KETUA]: "Ketua",
 };
 
 export function DepositDetailDialog({
@@ -71,9 +99,10 @@ export function DepositDetailDialog({
   onSuccess,
   canApprove = false,
 }: DepositDetailDialogProps) {
-  const [processingDecision, setProcessingDecision] = useState<DepositApprovalDecision | null>(null);
-  const [notes, setNotes] = useState('');
-  const [activeTab, setActiveTab] = useState('details');
+  const [processingDecision, setProcessingDecision] =
+    useState<DepositApprovalDecision | null>(null);
+  const [notes, setNotes] = useState("");
+  const [activeTab, setActiveTab] = useState("details");
 
   if (!deposit) return null;
 
@@ -81,9 +110,9 @@ export function DepositDetailDialog({
   const StatusIcon = status.icon;
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
@@ -103,13 +132,13 @@ export function DepositDetailDialog({
 
       toast.success(
         decision === DepositApprovalDecision.APPROVED
-          ? 'Deposito berhasil disetujui'
-          : 'Deposito berhasil ditolak'
+          ? "Deposito berhasil disetujui"
+          : "Deposito berhasil ditolak"
       );
 
       onSuccess?.();
       onOpenChange(false);
-      setNotes('');
+      setNotes("");
     } catch (error: any) {
       toast.error(handleApiError(error));
     } finally {
@@ -139,7 +168,10 @@ export function DepositDetailDialog({
           <TabsContent value="details" className="space-y-6 mt-6">
             {/* Status */}
             <div className="flex items-center justify-between">
-              <Badge variant={status.variant} className="flex items-center gap-2">
+              <Badge
+                variant={status.variant}
+                className="flex items-center gap-2"
+              >
                 <StatusIcon className="h-4 w-4" />
                 {status.label}
               </Badge>
@@ -152,8 +184,12 @@ export function DepositDetailDialog({
 
             {/* Deposit Number */}
             <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground mb-1">Nomor Deposito</p>
-              <p className="text-lg font-bold font-mono">{deposit.depositNumber}</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                Nomor Deposito
+              </p>
+              <p className="text-lg font-bold font-mono">
+                {deposit.depositNumber}
+              </p>
             </div>
 
             {/* User Info */}
@@ -166,7 +202,9 @@ export function DepositDetailDialog({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Nama</p>
-                  <p className="font-medium">{deposit.user?.employee.fullName}</p>
+                  <p className="font-medium">
+                    {deposit.user?.employee.fullName}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Email</p>
@@ -174,12 +212,14 @@ export function DepositDetailDialog({
                 </div>
                 <div>
                   <p className="text-muted-foreground">No. Karyawan</p>
-                  <p className="font-medium">{deposit.user?.employee.employeeNumber}</p>
+                  <p className="font-medium">
+                    {deposit.user?.employee.employeeNumber}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Department</p>
                   <p className="font-medium">
-                    {deposit.user?.employee.department?.departmentName || '-'}
+                    {deposit.user?.employee.department?.departmentName || "-"}
                   </p>
                 </div>
               </div>
@@ -205,11 +245,15 @@ export function DepositDetailDialog({
                 </div>
                 <div>
                   <p className="text-muted-foreground">Suku Bunga</p>
-                  <p className="font-medium">{deposit.interestRate}% per tahun</p>
+                  <p className="font-medium">
+                    {deposit.interestRate}% per tahun
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Setoran</p>
-                  <p className="font-medium">{deposit.installmentCount}/{deposit.tenorMonths}</p>
+                  <p className="font-medium">
+                    {deposit.installmentCount}/{deposit.tenorMonths}
+                  </p>
                 </div>
               </div>
             </div>
@@ -226,7 +270,9 @@ export function DepositDetailDialog({
                   <div>
                     <p className="text-muted-foreground">Tanggal Submit</p>
                     <p className="font-medium">
-                      {format(new Date(deposit.submittedAt), 'dd MMMM yyyy', { locale: id })}
+                      {format(new Date(deposit.submittedAt), "dd MMMM yyyy", {
+                        locale: id,
+                      })}
                     </p>
                   </div>
                 )}
@@ -234,7 +280,9 @@ export function DepositDetailDialog({
                   <div>
                     <p className="text-muted-foreground">Tanggal Disetujui</p>
                     <p className="font-medium">
-                      {format(new Date(deposit.approvedAt), 'dd MMMM yyyy', { locale: id })}
+                      {format(new Date(deposit.approvedAt), "dd MMMM yyyy", {
+                        locale: id,
+                      })}
                     </p>
                   </div>
                 )}
@@ -242,7 +290,9 @@ export function DepositDetailDialog({
                   <div>
                     <p className="text-muted-foreground">Tanggal Diaktifkan</p>
                     <p className="font-medium">
-                      {format(new Date(deposit.activatedAt), 'dd MMMM yyyy', { locale: id })}
+                      {format(new Date(deposit.activatedAt), "dd MMMM yyyy", {
+                        locale: id,
+                      })}
                     </p>
                   </div>
                 )}
@@ -250,7 +300,9 @@ export function DepositDetailDialog({
                   <div>
                     <p className="text-muted-foreground">Tanggal Jatuh Tempo</p>
                     <p className="font-bold text-primary">
-                      {format(new Date(deposit.maturityDate), 'dd MMMM yyyy', { locale: id })}
+                      {format(new Date(deposit.maturityDate), "dd MMMM yyyy", {
+                        locale: id,
+                      })}
                     </p>
                   </div>
                 )}
@@ -258,12 +310,15 @@ export function DepositDetailDialog({
             </div>
 
             {/* Rejection Reason */}
-            {deposit.status === DepositStatus.REJECTED && deposit.rejectionReason && (
-              <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
-                <h3 className="font-semibold text-destructive">Alasan Penolakan</h3>
-                <p className="text-sm">{deposit.rejectionReason}</p>
-              </div>
-            )}
+            {deposit.status === DepositStatus.REJECTED &&
+              deposit.rejectionReason && (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 space-y-2">
+                  <h3 className="font-semibold text-destructive">
+                    Alasan Penolakan
+                  </h3>
+                  <p className="text-sm">{deposit.rejectionReason}</p>
+                </div>
+              )}
           </TabsContent>
 
           <TabsContent value="timeline" className="space-y-6 mt-6">
@@ -272,20 +327,23 @@ export function DepositDetailDialog({
               {deposit.approvals.map((approval, index) => {
                 const isLast = index === deposit.approvals.length - 1;
                 const isPending = !approval.decision;
-                const isApproved = approval.decision === DepositApprovalDecision.APPROVED;
-                const isRejected = approval.decision === DepositApprovalDecision.REJECTED;
+                const isApproved =
+                  approval.decision === DepositApprovalDecision.APPROVED;
+                const isRejected =
+                  approval.decision === DepositApprovalDecision.REJECTED;
 
                 return (
                   <div key={approval.id} className="relative">
                     <div className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${isApproved
-                            ? 'border-green-500 bg-green-50 text-green-600 dark:bg-green-950'
-                            : isRejected
-                              ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950'
-                              : 'border-gray-300 bg-gray-50 text-gray-400 dark:bg-gray-900'
-                            }`}
+                          className={`flex h-10 w-10 items-center justify-center rounded-full border-2 ${
+                            isApproved
+                              ? "border-green-500 bg-green-50 text-green-600 dark:bg-green-950"
+                              : isRejected
+                              ? "border-red-500 bg-red-50 text-red-600 dark:bg-red-950"
+                              : "border-gray-300 bg-gray-50 text-gray-400 dark:bg-gray-900"
+                          }`}
                         >
                           {isApproved ? (
                             <CheckCircle2 className="h-5 w-5" />
@@ -297,16 +355,19 @@ export function DepositDetailDialog({
                         </div>
                         {!isLast && (
                           <div
-                            className={`mt-2 h-full w-0.5 ${isApproved ? 'bg-green-500' : 'bg-gray-200'
-                              }`}
-                            style={{ minHeight: '40px' }}
+                            className={`mt-2 h-full w-0.5 ${
+                              isApproved ? "bg-green-500" : "bg-gray-200"
+                            }`}
+                            style={{ minHeight: "40px" }}
                           />
                         )}
                       </div>
 
                       <div className="flex-1 space-y-1 pb-8">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold">{stepMap[approval.step]}</h4>
+                          <h4 className="font-semibold">
+                            {stepMap[approval.step]}
+                          </h4>
                           {isPending && (
                             <Badge variant="outline" className="gap-1">
                               <Clock className="h-3 w-3" />
@@ -314,7 +375,10 @@ export function DepositDetailDialog({
                             </Badge>
                           )}
                           {isApproved && (
-                            <Badge variant="default" className="gap-1 bg-green-600">
+                            <Badge
+                              variant="default"
+                              className="gap-1 bg-green-600"
+                            >
                               <CheckCircle2 className="h-3 w-3" />
                               Disetujui
                             </Badge>
@@ -335,9 +399,13 @@ export function DepositDetailDialog({
 
                         {approval.decidedAt && (
                           <p className="text-sm text-muted-foreground">
-                            {format(new Date(approval.decidedAt), 'dd MMMM yyyy HH:mm', {
-                              locale: id,
-                            })}
+                            {format(
+                              new Date(approval.decidedAt),
+                              "dd MMMM yyyy HH:mm",
+                              {
+                                locale: id,
+                              }
+                            )}
                           </p>
                         )}
 
@@ -357,7 +425,10 @@ export function DepositDetailDialog({
 
         {/* Action Buttons for Approvers */}
         {canApprove &&
-          [DepositStatus.SUBMITTED, DepositStatus.UNDER_REVIEW_DSP, DepositStatus.UNDER_REVIEW_KETUA].includes(deposit.status) &&
+          [
+            DepositStatus.UNDER_REVIEW_DSP,
+            DepositStatus.UNDER_REVIEW_KETUA,
+          ].includes(deposit.status) &&
           deposit.currentStep && (
             <>
               <Separator />
@@ -376,7 +447,9 @@ export function DepositDetailDialog({
                 <div className="flex gap-3">
                   <Button
                     variant="destructive"
-                    onClick={() => handleProcess(DepositApprovalDecision.REJECTED)}
+                    onClick={() =>
+                      handleProcess(DepositApprovalDecision.REJECTED)
+                    }
                     disabled={!!processingDecision}
                     className="flex-1"
                   >
@@ -388,7 +461,9 @@ export function DepositDetailDialog({
                     Tolak
                   </Button>
                   <Button
-                    onClick={() => handleProcess(DepositApprovalDecision.APPROVED)}
+                    onClick={() =>
+                      handleProcess(DepositApprovalDecision.APPROVED)
+                    }
                     disabled={!!processingDecision}
                     className="flex-1"
                   >
