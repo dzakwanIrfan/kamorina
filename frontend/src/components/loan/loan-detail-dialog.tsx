@@ -416,7 +416,7 @@ export function LoanDetailDialog({
                 <Separator />
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground mb-1">
-                    Nomor Rekening
+                    Nomor Rekening:
                   </p>
                   <p className="text-lg font-mono font-medium">
                     {loan.user?.employee?.bankAccountNumber}
@@ -424,9 +424,9 @@ export function LoanDetailDialog({
                 </div>
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground mb-1">
-                    Nama Bank
+                    Nama Bank:
                   </p>
-                  <p className="text-lg font-mono font-medium">
+                  <p className="font-medium">
                     {loan.user?.employee?.bankAccountName}
                   </p>
                 </div>

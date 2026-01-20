@@ -5,8 +5,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessa
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ShoppingCart, Link as LinkIcon } from 'lucide-react';
-import { FaRupiahSign } from "react-icons/fa6";
 import { formatCurrency } from '@/lib/loan-utils';
+import { CurrencyInput } from '@/components/ui/currency-input';
 
 interface GoodsOnlineFieldsProps {
   form: UseFormReturn<any>;
@@ -46,17 +46,13 @@ export function GoodsOnlineFields({ form, maxAmount, isSubmitting }: GoodsOnline
           <FormItem>
             <FormLabel>Harga Barang</FormLabel>
             <FormControl>
-              <div className="relative">
-                <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  placeholder="5000000"
-                  className="pl-10"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  disabled={isSubmitting}
-                />
-              </div>
+              <CurrencyInput
+                placeholder="Masukkan harga barang"
+                value={field.value}
+                onChange={(value) => field.onChange(parseFloat(value) || 0)}
+                maxValue={maxAmount}
+                disabled={isSubmitting}
+              />
             </FormControl>
             <FormDescription>
               Maksimal {formatCurrency(maxAmount)}

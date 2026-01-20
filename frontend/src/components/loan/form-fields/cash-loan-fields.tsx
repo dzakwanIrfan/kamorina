@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { UseFormReturn } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
-import { FaRupiahSign } from "react-icons/fa6";
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { LoanEligibility } from '@/types/loan.types';
-import { formatCurrency } from '@/lib/loan-utils';
+import { UseFormReturn } from "react-hook-form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { LoanEligibility } from "@/types/loan.types";
+import { formatCurrency } from "@/lib/loan-utils";
+import { CurrencyInput } from "@/components/ui/currency-input";
 
 interface CashLoanFieldsProps {
   form: UseFormReturn<any>;
@@ -14,7 +20,11 @@ interface CashLoanFieldsProps {
   isSubmitting: boolean;
 }
 
-export function CashLoanFields({ form, eligibility, isSubmitting }: CashLoanFieldsProps) {
+export function CashLoanFields({
+  form,
+  eligibility,
+  isSubmitting,
+}: CashLoanFieldsProps) {
   return (
     <>
       <FormField
@@ -24,21 +34,18 @@ export function CashLoanFields({ form, eligibility, isSubmitting }: CashLoanFiel
           <FormItem>
             <FormLabel>Jumlah Pinjaman</FormLabel>
             <FormControl>
-              <div className="relative">
-                <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  placeholder="5000000"
-                  className="pl-10"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                  disabled={isSubmitting}
-                />
-              </div>
+              <CurrencyInput
+                placeholder="Masukkan jumlah yang ingin dipinjam"
+                value={field.value}
+                onChange={(value) => field.onChange(parseFloat(value) || 0)}
+                minValue={eligibility.loanLimit.minLoanAmount}
+                maxValue={eligibility.loanLimit.maxLoanAmount}
+                disabled={isSubmitting}
+              />
             </FormControl>
             <FormDescription>
-              Minimal {formatCurrency(eligibility.loanLimit.minLoanAmount)} - Maksimal{' '}
-              {formatCurrency(eligibility.loanLimit.maxLoanAmount)}
+              Minimal {formatCurrency(eligibility.loanLimit.minLoanAmount)} -
+              Maksimal {formatCurrency(eligibility.loanLimit.maxLoanAmount)}
             </FormDescription>
             <FormMessage />
           </FormItem>

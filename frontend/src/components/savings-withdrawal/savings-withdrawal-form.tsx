@@ -23,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
@@ -198,10 +198,11 @@ export function SavingsWithdrawalForm({
                 <FormItem>
                   <FormLabel>Jumlah Penarikan</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
+                    <CurrencyInput
                       placeholder="Masukkan jumlah yang ingin ditarik"
-                      {...field}
+                      value={field.value}
+                      onChange={field.onChange}
+                      maxValue={availableBalance}
                     />
                   </FormControl>
                   <FormDescription>

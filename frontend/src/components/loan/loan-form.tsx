@@ -146,7 +146,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const loanAmount = getLoanAmount(form.watch());
   const loanTenor = form.watch('loanTenor');
   const calculations = loanAmount && loanTenor && selectedType
-    ? calculateLoan(loanAmount, loanTenor, selectedType) 
+    ? calculateLoan(Number(loanAmount), Number(loanTenor), selectedType) 
     : null;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

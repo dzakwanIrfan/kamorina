@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -75,11 +75,24 @@ function StatCardSkeleton() {
 }
 
 export function MyBukuTabungan() {
-  const [activeTab, setActiveTab] = useState("overview");
+  const searchParams = useSearchParams();
+  
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Get active tab from URL or default to "overview"
+  const activeTab = searchParams.get("tab") || "overview";
 
   const { tabungan, isLoading, notFound, refetch } = useBukuTabungan({
     includeTransactionSummary: true,
   });
+
+  // Function to handle tab change
+  const handleTabChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", value);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   // Show empty state if account not found
   if (!isLoading && notFound) {
@@ -164,7 +177,7 @@ export function MyBukuTabungan() {
       {/* Tabs */}
       <Tabs
         value={activeTab}
-        onValueChange={setActiveTab}
+        onValueChange={handleTabChange}
         className="space-y-4"
       >
         <TabsList>
