@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  Min,
+  IsBooleanString,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class QueryUserDto {
@@ -25,4 +31,16 @@ export class QueryUserDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  departmentId?: string;
+
+  @IsOptional()
+  @IsBooleanString()
+  isActive?: string;
 }

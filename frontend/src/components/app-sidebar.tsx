@@ -219,6 +219,13 @@ const managementGroups = [
         requiresMemberVerified: true,
       },
       {
+        title: "Users",
+        icon: Users,
+        href: "/dashboard/users",
+        roles: ["ketua", "divisi_simpan_pinjam", "admin"],
+        requiresMemberVerified: true,
+      },
+      {
         title: "Karyawan",
         icon: Users,
         href: "/dashboard/employees",
@@ -302,7 +309,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       role === "pengawas" ||
       role === "bendahara" ||
       role === "payroll" ||
-      role === "shopkeeper"
+      role === "shopkeeper" ||
+      role === "admin"
   );
 
   return (

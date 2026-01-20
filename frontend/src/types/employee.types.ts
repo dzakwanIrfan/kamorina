@@ -1,6 +1,6 @@
 export enum EmployeeType {
-  TETAP = 'TETAP',
-  KONTRAK = 'KONTRAK',
+  TETAP = "TETAP",
+  KONTRAK = "KONTRAK",
 }
 
 export interface Department {
@@ -48,6 +48,7 @@ export interface CreateEmployeeRequest {
   employeeType: EmployeeType;
   permanentEmployeeDate?: Date | null;
   bankAccountNumber: string;
+  bankAccountName: string;
 }
 
 export interface UpdateEmployeeRequest {
@@ -59,6 +60,7 @@ export interface UpdateEmployeeRequest {
   isActive?: boolean;
   permanentEmployeeDate?: Date | null;
   bankAccountNumber?: string;
+  bankAccountName?: string;
 }
 
 export interface QueryEmployeeParams {
@@ -66,7 +68,7 @@ export interface QueryEmployeeParams {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   isActive?: boolean;
   employeeNumber?: string;
   fullName?: string;
