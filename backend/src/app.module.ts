@@ -20,6 +20,8 @@ import { BukuTabunganModule } from './buku-tabungan/buku-tabungan.module';
 import { SavingsModule } from './savings/savings.module';
 import { LoanRepaymentModule } from './loan-repayment/loan-repayment.module';
 import { UsersModule } from './users/users.module';
+import { EmailConfigModule } from './email-config/email-config.module';
+import { EmailLogsModule } from './email-logs/email-logs.module';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { UsersModule } from './users/users.module';
     SavingsModule,
     LoanRepaymentModule,
     UsersModule,
+    EmailConfigModule,
+    EmailLogsModule,
   ],
 })
 export class AppModule {}

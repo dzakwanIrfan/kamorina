@@ -2,21 +2,158 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '../config/env.config';
 import * as nodemailer from 'nodemailer';
+import { PrismaService } from '../prisma/prisma.service';
+import { EncryptionUtil } from '../common/utils/encryption.util';
 
 @Injectable()
 export class MailService {
   private transporter: nodemailer.Transporter;
 
-  constructor(private configService: ConfigService<EnvironmentVariables>) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('MAIL_HOST', { infer: true }),
-      port: this.configService.get('MAIL_PORT', { infer: true }),
+  constructor(
+    private configService: ConfigService<EnvironmentVariables>,
+    private prisma: PrismaService,
+    private encryptionUtil: EncryptionUtil,
+  ) {
+    // Create a proxy transporter that uses our dynamic sending logic
+    this.transporter = {
+      sendMail: (options: nodemailer.SendMailOptions) =>
+        this.sendInternalMail(options),
+    } as any;
+  }
+
+  private async sendInternalMail(options: nodemailer.SendMailOptions) {
+    const { to, subject, html } = options;
+    const toAddress = Array.isArray(to) ? to.join(', ') : (to as string);
+
+    // 1. Get Active Email Config
+    const emailConfig = await this.prisma.email.findFirst({
+      where: { isActive: true },
+    });
+
+    if (!emailConfig) {
+      throw new Error('No active email configuration found in database.');
+    }
+
+    const decryptedPassword = this.encryptionUtil.decrypt(emailConfig.password);
+
+    const transporter = nodemailer.createTransport({
+      host: emailConfig.host,
+      port: emailConfig.port,
       secure: false,
       auth: {
-        user: this.configService.get('MAIL_USER', { infer: true }),
-        pass: this.configService.get('MAIL_PASSWORD', { infer: true }),
+        user: emailConfig.username,
+        pass: decryptedPassword,
       },
     });
+
+    // 2. Log PENDING
+    const log = await this.prisma.emailLog.create({
+      data: {
+        emailId: emailConfig.id,
+        recipient: toAddress,
+        subject: subject || 'No Subject',
+        content: (html as string) || 'No Content',
+        status: 'PENDING',
+      },
+    });
+
+    try {
+      // 3. Send
+      await transporter.sendMail({
+        from: emailConfig.fromName, // Use configured From Name
+        to,
+        subject,
+        html,
+      });
+
+      // 4. Update SENT
+      await this.prisma.emailLog.update({
+        where: { id: log.id },
+        data: { status: 'SENT' },
+      });
+    } catch (error) {
+      // 5. Update FAILED
+      await this.prisma.emailLog.update({
+        where: { id: log.id },
+        data: { status: 'FAILED', errorMessage: error.message },
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Resend failed email using existing log
+   */
+  async resendFailedEmail(logId: string) {
+    // 1. Get Log
+    const log = await this.prisma.emailLog.findUnique({
+      where: { id: logId },
+    });
+
+    if (!log) {
+      throw new Error('Email log not found');
+    }
+
+    if (log.status !== 'FAILED') {
+      throw new Error('Only failed emails can be resent');
+    }
+
+    // 2. Get Active Email Config (or use the one in log if still active, but simpler to just use current active)
+    const emailConfig = await this.prisma.email.findFirst({
+      where: { isActive: true },
+    });
+
+    if (!emailConfig) {
+      throw new Error('No active email configuration found in database.');
+    }
+
+    const decryptedPassword = this.encryptionUtil.decrypt(emailConfig.password);
+
+    const transporter = nodemailer.createTransport({
+      host: emailConfig.host,
+      port: emailConfig.port,
+      secure: false,
+      auth: {
+        user: emailConfig.username,
+        pass: decryptedPassword,
+      },
+    });
+
+    try {
+      // 3. Send
+      await transporter.sendMail({
+        from: emailConfig.fromName,
+        to: log.recipient,
+        subject: log.subject,
+        html: log.content || '',
+      });
+
+      // 4. Update SENT
+      await this.prisma.emailLog.update({
+        where: { id: log.id },
+        data: {
+          status: 'SENT',
+          errorMessage: null, // Clear error
+          emailId: emailConfig.id, // Update sender used
+          sentAt: new Date(), // Update sent time? Or keep original? Typically retry updates time or we track revisions. Let's update timestamp to reflect actual sent time.
+        },
+      });
+
+      return { message: 'Email resent successfully' };
+    } catch (error) {
+      // 5. Update FAILED count
+      await this.prisma.emailLog.update({
+        where: { id: log.id },
+        data: {
+          status: 'FAILED',
+          errorMessage: error.message,
+          retryCount: {
+            increment: 1,
+          },
+        },
+      });
+      throw error;
+    }
   }
 
   // Helper untuk format currency
@@ -89,7 +226,8 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Member Baru Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
+      subject:
+        'Pengajuan Member Baru Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${approverName},</h2>
         <p>Ada pengajuan member baru yang menunggu persetujuan Anda.</p>
@@ -216,7 +354,8 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Pinjaman Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
+      subject:
+        'Pengajuan Pinjaman Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${approverName},</h2>
         <p>Ada pengajuan pinjaman baru yang menunggu persetujuan Anda.</p>
@@ -254,7 +393,8 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Pinjaman Anda Direvisi - Koperasi Kamorina Surya Niaga',
+      subject:
+        'Pengajuan Pinjaman Anda Direvisi - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${applicantName},</h2>
         <p>Pengajuan pinjaman Anda dengan nomor <strong>${loanNumber}</strong> telah direvisi oleh Divisi Simpan Pinjam.</p>
@@ -439,7 +579,8 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pinjaman Telah Selesai Dicairkan - Koperasi Kamorina Surya Niaga',
+      subject:
+        'Pinjaman Telah Selesai Dicairkan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Notifikasi Pencairan Pinjaman</h2>
         <p>Pinjaman berikut telah selesai diproses dan dicairkan:</p>
@@ -473,7 +614,8 @@ export class MailService {
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
       to: email,
-      subject: 'Pengajuan Deposito Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
+      subject:
+        'Pengajuan Deposito Menunggu Persetujuan - Koperasi Kamorina Surya Niaga',
       html: `
         <h2>Halo ${approverName},</h2>
         <p>Ada pengajuan deposito baru yang menunggu persetujuan Anda.</p>
@@ -614,14 +756,16 @@ export class MailService {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposit-changes/approvals`;
     const formattedCurrentAmount = this.formatCurrency(currentAmount);
     const formattedNewAmount = this.formatCurrency(newAmount);
-    const roleLabel = roleName === 'divisi_simpan_pinjam'
-      ? 'Divisi Simpan Pinjam'
-      : 'Ketua Koperasi';
+    const roleLabel =
+      roleName === 'divisi_simpan_pinjam'
+        ? 'Divisi Simpan Pinjam'
+        : 'Ketua Koperasi';
 
     const amountDifference = newAmount - currentAmount;
-    const differenceLabel = amountDifference >= 0
-      ? `+${this.formatCurrency(amountDifference)}`
-      : this.formatCurrency(amountDifference);
+    const differenceLabel =
+      amountDifference >= 0
+        ? `+${this.formatCurrency(amountDifference)}`
+        : this.formatCurrency(amountDifference);
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -859,9 +1003,10 @@ export class MailService {
     const formattedAdminFee = this.formatCurrency(adminFee);
 
     const amountDifference = newAmount - currentAmount;
-    const differenceLabel = amountDifference >= 0
-      ? `+${this.formatCurrency(amountDifference)}`
-      : this.formatCurrency(amountDifference);
+    const differenceLabel =
+      amountDifference >= 0
+        ? `+${this.formatCurrency(amountDifference)}`
+        : this.formatCurrency(amountDifference);
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -1108,9 +1253,10 @@ export class MailService {
   ) {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/deposit-withdrawals/approvals`;
     const formattedAmount = this.formatCurrency(withdrawalAmount);
-    const roleLabel = roleName === 'divisi_simpan_pinjam'
-      ? 'Divisi Simpan Pinjam'
-      : 'Ketua Koperasi';
+    const roleLabel =
+      roleName === 'divisi_simpan_pinjam'
+        ? 'Divisi Simpan Pinjam'
+        : 'Ketua Koperasi';
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),
@@ -1432,9 +1578,10 @@ export class MailService {
   ) {
     const dashboardUrl = `${this.configService.get('FRONTEND_URL', { infer: true })}/dashboard/savings-withdrawals/approvals`;
     const formattedAmount = this.formatCurrency(withdrawalAmount);
-    const roleLabel = roleName === 'divisi_simpan_pinjam'
-      ? 'Divisi Simpan Pinjam'
-      : 'Ketua Koperasi';
+    const roleLabel =
+      roleName === 'divisi_simpan_pinjam'
+        ? 'Divisi Simpan Pinjam'
+        : 'Ketua Koperasi';
 
     await this.transporter.sendMail({
       from: this.configService.get('MAIL_FROM', { infer: true }),

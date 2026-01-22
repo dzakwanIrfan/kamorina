@@ -16,6 +16,7 @@ import { seedDepositOptions } from './08-deposit-options.seed';
 import { seedMemberApplications } from './09-member-applications.seed';
 import { seedSavingsAccounts } from './10-savings-accounts.seed';
 import { seedSavingsTransactions } from './11-savings-transactions.seed';
+import { seedEmails } from './12-emails.seed';
 
 // Re-export individual seeders for standalone use
 export {
@@ -30,6 +31,7 @@ export {
   seedMemberApplications,
   seedSavingsAccounts,
   seedSavingsTransactions,
+  seedEmails,
 };
 
 // Re-export helpers
@@ -60,6 +62,7 @@ export async function runAllSeeders(prisma: PrismaClient): Promise<void> {
     { name: 'MemberApplications', fn: () => seedMemberApplications(ctx) },
     { name: 'SavingsAccounts', fn: () => seedSavingsAccounts(ctx) },
     { name: 'SavingsTransactions', fn: () => seedSavingsTransactions(ctx) },
+    { name: 'Emails', fn: () => seedEmails(ctx) },
   ];
 
   for (const seeder of seeders) {
@@ -102,6 +105,7 @@ async function printSummary(prisma: PrismaClient): Promise<void> {
     prisma.savingsTransaction.count(),
     prisma.payrollPeriod.count(),
     prisma.cooperativeSetting.count(),
+    prisma.email.count(),
   ]);
 
   const labels = [
@@ -115,6 +119,7 @@ async function printSummary(prisma: PrismaClient): Promise<void> {
     'Savings Transactions',
     'Payroll Periods',
     'Cooperative Settings',
+    'Emails',
   ];
 
   labels.forEach((label, i) => {

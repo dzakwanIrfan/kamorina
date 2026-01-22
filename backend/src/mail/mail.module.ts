@@ -7,9 +7,13 @@ import { MailProcessor } from './mail.processor';
 import { MailQueueController } from './mail-queue.controller';
 import { EMAIL_QUEUE_NAME } from './mail.types';
 import { EnvironmentVariables } from '../config/env.config';
+import { PrismaModule } from '../prisma/prisma.module';
+import { EmailConfigModule } from '../email-config/email-config.module';
 
 @Module({
   imports: [
+    PrismaModule,
+    EmailConfigModule,
     // Register BullMQ dengan Redis connection
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -18,7 +22,8 @@ import { EnvironmentVariables } from '../config/env.config';
         connection: {
           host: configService.get('REDIS_HOST', { infer: true }) || 'localhost',
           port: configService.get('REDIS_PORT', { infer: true }) || 6379,
-          password: configService.get('REDIS_PASSWORD', { infer: true }) || undefined,
+          password:
+            configService.get('REDIS_PASSWORD', { infer: true }) || undefined,
         },
         defaultJobOptions: {
           attempts: 5,
@@ -42,15 +47,7 @@ import { EnvironmentVariables } from '../config/env.config';
     }),
   ],
   controllers: [MailQueueController],
-  providers: [
-    MailService,
-    MailQueueService,
-    MailProcessor,
-  ],
-  exports: [
-    MailService,
-    MailQueueService,
-    BullModule,
-  ],
+  providers: [MailService, MailQueueService, MailProcessor],
+  exports: [MailService, MailQueueService, BullModule],
 })
-export class MailModule { }
+export class MailModule {}

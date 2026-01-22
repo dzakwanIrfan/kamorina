@@ -2,8 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Delete,
   Body,
   Param,
   Query,
@@ -13,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { DepositService } from './deposit.service';
 import { CreateDepositDto } from './dto/create-deposit.dto';
-import { UpdateDepositDto } from './dto/update-deposit.dto';
 import { ApproveDepositDto } from './dto/approve-deposit.dto';
 import { BulkApproveDepositDto } from './dto/bulk-approve-deposit.dto';
 import { QueryDepositDto } from './dto/query-deposit.dto';
@@ -33,52 +30,15 @@ export class DepositController {
    */
 
   /**
-   * Create draft deposit application
+   * Create deposit application
    */
-  @Post('draft')
+  @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createDraft(
+  async create(
     @CurrentUser() user: ICurrentUser,
     @Body() createDepositDto: CreateDepositDto,
   ) {
-    return this.depositService.createDraft(user.id, createDepositDto);
-  }
-
-  /**
-   * Update draft deposit
-   */
-  @Put('draft/:id')
-  @HttpCode(HttpStatus.OK)
-  async updateDraft(
-    @CurrentUser() user: ICurrentUser,
-    @Param('id') id: string,
-    @Body() updateDepositDto: UpdateDepositDto,
-  ) {
-    return this.depositService.updateDraft(user.id, id, updateDepositDto);
-  }
-
-  /**
-   * Submit deposit application
-   */
-  @Post(':id/submit')
-  @HttpCode(HttpStatus.OK)
-  async submitDeposit(
-    @CurrentUser() user: ICurrentUser,
-    @Param('id') id: string,
-  ) {
-    return this.depositService.submitDeposit(user.id, id);
-  }
-
-  /**
-   * Delete draft deposit
-   */
-  @Delete('draft/:id')
-  @HttpCode(HttpStatus.OK)
-  async deleteDraft(
-    @CurrentUser() user: ICurrentUser,
-    @Param('id') id: string,
-  ) {
-    return this.depositService.deleteDraft(user.id, id);
+    return this.depositService.create(user.id, createDepositDto);
   }
 
   /**

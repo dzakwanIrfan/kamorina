@@ -1142,6 +1142,7 @@ model EmailLog {
   content      String?     @db.Text
   status       EmailStatus @default(PENDING)
   errorMessage String?     @db.Text
+  retryCount   Int         @default(0) @map("retry_count")
 
   sentAt DateTime @default(now())
 

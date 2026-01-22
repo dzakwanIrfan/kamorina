@@ -9,7 +9,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailQueueService } from '../mail/mail-queue.service';
 import { DepositOptionService } from './deposit-option.service';
 import { CreateDepositDto } from './dto/create-deposit.dto';
-import { UpdateDepositDto } from './dto/update-deposit.dto';
 import { ApproveDepositDto } from './dto/approve-deposit.dto';
 import { BulkApproveDepositDto } from './dto/bulk-approve-deposit.dto';
 import { QueryDepositDto } from './dto/query-deposit.dto';
@@ -29,7 +28,7 @@ export class DepositService {
     private prisma: PrismaService,
     private mailQueueService: MailQueueService,
     private depositOptionService: DepositOptionService,
-  ) { }
+  ) {}
 
   /**
    * Generate deposit number: DEPO-YYYYMMDD-XXXX
@@ -78,9 +77,9 @@ export class DepositService {
   }
 
   /**
-   * Create draft deposit application
+   * Create deposit application (Directly Submitted)
    */
-  async createDraft(userId: string, dto: CreateDepositDto) {
+  async create(userId: string, dto: CreateDepositDto) {
     if (!dto.agreedToTerms) {
       throw new BadRequestException(
         'Anda harus menyetujui syarat dan ketentuan',
@@ -107,6 +106,7 @@ export class DepositService {
     const tenorMonths = tenorOption.months;
     const depositNumber = await this.generateDepositNumber();
     const { interestRate } = await this.getDepositSettings();
+    const now = new Date();
 
     const deposit = await this.prisma.depositApplication.create({
       data: {
@@ -115,8 +115,26 @@ export class DepositService {
         amountValue,
         tenorMonths,
         agreedToTerms: dto.agreedToTerms,
-        status: DepositStatus.DRAFT,
+        status: DepositStatus.UNDER_REVIEW_DSP,
+        currentStep: DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
+        submittedAt: now,
         interestRate,
+        approvals: {
+          create: [
+            { step: DepositApprovalStep.DIVISI_SIMPAN_PINJAM },
+            { step: DepositApprovalStep.KETUA },
+          ],
+        },
+        history: {
+          create: {
+            status: DepositStatus.UNDER_REVIEW_DSP,
+            amountValue: amountOption.amount,
+            tenorMonths: tenorOption.months,
+            action: 'SUBMITTED',
+            actionAt: now,
+            actionBy: userId,
+          },
+        },
       },
       include: {
         user: {
@@ -130,168 +148,12 @@ export class DepositService {
           },
         },
       },
-    });
-
-    return {
-      message: 'Draft deposito berhasil dibuat',
-      deposit,
-    };
-  }
-
-  /**
-   * Update draft deposit
-   */
-  async updateDraft(userId: string, depositId: string, dto: UpdateDepositDto) {
-    const deposit = await this.prisma.depositApplication.findUnique({
-      where: { id: depositId },
-    });
-
-    if (!deposit) {
-      throw new NotFoundException('Deposito tidak ditemukan');
-    }
-
-    if (deposit.userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke deposito ini');
-    }
-
-    if (deposit.status !== DepositStatus.DRAFT) {
-      throw new BadRequestException('Hanya draft yang bisa diupdate');
-    }
-
-    const updateData: any = {};
-    let newAmountValue = deposit.amountValue.toNumber();
-    let newTenorMonths = deposit.tenorMonths;
-
-    if (dto.depositAmountCode) {
-      const amountOption =
-        await this.depositOptionService.findAmountOptionByCode(
-          dto.depositAmountCode,
-        );
-      if (!amountOption.isActive) {
-        throw new BadRequestException('Opsi jumlah deposito tidak aktif');
-      }
-      updateData.depositAmountCode = dto.depositAmountCode;
-      updateData.amountValue = amountOption.amount.toNumber();
-      newAmountValue = amountOption.amount.toNumber();
-    }
-
-    if (dto.depositTenorCode) {
-      const tenorOption = await this.depositOptionService.findTenorOptionByCode(
-        dto.depositTenorCode,
-      );
-      if (!tenorOption.isActive) {
-        throw new BadRequestException('Opsi tenor deposito tidak aktif');
-      }
-      updateData.depositTenorCode = dto.depositTenorCode;
-      updateData.tenorMonths = tenorOption.months;
-      newTenorMonths = tenorOption.months;
-    }
-
-    if (dto.agreedToTerms !== undefined) {
-      updateData.agreedToTerms = dto.agreedToTerms;
-    }
-
-    // Recalculate if amount or tenor changed
-    if (dto.depositAmountCode || dto.depositTenorCode) {
-      updateData.interestRate = await this.getDepositSettings().then(
-        (s) => s.interestRate,
-      );
-    }
-
-    const updated = await this.prisma.depositApplication.update({
-      where: { id: depositId },
-      data: updateData,
-      include: {
-        user: {
-          include: {
-            employee: {
-              include: {
-                department: true,
-                golongan: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return {
-      message: 'Draft deposito berhasil diupdate',
-      deposit: updated,
-    };
-  }
-
-  /**
-   * Submit deposit application
-   */
-  async submitDeposit(userId: string, depositId: string) {
-    const deposit = await this.prisma.depositApplication.findUnique({
-      where: { id: depositId },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!deposit) {
-      throw new NotFoundException('Deposito tidak ditemukan');
-    }
-
-    if (deposit.userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke deposito ini');
-    }
-
-    if (deposit.status !== DepositStatus.DRAFT) {
-      throw new BadRequestException('Hanya draft yang bisa disubmit');
-    }
-
-    if (!deposit.agreedToTerms) {
-      throw new BadRequestException(
-        'Anda harus menyetujui syarat dan ketentuan',
-      );
-    }
-
-    const result = await this.prisma.$transaction(async (tx) => {
-      // Update deposit status
-      const updated = await tx.depositApplication.update({
-        where: { id: depositId },
-        data: {
-          status: DepositStatus.UNDER_REVIEW_DSP,
-          currentStep: DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
-          submittedAt: new Date(),
-        },
-      });
-
-      // Create approval records
-      await tx.depositApproval.createMany({
-        data: [
-          {
-            depositApplicationId: depositId,
-            step: DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
-          },
-          { depositApplicationId: depositId, step: DepositApprovalStep.KETUA },
-        ],
-      });
-
-      // Save history
-      await tx.depositHistory.create({
-        data: {
-          depositApplicationId: depositId,
-          status: DepositStatus.SUBMITTED,
-          amountValue: updated.amountValue,
-          tenorMonths: updated.tenorMonths,
-          action: 'SUBMITTED',
-          actionAt: new Date(),
-          actionBy: userId,
-        },
-      });
-
-      return updated;
     });
 
     // Notify DSP
     try {
       await this.notifyApprovers(
-        depositId,
+        deposit.id,
         DepositApprovalStep.DIVISI_SIMPAN_PINJAM,
         'NEW_DEPOSIT',
       );
@@ -301,8 +163,8 @@ export class DepositService {
 
     return {
       message:
-        'Pengajuan deposito berhasil disubmit. Menunggu review dari Divisi Simpan Pinjam.',
-      deposit: result,
+        'Pengajuan deposito berhasil dibuat. Menunggu review dari Divisi Simpan Pinjam.',
+      deposit,
     };
   }
 
@@ -432,7 +294,7 @@ export class DepositService {
     }
 
     return {
-      ...deposit
+      ...deposit,
     };
   }
 
@@ -714,7 +576,9 @@ export class DepositService {
         });
 
         // Tentukan Status Baru
-        const newStatus = isLastStep ? DepositStatus.APPROVED : DepositStatus.UNDER_REVIEW_KETUA;
+        const newStatus = isLastStep
+          ? DepositStatus.APPROVED
+          : DepositStatus.UNDER_REVIEW_KETUA;
 
         // Update Aplikasi Utama
         await tx.depositApplication.update({
@@ -808,33 +672,6 @@ export class DepositService {
     };
   }
 
-  /**
-   * Delete draft deposit
-   */
-  async deleteDraft(userId: string, depositId: string) {
-    const deposit = await this.prisma.depositApplication.findUnique({
-      where: { id: depositId },
-    });
-
-    if (!deposit) {
-      throw new NotFoundException('Deposito tidak ditemukan');
-    }
-
-    if (deposit.userId !== userId) {
-      throw new ForbiddenException('Anda tidak memiliki akses ke deposito ini');
-    }
-
-    if (deposit.status !== DepositStatus.DRAFT) {
-      throw new BadRequestException('Hanya draft yang bisa dihapus');
-    }
-
-    await this.prisma.depositApplication.delete({
-      where: { id: depositId },
-    });
-
-    return { message: 'Draft deposito berhasil dihapus' };
-  }
-
   // NOTIFICATION HELPERS
 
   private async notifyApprovers(
@@ -875,13 +712,15 @@ export class DepositService {
     // Queue bulk approval request emails
     try {
       await this.mailQueueService.queueBulkDepositApprovalRequests(
-        approvers.map(a => ({ email: a.email, approverName: a.name })),
+        approvers.map((a) => ({ email: a.email, approverName: a.name })),
         deposit.user.name,
         deposit.depositNumber,
         deposit.amountValue.toNumber(),
         roleName,
       );
-      this.logger.log(`Queued ${approvers.length} deposit approval request emails`);
+      this.logger.log(
+        `Queued ${approvers.length} deposit approval request emails`,
+      );
     } catch (error) {
       this.logger.error('Failed to queue approval requests:', error);
     }
@@ -940,6 +779,8 @@ export class DepositService {
       }
     }
 
-    this.logger.log(`Queued deposit approved notifications for ${deposit.depositNumber}`);
+    this.logger.log(
+      `Queued deposit approved notifications for ${deposit.depositNumber}`,
+    );
   }
 }

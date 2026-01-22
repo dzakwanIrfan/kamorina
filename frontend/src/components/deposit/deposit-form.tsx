@@ -1,20 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import {
-  Loader2,
-  Calendar as CalendarIcon,
-  CheckCircle2,
-  Info,
-  TrendingUp,
-  Wallet,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, CheckCircle2 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 
 import { Button } from "@/components/ui/button";
@@ -75,15 +66,12 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
     try {
       setIsSubmitting(true);
 
-      // Create draft first
-      const draftResult = await depositService.createDraft({
+      // Create directly
+      await depositService.create({
         depositAmountCode: data.depositAmountCode,
         depositTenorCode: data.depositTenorCode,
         agreedToTerms: data.agreedToTerms,
       });
-
-      // Then submit
-      await depositService.submitDeposit(draftResult.deposit.id);
 
       toast.success("Pengajuan tabungan deposito berhasil disubmit! ");
       onSuccess();
