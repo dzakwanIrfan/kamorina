@@ -1107,3 +1107,46 @@ model PayrollPeriod {
   @@unique([month, year])
   @@map("payroll_periods")
 }
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Email {
+  id       String  @id @default(uuid())
+  label    String?
+  host     String  @default("smtp.gmail.com")
+  port     Int     @default(587)
+  username String  @unique
+  password String
+  fromName String
+  isActive Boolean @default(true)
+
+  logs EmailLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("emails")
+}
+
+model EmailLog {
+  id      String  @id @default(uuid())
+  emailId String?
+  email   Email?  @relation(fields: [emailId], references: [id], onDelete: SetNull)
+
+  recipient    String
+  subject      String
+  content      String?     @db.Text
+  status       EmailStatus @default(PENDING)
+  errorMessage String?     @db.Text
+
+  sentAt DateTime @default(now())
+
+  @@index([recipient])
+  @@index([status])
+  @@index([sentAt])
+  @@map("email_logs")
+}
