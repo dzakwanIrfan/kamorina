@@ -248,7 +248,7 @@ const managementGroups = [
         requiresMemberVerified: true,
       },
       {
-        title: "Jabatan",
+        title: "Roles",
         icon: Shield,
         href: "/dashboard/levels",
         roles: ["ketua", "divisi_simpan_pinjam", "pengawas"],

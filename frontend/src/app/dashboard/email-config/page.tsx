@@ -44,10 +44,10 @@ export default function EmailConfigPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-3xl font-bold tracking-tight">
             Konfigurasi Email
           </h1>
           <p className="text-muted-foreground">

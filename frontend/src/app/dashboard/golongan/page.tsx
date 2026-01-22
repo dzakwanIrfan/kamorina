@@ -1,31 +1,38 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { ColumnDef } from '@tanstack/react-table';
-import { Plus, Users } from 'lucide-react';
+import { useState, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ColumnDef } from "@tanstack/react-table";
+import { Plus, Users } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { toast } from 'sonner';
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { toast } from "sonner";
 
-import { DataTableAdvanced } from '@/components/data-table/data-table-advanced';
-import { ColumnActions } from '@/components/data-table/column-actions';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { GolonganFormDialog } from '@/components/golongan/golongan-form-dialog';
-import { GolonganDetailDialog } from '@/components/golongan/golongan-detail-dialog';
-import { DeleteGolonganDialog } from '@/components/golongan/delete-golongan-dialog';
-import { LoanLimitMatrixDialog } from '@/components/golongan/loan-limit-matrix-dialog';
-import { golonganService } from '@/services/golongan.service';
+import { DataTableAdvanced } from "@/components/data-table/data-table-advanced";
+import { ColumnActions } from "@/components/data-table/column-actions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { GolonganFormDialog } from "@/components/golongan/golongan-form-dialog";
+import { GolonganDetailDialog } from "@/components/golongan/golongan-detail-dialog";
+import { DeleteGolonganDialog } from "@/components/golongan/delete-golongan-dialog";
+import { LoanLimitMatrixDialog } from "@/components/golongan/loan-limit-matrix-dialog";
+import { golonganService } from "@/services/golongan.service";
 import {
   Golongan,
   CreateGolonganRequest,
   UpdateGolonganRequest,
-} from '@/types/golongan.types';
-import { PaginatedResponse } from '@/types/pagination.types';
-import { handleApiError } from '@/lib/axios';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/types/golongan.types";
+import { PaginatedResponse } from "@/types/pagination.types";
+import { handleApiError } from "@/lib/axios";
+import { useAuthStore } from "@/store/auth.store";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function GolonganPage() {
   const router = useRouter();
@@ -34,12 +41,12 @@ export default function GolonganPage() {
 
   // Permissions
   const canCreate = user?.roles?.some((role) =>
-    ['ketua', 'divisi_simpan_pinjam'].includes(role)
+    ["ketua", "divisi_simpan_pinjam"].includes(role),
   );
   const canEdit = user?.roles?.some((role) =>
-    ['ketua', 'divisi_simpan_pinjam'].includes(role)
+    ["ketua", "divisi_simpan_pinjam"].includes(role),
   );
-  const canDelete = user?.roles?.includes('ketua');
+  const canDelete = user?.roles?.includes("ketua");
 
   // States
   const [data, setData] = useState<PaginatedResponse<Golongan> | null>(null);
@@ -48,15 +55,17 @@ export default function GolonganPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isLoanLimitOpen, setIsLoanLimitOpen] = useState(false);
-  const [selectedGolongan, setSelectedGolongan] = useState<Golongan | null>(null);
+  const [selectedGolongan, setSelectedGolongan] = useState<Golongan | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Query params
-  const page = Number(searchParams.get('page')) || 1;
-  const limit = Number(searchParams.get('limit')) || 10;
-  const search = searchParams.get('search') || '';
-  const sortBy = searchParams.get('sortBy') || 'golonganName';
-  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+  const search = searchParams.get("search") || "";
+  const sortBy = searchParams.get("sortBy") || "golonganName";
+  const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || "asc";
 
   // Update URL with query params
   const updateQueryParams = useCallback(
@@ -73,7 +82,7 @@ export default function GolonganPage() {
 
       router.push(`?${newSearchParams.toString()}`);
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   // Fetch data
@@ -89,7 +98,7 @@ export default function GolonganPage() {
       });
       setData(response);
     } catch (error) {
-      toast.error('Gagal memuat data', {
+      toast.error("Gagal memuat data", {
         description: handleApiError(error),
       });
     } finally {
@@ -115,7 +124,7 @@ export default function GolonganPage() {
   };
 
   const handleResetFilters = () => {
-    router.push('/dashboard/golongan');
+    router.push("/dashboard/golongan");
   };
 
   const handleCreate = () => {
@@ -134,7 +143,7 @@ export default function GolonganPage() {
       setSelectedGolongan(detailData);
       setIsDetailOpen(true);
     } catch (error) {
-      toast.error('Gagal memuat detail', {
+      toast.error("Gagal memuat detail", {
         description: handleApiError(error),
       });
     }
@@ -151,32 +160,32 @@ export default function GolonganPage() {
       setSelectedGolongan(detailData);
       setIsLoanLimitOpen(true);
     } catch (error) {
-      toast.error('Gagal memuat detail', {
+      toast.error("Gagal memuat detail", {
         description: handleApiError(error),
       });
     }
   };
 
   const handleFormSubmit = async (
-    formData: CreateGolonganRequest | UpdateGolonganRequest
+    formData: CreateGolonganRequest | UpdateGolonganRequest,
   ) => {
     setIsSubmitting(true);
     try {
       if (selectedGolongan) {
         await golonganService.update(selectedGolongan.id, formData);
-        toast.success('Berhasil', {
-          description: 'Golongan berhasil diupdate',
+        toast.success("Berhasil", {
+          description: "Golongan berhasil diupdate",
         });
       } else {
         await golonganService.create(formData as CreateGolonganRequest);
-        toast.success('Berhasil', {
-          description: 'Golongan berhasil ditambahkan',
+        toast.success("Berhasil", {
+          description: "Golongan berhasil ditambahkan",
         });
       }
       setIsFormOpen(false);
       fetchData();
     } catch (error) {
-      toast.error('Gagal menyimpan', {
+      toast.error("Gagal menyimpan", {
         description: handleApiError(error),
       });
     } finally {
@@ -190,13 +199,13 @@ export default function GolonganPage() {
     setIsSubmitting(true);
     try {
       await golonganService.delete(selectedGolongan.id);
-      toast.success('Berhasil', {
+      toast.success("Berhasil", {
         description: `Golongan "${selectedGolongan.golonganName}" berhasil dihapus`,
       });
       setIsDeleteOpen(false);
       fetchData();
     } catch (error) {
-      toast.error('Gagal menghapus', {
+      toast.error("Gagal menghapus", {
         description: handleApiError(error),
       });
     } finally {
@@ -207,24 +216,24 @@ export default function GolonganPage() {
   // Columns definition
   const columns: ColumnDef<Golongan>[] = [
     {
-      accessorKey: 'golonganName',
-      header: 'Nama Golongan',
+      accessorKey: "golonganName",
+      header: "Nama Golongan",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue('golonganName')}</div>
+        <div className="font-medium">{row.getValue("golonganName")}</div>
       ),
     },
     {
-      accessorKey: 'description',
-      header: 'Deskripsi',
+      accessorKey: "description",
+      header: "Deskripsi",
       cell: ({ row }) => (
         <div className="max-w-[300px] truncate text-muted-foreground">
-          {row.getValue('description') || '-'}
+          {row.getValue("description") || "-"}
         </div>
       ),
     },
     {
-      accessorKey: '_count',
-      header: 'Jumlah Karyawan',
+      accessorKey: "_count",
+      header: "Jumlah Karyawan",
       cell: ({ row }) => {
         const count = row.original._count?.employees || 0;
         return (
@@ -236,15 +245,18 @@ export default function GolonganPage() {
       },
     },
     {
-      id: 'loanLimits',
-      header: 'Plafond Pinjaman',
+      id: "loanLimits",
+      header: "Plafond Pinjaman",
       cell: ({ row }) => {
         const count = row.original._count?.loanLimits || 0;
         return (
           <div className="flex items-center gap-2">
-            <Badge variant={count > 0 ? 'default' : 'outline'} className="gap-1">
+            <Badge
+              variant={count > 0 ? "default" : "outline"}
+              className="gap-1"
+            >
               <FaRupiahSign className="h-3 w-3" />
-              {count > 0 ? `${count} range` : 'Belum diatur'}
+              {count > 0 ? `${count} range` : "Belum diatur"}
             </Badge>
             {canEdit && (
               <Button
@@ -261,12 +273,12 @@ export default function GolonganPage() {
       },
     },
     {
-      accessorKey: 'createdAt',
-      header: 'Dibuat',
+      accessorKey: "createdAt",
+      header: "Dibuat",
       cell: ({ row }) => {
         return (
           <div className="text-sm text-muted-foreground">
-            {format(new Date(row.getValue('createdAt')), 'dd MMM yyyy', {
+            {format(new Date(row.getValue("createdAt")), "dd MMM yyyy", {
               locale: id,
             })}
           </div>
@@ -274,7 +286,7 @@ export default function GolonganPage() {
       },
     },
     {
-      id: 'actions',
+      id: "actions",
       cell: ({ row }) => (
         <ColumnActions
           onView={() => handleView(row.original)}
@@ -297,30 +309,41 @@ export default function GolonganPage() {
             Kelola golongan/klasifikasi karyawan dan plafond pinjaman
           </p>
         </div>
-        {canCreate && (
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Tambah Golongan
-          </Button>
-        )}
       </div>
 
       {/* Data Table */}
-      <DataTableAdvanced
-        columns={columns}
-        data={data?.data || []}
-        meta={data?.meta}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        onSearch={handleSearch}
-        onResetFilters={handleResetFilters}
-        isLoading={isLoading}
-        config={{
-          searchable: true,
-          searchPlaceholder: 'Cari golongan...',
-          filterable: false,
-        }}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar Golongan</CardTitle>
+          <CardDescription>
+            Total {data?.meta.total} golongan terdaftar
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DataTableAdvanced
+            columns={columns}
+            data={data?.data || []}
+            meta={data?.meta}
+            config={{
+              searchable: true,
+              searchPlaceholder: "Cari golongan...",
+              filterable: false,
+              toolbarActions: canCreate ? [
+                {
+                  label: "Tambah Golongan",
+                  icon: Plus,
+                  onClick: handleCreate,
+                }
+              ] : undefined
+            }}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            onSearch={handleSearch}
+            onResetFilters={handleResetFilters}
+            isLoading={isLoading}
+          />
+        </CardContent>
+      </Card>
 
       {/* Dialogs */}
       <GolonganFormDialog
