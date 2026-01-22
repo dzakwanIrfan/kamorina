@@ -64,8 +64,11 @@ export class EmailConfigService {
     }
 
     const data: any = { ...dto };
-    if (dto.password) {
+
+    if (dto.password && dto.password.trim() !== '') {
       data.password = this.encryptionUtil.encrypt(dto.password);
+    } else {
+      delete data.password;
     }
 
     return this.prisma.email.update({

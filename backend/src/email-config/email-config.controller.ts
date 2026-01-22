@@ -11,8 +11,10 @@ import { EmailConfigService } from './email-config.service';
 import { CreateEmailConfigDto } from './dto/create-email-config.dto';
 import { UpdateEmailConfigDto } from './dto/update-email-config.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @ApiTags('Email Config')
+@Roles('ketua')
 @Controller('email-configs')
 export class EmailConfigController {
   constructor(private readonly emailConfigService: EmailConfigService) {}

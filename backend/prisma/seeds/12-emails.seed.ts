@@ -2,8 +2,6 @@ import { SeederContext } from './helpers/seeder-context';
 import * as crypto from 'crypto';
 
 export async function seedEmails({ prisma }: SeederContext): Promise<void> {
-  console.log('  ➜ Seeding Emails...');
-
   const host = process.env.MAIL_HOST;
   const port = parseInt(process.env.MAIL_PORT || '587', 10);
   const user = process.env.MAIL_USER;
@@ -46,5 +44,5 @@ export async function seedEmails({ prisma }: SeederContext): Promise<void> {
     },
   });
 
-  console.log(`    ✅ Seeded email: ${user}`);
+  console.log(`✅ Seeded email: ${user}`);
 }
