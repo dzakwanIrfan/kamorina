@@ -24,6 +24,7 @@ import {
   TrendingDown,
   Loader2,
   Mail,
+  History as HistoryIcon,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 import { useSidebarBadges } from "@/hooks/use-sidebar-badges";
@@ -270,6 +271,13 @@ const managementGroups = [
         title: "Konfigurasi Email",
         icon: Mail,
         href: "/dashboard/email-config",
+        roles: ["ketua", "admin"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Log Email",
+        icon: HistoryIcon,
+        href: "/dashboard/email-logs",
         roles: ["ketua", "admin"],
         requiresMemberVerified: true,
       },
