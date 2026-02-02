@@ -956,7 +956,7 @@ export class MailService {
           <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
             <p style="margin: 0; color: #e65100;">
               <strong>Biaya Admin:</strong> ${formattedAdminFee}<br>
-              <small>Biaya admin akan dipotong langsung dari tabungan/gaji Anda.</small>
+              <small>Biaya admin akan dipotong langsung dari tabungan Anda.</small>
             </p>
           </div>
 
@@ -1055,18 +1055,10 @@ export class MailService {
             </table>
           </div>
 
-          <div style="background-color: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #d32f2f; margin: 20px 0;">
-            <p style="margin: 0; color: #c62828;">
-              <strong>Biaya Admin (potong sekali):</strong> ${formattedAdminFee}<br>
-              <small>Biaya admin harus dipotong pada periode gaji berikutnya.</small>
-            </p>
-          </div>
-
           <div style="background-color: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin: 20px 0;">
             <h4 style="margin-top: 0; color: #1565c0;">Yang Perlu Dilakukan:</h4>
             <ol style="margin-bottom: 0; padding-left: 20px; color: #333;">
               <li>Update pemotongan deposito bulanan di sistem payroll</li>
-              <li>Potong biaya admin ${formattedAdminFee} pada gaji periode berikutnya</li>
               <li>Pastikan perubahan berlaku mulai periode gaji mendatang</li>
             </ol>
           </div>
@@ -1157,7 +1149,7 @@ export class MailService {
           <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; margin: 20px 0;">
             <p style="margin: 0; color: #e65100;">
               <strong>Biaya Admin:</strong> ${formattedAdminFee}<br>
-              <small>Biaya admin akan dipotong dari gaji Anda pada periode berikutnya.</small>
+              <small>Biaya admin akan dipotong dari tabungan Anda.</small>
             </p>
           </div>
           
