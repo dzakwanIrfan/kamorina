@@ -975,10 +975,17 @@ export class DepositChangeService {
         });
 
         if (savingsAccount) {
-          const currentSaldoSukarela = new Prisma.Decimal(savingsAccount.saldoSukarela || 0);
+          const currentBunga = new Prisma.Decimal(
+            savingsAccount.bungaDeposito || 0,
+          );
+          const currentSaldoSukarela = new Prisma.Decimal(
+            savingsAccount.saldoSukarela || 0,
+          );
           const saldoSukarela = currentSaldoSukarela.sub(adminFee);
 
-          const totalBalance = new Prisma.Decimal(savingsAccount.saldoPokok || 0)
+          const totalBalance = new Prisma.Decimal(
+            savingsAccount.saldoPokok || 0,
+          )
             .add(savingsAccount.saldoWajib || 0)
             .add(saldoSukarela);
 
@@ -987,7 +994,9 @@ export class DepositChangeService {
           const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
 
           // Hitung bunga bulanan
-          const monthlyInterest = totalBalance.mul(monthlyRate);
+          const monthlyInterest = new Prisma.Decimal(
+            totalBalance.mul(monthlyRate).toFixed(0),
+          );
 
           await tx.savingsAccount.update({
             where: { userId: depositApplication?.userId },
@@ -1004,10 +1013,12 @@ export class DepositChangeService {
             data: {
               savingsAccountId: savingsAccount.id,
               penarikan: adminFee,
+              bunga: monthlyInterest.sub(currentBunga),
+              jumlahBunga: monthlyInterest,
               transactionDate: new Date(),
               createdBy: approverId,
               interestRate: annualRate,
-              note: 'Biaya admin perubahan deposito', 
+              note: 'Biaya admin perubahan deposito',
             },
           });
         }

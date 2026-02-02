@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS = [
   },
   {
     key: 'monthly_membership_fee',
-    value: '50000',
+    value: '100000',
     type: SettingType.NUMBER,
     category: SettingCategory.MEMBERSHIP,
     label: 'Iuran Bulanan Anggota',

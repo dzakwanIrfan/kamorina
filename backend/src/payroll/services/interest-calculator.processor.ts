@@ -61,7 +61,9 @@ export class InterestCalculatorProcessor {
         }
 
         // Hitung bunga bulanan
-        const monthlyInterest = totalBalance.mul(monthlyRate);
+        const monthlyInterest = new Prisma.Decimal(
+          totalBalance.mul(monthlyRate).toFixed(0),
+        );
 
         // Check if transaction exists for this period
         const existingTransaction = account.transactions[0];
@@ -73,7 +75,7 @@ export class InterestCalculatorProcessor {
         if (existingTransaction) {
           // Update existing transaction dengan bunga
           const previousJumlahBunga =
-            existingTransaction.jumlahBunga || new Prisma.Decimal(0);
+            account.bungaDeposito || new Prisma.Decimal(0);
 
           await tx.savingsTransaction.update({
             where: { id: existingTransaction.id },

@@ -855,6 +855,9 @@ export class SavingsWithdrawalService {
       });
 
       if (savingsAccount) {
+        const currentBunga = new Prisma.Decimal(
+          savingsAccount.bungaDeposito || 0,
+        );
         // Calculate new balance after withdrawal
         const currentSaldoSukarela = new Prisma.Decimal(
           savingsAccount.saldoSukarela || 0,
@@ -872,7 +875,9 @@ export class SavingsWithdrawalService {
         const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
 
         // Hitung bunga bulanan berdasarkan saldo baru
-        const monthlyInterest = totalBalance.mul(monthlyRate);
+        const monthlyInterest = new Prisma.Decimal(
+          totalBalance.mul(monthlyRate).toFixed(0),
+        );
 
         await tx.savingsAccount.update({
           where: { userId: withdrawal.userId },
@@ -905,6 +910,8 @@ export class SavingsWithdrawalService {
           data: {
             savingsAccountId: savingsAccount.id,
             penarikan: withdrawal.withdrawalAmount.toNumber(),
+            bunga: monthlyInterest.sub(currentBunga),
+            jumlahBunga: monthlyInterest,
             transactionDate: new Date(),
             createdBy: authorizedBy,
             interestRate: 0,
