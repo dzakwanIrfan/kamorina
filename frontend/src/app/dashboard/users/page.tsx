@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Plus, Power, PowerOff, Shield } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTableAdvanced } from "@/components/data-table/data-table-advanced";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserFormDialog } from "@/components/users/user-form-dialog";
 import { UserDetailDialog } from "@/components/users/user-detail-dialog";
