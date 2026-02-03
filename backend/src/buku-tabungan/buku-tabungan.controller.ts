@@ -145,6 +145,28 @@ export class BukuTabunganController {
   }
 
   /**
+   * GET /buku-tabungan/export/all
+   * Export all savings books to ZIP (admin only)
+   */
+  @Get('export/all')
+  @UseGuards(RolesGuard)
+  @Roles('ketua', 'divisi_simpan_pinjam', 'pengawas')
+  async exportAllTabungan(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const buffer = await this.exportService.exportAllToZip();
+
+    const filename = `Buku_Tabungan_All_${new Date().getTime()}.zip`;
+
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    return new StreamableFile(buffer);
+  }
+
+  /**
    * GET /buku-tabungan/user/:userId/export
    * Export specific user's savings book to Excel (admin only)
    */

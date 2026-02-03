@@ -3,6 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as ExcelJS from 'exceljs';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
+import * as archiver from 'archiver';
 
 @Injectable()
 export class BukuTabunganExportService {
@@ -274,6 +275,58 @@ export class BukuTabunganExportService {
       }
 
       rowIndex++;
+    });
+  }
+
+  async exportAllToZip(): Promise<Buffer> {
+    const accounts = await this.prisma.savingsAccount.findMany({
+      select: {
+        userId: true,
+        user: {
+          select: {
+            name: true,
+            employee: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const archive = archiver.create('zip', {
+      zlib: { level: 9 }, // Sets the compression level.
+    });
+
+    const chunks: Buffer[] = [];
+
+    return new Promise((resolve, reject) => {
+      archive.on('data', (chunk) => chunks.push(chunk));
+      archive.on('error', (err) => reject(err));
+      archive.on('end', () => resolve(Buffer.concat(chunks)));
+
+      // Process each user
+      (async () => {
+        for (const account of accounts) {
+          try {
+            const excelBuffer = await this.exportToExcel(account.userId);
+            const name =
+              account.user.employee?.fullName || account.user.name || 'Unknown';
+            const safeName = name.replace(/[^a-zA-Z0-9 ]/g, '_').trim();
+            archive.append(excelBuffer, {
+              name: `Buku_Tabungan_${safeName}.xlsx`,
+            });
+          } catch (error) {
+            console.error(
+              `Failed to export for user ${account.userId}:`,
+              error,
+            );
+            // Continue with other users
+          }
+        }
+        await archive.finalize();
+      })();
     });
   }
 }

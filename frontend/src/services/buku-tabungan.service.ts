@@ -115,4 +115,14 @@ export const bukuTabunganService = {
     );
     return response.data;
   },
+
+  /**
+   * Export all savings books to ZIP (admin only)
+   */
+  async exportAllBukuTabungan(): Promise<Blob> {
+    const response = await apiClient.get("/buku-tabungan/export/all", {
+      responseType: "blob",
+    });
+    return response.data;
+  },
 };

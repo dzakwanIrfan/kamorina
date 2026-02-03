@@ -4,8 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { Eye, Download, RefreshCw } from "lucide-react";
+import { Eye, RefreshCw, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTableAdvanced } from "@/components/data-table/data-table-advanced";
@@ -100,50 +99,27 @@ export function AllAccountsTable() {
     resetFilters();
   };
 
-  const handleExport = async () => {
-    const toastId = toast.loading("Sedang menyiapkan data export...");
+  const handleDownloadZip = async () => {
+    const toastId = toast.loading("Mengunduh ZIP buku tabungan...");
     try {
-      const XLSX = await import("xlsx");
-
-      // Fetch all data for export
-      const response = await bukuTabunganService.getAllAccounts({
-        ...params,
-        isExport: true,
-      });
-
-      const exportData = response.data.map((account) => ({
-        NIP: account.user?.employee?.employeeNumber ?? "-",
-        Nama: account.user?.employee?.fullName ?? account.user?.name ?? "-",
-        Email: account.user?.email ?? "-",
-        Departemen: account.user?.employee?.department?.departmentName ?? "-",
-        Golongan: account.user?.employee?.golongan?.golonganName ?? "-",
-        Tipe: account.user?.employee?.employeeType ?? "-",
-        "Simpanan Pokok": toNumber(account.saldoPokok),
-        "Simapan Wajib": toNumber(account.saldoWajib),
-        "Tabungan Deposito": toNumber(account.saldoSukarela),
-        "Bunga Deposito": toNumber(account.bungaDeposito),
-        "Total Saldo": toNumber(account.totalSaldo),
-        Terdaftar: account.createdAt
-          ? format(new Date(account.createdAt), "dd/MM/yyyy", {
-              locale: id,
-            })
-          : "-",
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Buku Tabungan");
-
-      const fileName = `semua_buku_tabungan_${format(
+      const blob = await bukuTabunganService.exportAllBukuTabungan();
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const filename = `Buku_Tabungan_All_${format(
         new Date(),
-        "yyyyMMdd_HHmmss"
-      )}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-
-      toast.success("Data berhasil diekspor", { id: toastId });
+        "yyyyMMdd_HHmmss",
+      )}.zip`;
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Download berhasil", { id: toastId });
     } catch (error) {
-      console.error("Export error:", error);
-      toast.error("Gagal mengekspor data", { id: toastId });
+      console.error("Download error:", error);
+      toast.error("Gagal mengunduh ZIP", { id: toastId });
     }
   };
 
@@ -236,8 +212,7 @@ export function AllAccountsTable() {
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const tableConfig: DataTableConfig<SavingsAccountListItem> = {
@@ -269,9 +244,9 @@ export function AllAccountsTable() {
         variant: "outline",
       },
       {
-        label: "Export",
-        icon: Download,
-        onClick: handleExport,
+        label: "Download ZIP",
+        icon: Archive,
+        onClick: handleDownloadZip,
         variant: "outline",
         disabled: accounts.length === 0,
       },
