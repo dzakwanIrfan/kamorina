@@ -18,6 +18,8 @@ import {
   PiggyBank,
   Coins,
   RefreshCw,
+  FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +29,11 @@ import { TransactionSummaryCard } from "@/components/buku-tabungan/transaction-s
 import { TransactionList } from "@/components/buku-tabungan/transaction-list";
 import { EmptyState } from "@/components/buku-tabungan/empty-state";
 import { formatCurrency } from "@/lib/format";
+import { useState } from "react";
+import { bukuTabunganService } from "@/services/buku-tabungan.service";
+import { downloadBlob, generateFilename } from "@/lib/download";
+import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth.store";
 
 interface StatCardProps {
   title: string;
@@ -76,7 +83,9 @@ function StatCardSkeleton() {
 
 export function MyBukuTabungan() {
   const searchParams = useSearchParams();
-  
+  const [isExporting, setIsExporting] = useState(false);
+
+  const { user } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -92,6 +101,21 @@ export function MyBukuTabungan() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", value);
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await bukuTabunganService.exportTabunganByUserId(user?.id!);
+      const filename = generateFilename("Buku_Tabungan");
+      downloadBlob(blob, filename);
+      toast.success("Buku tabungan berhasil diekspor");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Gagal mengekspor buku tabungan");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Show empty state if account not found
@@ -118,7 +142,7 @@ export function MyBukuTabungan() {
           <BookOpen className="h-6 w-6 text-primary" />
           <h2 className="text-xl font-semibold">Buku Tabungan</h2>
         </div>
-        <Button
+        {/* <Button
           variant="outline"
           size="sm"
           onClick={() => refetch()}
@@ -128,6 +152,18 @@ export function MyBukuTabungan() {
             className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
           />
           Refresh
+        </Button> */}
+        <Button
+          onClick={handleExport}
+          disabled={isExporting || !tabungan}
+          className="gap-2"
+        >
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="h-4 w-4" />
+          )}
+          {isExporting ? "Mengekspor..." : "Export Buku Tabungan"}
         </Button>
       </div>
 
@@ -158,7 +194,10 @@ export function MyBukuTabungan() {
             />
             <StatCard
               title="Saldo Pasif"
-              value={formatCurrency(Number(tabungan.summary.saldoWajib) + Number(tabungan.summary.saldoPokok))}
+              value={formatCurrency(
+                Number(tabungan.summary.saldoWajib) +
+                  Number(tabungan.summary.saldoPokok),
+              )}
               icon={<PiggyBank className="h-4 w-4" />}
               description="Iuran wajib"
               colorClass="text-green-600"

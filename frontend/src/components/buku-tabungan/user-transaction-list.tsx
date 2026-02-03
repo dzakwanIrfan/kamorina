@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Eye, Download, Loader2, FileSpreadsheet } from "lucide-react";
+import { Eye, Loader2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -155,40 +155,6 @@ export function UserTransactionList({ userId }: UserTransactionListProps) {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const { default: XLSX } = await import("xlsx");
-
-      const exportData = transactions.map((tx) => ({
-        Tanggal: format(new Date(tx.transactionDate), "dd/MM/yyyy", {
-          locale: id,
-        }),
-        Periode: tx.payrollPeriod?.name || "-",
-        "Iuran Pendaftaran": toNumber(tx.iuranPendaftaran),
-        "Iuran Bulanan": toNumber(tx.iuranBulanan),
-        "Tabungan Deposito": toNumber(tx.tabunganDeposito),
-        SHU: toNumber(tx.shu),
-        Bunga: toNumber(tx.bunga),
-        Penarikan: toNumber(tx.penarikan),
-        Keterangan: tx.description || "-",
-      }));
-
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Transaksi");
-
-      const fileName = `transaksi_${userId}_${format(
-        new Date(),
-        "yyyyMMdd_HHmmss",
-      )}.xlsx`;
-      XLSX.writeFile(wb, fileName);
-
-      toast.success("Data berhasil diekspor");
-    } catch {
-      toast.error("Gagal mengekspor data");
-    }
-  };
-
   const columns: ColumnDef<SavingsTransaction>[] = useMemo(
     () => [
       {
@@ -298,13 +264,6 @@ export function UserTransactionList({ userId }: UserTransactionListProps) {
         onClick: handleExportExcel,
         variant: "default",
         disabled: isExporting,
-      },
-      {
-        label: "Export",
-        icon: Download,
-        onClick: handleExport,
-        variant: "outline",
-        disabled: transactions.length === 0,
       },
     ],
   };
