@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
@@ -18,9 +18,14 @@ import { MandatorySavingsProcessor } from './services/mandatory-savings.processo
 import { DepositSavingsProcessor } from './services/deposit-savings.processor';
 import { SavingsWithdrawalProcessor } from './services/savings-withdrawal.processor';
 import { InterestCalculatorProcessor } from './services/interest-calculator.processor';
-import { ManualPayrollDto } from './dto/payroll.dto';
+import {
+  ManualPayrollDto,
+  QueryPayrollDto,
+  QueryPayrollTransactionsDto,
+} from './dto/payroll.dto';
 import { LoanInstallmentProcessor } from './services/loan-installment.processor';
 import { LoanRepaymentProcessor } from './services/loan-repayment.processor';
+import { PaginatedResult } from 'src/common/interfaces/pagination.interface';
 
 @Injectable()
 export class PayrollService {
@@ -255,6 +260,321 @@ export class PayrollService {
   }
 
   /**
+   * Get all payroll periods with pagination, search, filter, sort
+   */
+  async getAllPeriods(query: QueryPayrollDto): Promise<PaginatedResult<any>> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      sortBy = 'year',
+      sortOrder = 'desc',
+      isProcessed,
+      startDate,
+      endDate,
+    } = query;
+
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (isProcessed !== undefined) {
+      where.isProcessed = isProcessed;
+    }
+
+    if (search) {
+      where.OR = [{ name: { contains: search, mode: 'insensitive' } }];
+    }
+
+    if (startDate || endDate) {
+      where.processedAt = {};
+      if (startDate) where.processedAt.gte = new Date(startDate);
+      if (endDate) {
+        const endDateTime = new Date(endDate);
+        endDateTime.setHours(23, 59, 59, 999);
+        where.processedAt.lte = endDateTime;
+      }
+    }
+
+    // Handle sorting — support multi-field sort for year+month
+    let orderBy: any;
+    if (sortBy === 'year' || sortBy === 'period') {
+      orderBy = [{ year: sortOrder }, { month: sortOrder }];
+    } else {
+      orderBy = { [sortBy]: sortOrder };
+    }
+
+    const [periods, total] = await Promise.all([
+      this.prisma.payrollPeriod.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          _count: {
+            select: { transactions: true },
+          },
+        },
+      }),
+      this.prisma.payrollPeriod.count({ where }),
+    ]);
+
+    return {
+      data: periods.map((p) => ({
+        id: p.id,
+        month: p.month,
+        year: p.year,
+        name: p.name,
+        isProcessed: p.isProcessed,
+        processedAt: p.processedAt,
+        totalAmount: p.totalAmount.toString(),
+        transactionCount: p._count.transactions,
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Get single period detail
+   */
+  async getPeriodDetail(periodId: string) {
+    const period = await this.prisma.payrollPeriod.findUnique({
+      where: { id: periodId },
+      include: {
+        _count: {
+          select: {
+            transactions: true,
+            loanInstallments: true,
+          },
+        },
+      },
+    });
+
+    if (!period) {
+      throw new NotFoundException('Periode payroll tidak ditemukan');
+    }
+
+    return {
+      id: period.id,
+      month: period.month,
+      year: period.year,
+      name: period.name,
+      isProcessed: period.isProcessed,
+      processedAt: period.processedAt,
+      totalAmount: period.totalAmount.toString(),
+      transactionCount: period._count.transactions,
+      loanInstallmentCount: period._count.loanInstallments,
+    };
+  }
+
+  /**
+   * Get paginated transactions for a period
+   */
+  async getPeriodTransactionsPaginated(
+    periodId: string,
+    query: QueryPayrollTransactionsDto,
+  ): Promise<PaginatedResult<any>> {
+    const { page = 1, limit = 10, search } = query;
+    const skip = (page - 1) * limit;
+
+    // Verify period exists
+    const period = await this.prisma.payrollPeriod.findUnique({
+      where: { id: periodId },
+    });
+    if (!period) {
+      throw new NotFoundException('Periode payroll tidak ditemukan');
+    }
+
+    const where: any = { payrollPeriodId: periodId };
+
+    if (search) {
+      where.account = {
+        user: {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+            {
+              employee: {
+                employeeNumber: { contains: search, mode: 'insensitive' },
+              },
+            },
+            {
+              employee: {
+                fullName: { contains: search, mode: 'insensitive' },
+              },
+            },
+          ],
+        },
+      };
+    }
+
+    const [transactions, total] = await Promise.all([
+      this.prisma.savingsTransaction.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          account: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  employee: {
+                    select: {
+                      employeeNumber: true,
+                      fullName: true,
+                      department: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.savingsTransaction.count({ where }),
+    ]);
+
+    return {
+      data: transactions.map((t) => ({
+        id: t.id,
+        user: {
+          id: t.account.user.id,
+          name: t.account.user.name,
+          employeeNumber: t.account.user.employee?.employeeNumber,
+          department: t.account.user.employee?.department?.departmentName,
+        },
+        iuranPendaftaran: t.iuranPendaftaran.toString(),
+        iuranBulanan: t.iuranBulanan.toString(),
+        tabunganDeposito: t.tabunganDeposito.toString(),
+        bunga: t.bunga.toString(),
+        shu: t.shu.toString(),
+        penarikan: t.penarikan.toString(),
+        transactionDate: t.transactionDate,
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Delete a single payroll period
+   */
+  async deletePeriod(periodId: string) {
+    const period = await this.prisma.payrollPeriod.findUnique({
+      where: { id: periodId },
+    });
+
+    if (!period) {
+      throw new NotFoundException('Periode payroll tidak ditemukan');
+    }
+
+    // Delete cascading: transactions tied to this period will be unlinked
+    await this.prisma.$transaction(async (tx) => {
+      // Unlink savings transactions
+      await tx.savingsTransaction.deleteMany({
+        where: { payrollPeriodId: periodId },
+      });
+
+      // Unlink loan installments
+      await tx.loanInstallment.updateMany({
+        where: { payrollPeriodId: periodId },
+        data: { payrollPeriodId: null },
+      });
+
+      // Delete the period
+      await tx.payrollPeriod.delete({
+        where: { id: periodId },
+      });
+    });
+
+    return { message: 'Periode payroll berhasil dihapus' };
+  }
+
+  /**
+   * Bulk delete payroll periods
+   */
+  async bulkDeletePeriods(periodIds: string[]) {
+    const results = {
+      success: [] as string[],
+      failed: [] as { id: string; reason: string }[],
+    };
+
+    for (const periodId of periodIds) {
+      try {
+        await this.deletePeriod(periodId);
+        results.success.push(periodId);
+      } catch (error) {
+        results.failed.push({
+          id: periodId,
+          reason: error.message || 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      message: `Berhasil menghapus ${results.success.length} periode, ${results.failed.length} gagal`,
+      results,
+    };
+  }
+
+  /**
+   * Get payroll preview (dry run)
+   */
+  async getPayrollPreview(month: number, year: number) {
+    const pendingMemberships = await this.prisma.memberApplication.count({
+      where: {
+        status: 'APPROVED',
+        isPaidOff: false,
+      },
+    });
+
+    const activeMembers = await this.prisma.user.count({
+      where: {
+        memberVerified: true,
+        savingsAccount: { isNot: null },
+      },
+    });
+
+    const activeDeposits = await this.prisma.depositApplication.count({
+      where: {
+        status: { in: ['APPROVED', 'ACTIVE'] },
+      },
+    });
+
+    const activeLoans = await this.prisma.loanApplication.count({
+      where: {
+        status: 'DISBURSED',
+      },
+    });
+
+    return {
+      period: `${month}/${year}`,
+      preview: {
+        pendingMembershipFees: pendingMemberships,
+        activeMembersForMandatorySavings: activeMembers,
+        activeDeposits: activeDeposits,
+        activeLoans: activeLoans,
+      },
+    };
+  }
+
+  /**
    * Get payroll status for a period
    */
   async getPayrollStatus(month: number, year: number) {
@@ -312,7 +632,7 @@ export class PayrollService {
   }
 
   /**
-   * Get detailed transactions for a period
+   * Get detailed transactions for a period (non-paginated, kept for backward compat)
    */
   async getPeriodTransactions(periodId: string) {
     return this.prisma.savingsTransaction.findMany({

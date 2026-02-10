@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Query,
   Param,
@@ -16,7 +17,13 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { PayrollService } from './payroll.service';
-import { ManualPayrollDto, PayrollPeriodQueryDto } from './dto/payroll.dto';
+import {
+  ManualPayrollDto,
+  PayrollPeriodQueryDto,
+  QueryPayrollDto,
+  QueryPayrollTransactionsDto,
+  BulkDeletePayrollDto,
+} from './dto/payroll.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -26,7 +33,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class PayrollController {
-  constructor(private readonly payrollService: PayrollService) { }
+  constructor(private readonly payrollService: PayrollService) {}
 
   @Post('process')
   @HttpCode(HttpStatus.OK)
@@ -76,6 +83,46 @@ export class PayrollController {
     };
   }
 
+  @Get('periods')
+  @Roles('ketua', 'payroll', 'divisi_simpan_pinjam', 'bendahara')
+  @ApiOperation({ summary: 'Get all payroll periods with pagination' })
+  async getAllPeriods(@Query() query: QueryPayrollDto) {
+    return this.payrollService.getAllPeriods(query);
+  }
+
+  @Get('periods/:periodId')
+  @Roles('ketua', 'payroll', 'divisi_simpan_pinjam', 'bendahara')
+  @ApiOperation({ summary: 'Get payroll period detail' })
+  async getPeriodDetail(@Param('periodId') periodId: string) {
+    const data = await this.payrollService.getPeriodDetail(periodId);
+    return { success: true, data };
+  }
+
+  @Get('periods/:periodId/transactions')
+  @Roles('ketua', 'payroll', 'divisi_simpan_pinjam', 'bendahara')
+  @ApiOperation({ summary: 'Get paginated transactions for a payroll period' })
+  async getPeriodTransactionsPaginated(
+    @Param('periodId') periodId: string,
+    @Query() query: QueryPayrollTransactionsDto,
+  ) {
+    return this.payrollService.getPeriodTransactionsPaginated(periodId, query);
+  }
+
+  @Delete('periods/:periodId')
+  @Roles('ketua', 'payroll')
+  @ApiOperation({ summary: 'Delete a payroll period' })
+  async deletePeriod(@Param('periodId') periodId: string) {
+    return this.payrollService.deletePeriod(periodId);
+  }
+
+  @Post('periods/bulk-delete')
+  @HttpCode(HttpStatus.OK)
+  @Roles('ketua', 'payroll')
+  @ApiOperation({ summary: 'Bulk delete payroll periods' })
+  async bulkDeletePeriods(@Body() dto: BulkDeletePayrollDto) {
+    return this.payrollService.bulkDeletePeriods(dto.periodIds);
+  }
+
   @Get('status')
   @Roles('ketua', 'payroll', 'divisi_simpan_pinjam', 'bendahara')
   @ApiOperation({ summary: 'Get payroll status for a period' })
@@ -115,8 +162,10 @@ export class PayrollController {
 
   @Get('period/:periodId/transactions')
   @Roles('ketua', 'payroll', 'divisi_simpan_pinjam', 'bendahara')
-  @ApiOperation({ summary: 'Get transactions for a specific payroll period' })
-  async getPeriodTransactions(@Param('periodId') periodId: string) {
+  @ApiOperation({
+    summary: 'Get transactions for a specific payroll period (legacy)',
+  })
+  async getLegacyPeriodTransactions(@Param('periodId') periodId: string) {
     const transactions =
       await this.payrollService.getPeriodTransactions(periodId);
 
@@ -145,55 +194,14 @@ export class PayrollController {
   @Roles('ketua', 'payroll', 'divisi_simpan_pinjam')
   @ApiOperation({ summary: 'Preview payroll before processing (dry run)' })
   async previewPayroll(@Query() query: PayrollPeriodQueryDto) {
-    // This would be a dry-run implementation
-    // For now, just return the current pending items
-
     const month = query.month || new Date().getMonth() + 1;
     const year = query.year || new Date().getFullYear();
 
-    // Get pending items count
-    const pendingMemberships = await this.prisma.memberApplication.count({
-      where: {
-        status: 'APPROVED',
-        isPaidOff: false,
-      },
-    });
-
-    const activeMembers = await this.prisma.user.count({
-      where: {
-        memberVerified: true,
-        savingsAccount: { isNot: null },
-      },
-    });
-
-    const activeDeposits = await this.prisma.depositApplication.count({
-      where: {
-        status: { in: ['APPROVED', 'ACTIVE'] },
-      },
-    });
-
-    const activeLoans = await this.prisma.loanApplication.count({
-      where: {
-        status: 'DISBURSED',
-      },
-    });
+    const preview = await this.payrollService.getPayrollPreview(month, year);
 
     return {
       success: true,
-      data: {
-        period: `${month}/${year}`,
-        preview: {
-          pendingMembershipFees: pendingMemberships,
-          activeMembersForMandatorySavings: activeMembers,
-          activeDeposits: activeDeposits,
-          activeLoans: activeLoans,
-        },
-      },
+      data: preview,
     };
-  }
-
-  // Inject prisma for preview endpoint
-  private get prisma() {
-    return (this.payrollService as any).prisma;
   }
 }

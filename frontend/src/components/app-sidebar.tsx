@@ -214,6 +214,13 @@ const managementGroups = [
     label: "Administrasi & Master Data",
     items: [
       {
+        title: "Payroll",
+        icon: Banknote,
+        href: "/dashboard/payroll",
+        roles: ["ketua", "payroll", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
         title: "Pengajuan Anggota",
         icon: FileText,
         href: "/dashboard/member-application",
