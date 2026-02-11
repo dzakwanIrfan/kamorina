@@ -1,0 +1,155 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: kamorina-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kamorina}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kamorina_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-kamorina_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-kamorina} -d ${POSTGRES_DB:-kamorina_db}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kamorina-network
+
+  # Redis Cache / Queue
+  redis:
+    image: redis:7-alpine
+    container_name: kamorina-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kamorina-network
+
+  # Backend (NestJS) — Development
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: kamorina-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kamorina}:${POSTGRES_PASSWORD:-kamorina_secret}@postgres:5432/${POSTGRES_DB:-kamorina_db}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-VLVfauudYnWzUCubudGG7czbmfSOarNj}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-dzakwanbusiness7@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-ybqj njre esih lvxm}
+      MAIL_FROM: ${MAIL_FROM:-Surya Niaga Kamorina <no-reply@kamorina.com>}
+      FRONTEND_URL: http://localhost:3000
+      API_URL: http://localhost:3001/api/v1
+      BASE_URL: http://localhost:3001
+      APP_PORT: 3001
+      NODE_ENV: development
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-01234567890123456789012345678901}
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - ./backend/prisma.config.ts:/app/prisma.config.ts
+      - ./backend/nest-cli.json:/app/nest-cli.json
+      - ./backend/tsconfig.json:/app/tsconfig.json
+      - ./backend/tsconfig.build.json:/app/tsconfig.build.json
+      - backend_node_modules:/app/node_modules
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kamorina-network
+
+  # Frontend (Next.js) — Development
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: kamorina-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/next.config.ts:/app/next.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/postcss.config.mjs:/app/postcss.config.mjs
+      - ./frontend/components.json:/app/components.json
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - kamorina-network
+
+  # Prisma Studio — Development Only
+  prisma-studio:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: kamorina-prisma-studio
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kamorina}:${POSTGRES_PASSWORD:-kamorina_secret}@postgres:5432/${POSTGRES_DB:-kamorina_db}?schema=public
+    ports:
+      - "5555:5555"
+    command:
+      ["pnpm", "prisma", "studio", "--port", "5555", "--hostname", "0.0.0.0"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kamorina-network
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  uploads_data:
+    driver: local
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  kamorina-network:
+    driver: bridge

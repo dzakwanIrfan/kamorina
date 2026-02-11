@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+uploads/*
+!uploads/.gitkeep
+README.md
+coverage
+*.log
+.DS_Store
