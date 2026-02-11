@@ -114,6 +114,11 @@ prisma-generate:
 	docker compose exec backend pnpm prisma generate
 	@echo "✅ Prisma client generated."
 
+## Open Prisma Studio
+prisma-studio:
+	docker compose exec backend pnpm prisma studio -p 5555
+	@echo "✅ Prisma Studio opened."
+
 # Shell Access
 
 ## Open shell in backend container
@@ -195,6 +200,7 @@ help:
 	@echo "    make prisma-seed      Seed database"
 	@echo "    make prisma-reset     Reset database (destructive)"
 	@echo "    make prisma-generate  Generate Prisma client"
+	@echo "    make prisma-studio    Open Prisma Studio"
 	@echo ""
 	@echo "  Shell:"
 	@echo "    make shell-backend    Open backend shell"
