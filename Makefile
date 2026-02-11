@@ -114,10 +114,12 @@ prisma-generate:
 	docker compose exec backend pnpm prisma generate
 	@echo "✅ Prisma client generated."
 
-## Open Prisma Studio
+## Open Prisma Studio (uses dedicated service on port 5555)
 prisma-studio:
-	docker compose exec backend pnpm prisma studio -p 5555
-	@echo "✅ Prisma Studio opened."
+	docker compose up -d prisma-studio
+	@echo ""
+	@echo "✅ Prisma Studio running at: http://localhost:5555"
+	@echo ""
 
 # Shell Access
 

@@ -1,6 +1,6 @@
 
 # Stage 1: Base image with pnpm
-FROM node:20-slim AS base
+FROM node:20-alpine AS base
 
 RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 
