@@ -22,6 +22,7 @@ import { LoanRepaymentModule } from './loan-repayment/loan-repayment.module';
 import { UsersModule } from './users/users.module';
 import { EmailConfigModule } from './email-config/email-config.module';
 import { EmailLogsModule } from './email-logs/email-logs.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { EmailLogsModule } from './email-logs/email-logs.module';
     UsersModule,
     EmailConfigModule,
     EmailLogsModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

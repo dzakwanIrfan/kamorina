@@ -14,26 +14,136 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/store/auth.store';
 import { MemberApplicationForm } from '@/components/member-application/member-application-form';
 import { MyApplicationDetail } from '@/components/member-application/my-application-detail';
+import { DashboardContent } from '@/components/dashboard';
 import { memberApplicationService } from '@/services/member-application.service';
+import { dashboardService } from '@/services/dashboard.service';
 import { handleApiError } from '@/lib/axios';
 import { MemberApplication, ApplicationStatus } from '@/types/member-application.types';
+import { DashboardSummary } from '@/types/dashboard.types';
+
+/**
+ * Dashboard Skeleton component for loading state
+ */
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header Skeleton */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cards Skeleton */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-32 mb-2" />
+              <Skeleton className="h-3 w-40" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Chart and Activity Skeleton */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[300px] w-full" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-48" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-3 p-3 border rounded-lg">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Table Skeleton */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const [showForm, setShowForm] = useState(false);
   const [application, setApplication] = useState<MemberApplication | null>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(false);
 
   useEffect(() => {
-    if (user && !user.memberVerified) {
-      checkApplication();
-    } else {
-      setIsLoading(false);
+    if (user) {
+      if (user.memberVerified) {
+        // Verified member: fetch dashboard data
+        fetchDashboardData();
+      } else {
+        // Non-member: check application status
+        checkApplication();
+      }
     }
   }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsDashboardLoading(true);
+      const data = await dashboardService.getDashboardSummary();
+      setDashboardData(data);
+    } catch (error) {
+      const errorMessage = handleApiError(error);
+      toast.error('Gagal memuat dashboard: ' + errorMessage);
+    } finally {
+      setIsLoading(false);
+      setIsDashboardLoading(false);
+    }
+  };
 
   const checkApplication = async () => {
     try {
@@ -63,118 +173,15 @@ export default function DashboardPage() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
-  // If user is already a verified member, show welcome dashboard
+  // If user is already a verified member, show full dashboard
   if (user?.memberVerified) {
-    return (
-      <div className="space-y-6">
-        {/* Welcome Card */}
-        <Card className="border-primary/20 bg-linear-to-br from-primary/5 via-background to-primary/10">
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <CheckCircle2 className="h-8 w-8 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-2xl">Selamat Datang, {user.name}!</CardTitle>
-                <CardDescription className="text-base">
-                  Anda adalah anggota terverifikasi Koperasi Surya Niaga Kamorina
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Simpanan</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Rp 0</div>
-              <p className="text-xs text-muted-foreground">Belum ada simpanan</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pinjaman Aktif</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <rect width="20" height="14" x="2" y="5" rx="2" />
-                <path d="M2 10h20" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Rp 0</div>
-              <p className="text-xs text-muted-foreground">Tidak ada pinjaman</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Transaksi Bulan Ini</CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Belum ada transaksi</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Status Member</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">Aktif</div>
-              <p className="text-xs text-muted-foreground">Member terverifikasi</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
+    if (isDashboardLoading || !dashboardData) {
+      return <DashboardSkeleton />;
+    }
+    return <DashboardContent data={dashboardData} />;
   }
 
   // If user has submitted application, show detailed status
