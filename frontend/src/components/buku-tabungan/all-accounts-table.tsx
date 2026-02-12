@@ -79,12 +79,13 @@ export function AllAccountsTable() {
     router.push(`/dashboard/buku-tabungan/all/${account.userId}`);
   };
 
+  const handleSearch = (search: string) => {
+    setQueryFilters({ ...params, search: search || undefined, page: 1 });
+  };
+
   const handleFiltersChange = (newFilters: Record<string, unknown>) => {
     const queryFilters: Record<string, unknown> = {};
 
-    if (newFilters.search) {
-      queryFilters.search = newFilters.search;
-    }
     if (newFilters.departmentId && newFilters.departmentId !== "all") {
       queryFilters.departmentId = newFilters.departmentId;
     }
@@ -285,6 +286,7 @@ export function AllAccountsTable() {
           config={tableConfig}
           onPageChange={setPage}
           onPageSizeChange={setLimit}
+          onSearch={handleSearch}
           onFiltersChange={handleFiltersChange}
           onResetFilters={handleResetFilters}
           isLoading={isLoading}
