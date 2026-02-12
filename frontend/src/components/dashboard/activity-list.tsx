@@ -94,7 +94,7 @@ export function ActivityList({ activities, isApprover }: ActivityListProps) {
             : "Pengajuan yang sedang diproses"}
         </CardDescription>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent>
         <ScrollArea className="h-60 sm:h-72">
           {activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -106,7 +106,7 @@ export function ActivityList({ activities, isApprover }: ActivityListProps) {
               </p>
             </div>
           ) : (
-            <div className="space-y-2 pr-3">
+            <div className="space-y-2">
               {activities.map((activity) => {
                 const config = ACTIVITY_CONFIG[activity.type];
                 const Icon = config?.icon || Clock;

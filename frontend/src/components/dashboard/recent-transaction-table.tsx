@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { RecentTransaction } from '@/types/dashboard.types';
 import { Receipt, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { FaRupiahSign } from 'react-icons/fa6';
 
 interface RecentTransactionTableProps {
   transactions: RecentTransaction[];
@@ -60,7 +61,7 @@ export function RecentTransactionTable({ transactions }: RecentTransactionTableP
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Receipt className="h-5 w-5" />
+          <FaRupiahSign className="h-5 w-5" />
           Transaksi Terakhir
         </CardTitle>
         <CardDescription>5 transaksi terakhir pada rekening simpanan Anda</CardDescription>
@@ -68,7 +69,7 @@ export function RecentTransactionTable({ transactions }: RecentTransactionTableP
       <CardContent>
         {transactions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Receipt className="mb-4 h-12 w-12 text-muted-foreground/50" />
+            <FaRupiahSign className="mb-4 h-12 w-12 text-muted-foreground/50" />
             <p className="text-sm text-muted-foreground">
               Belum ada transaksi yang tercatat
             </p>
