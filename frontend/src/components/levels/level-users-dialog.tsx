@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 import { Level, UserRole } from "@/types/level.types";
-import { User } from "@/types/auth.types";
+import { User } from "@/types/user.types";
 import { levelService } from "@/services/level.service";
 import { userService } from "@/services/user.service";
 import { handleApiError } from "@/lib/axios";
@@ -209,7 +209,7 @@ export function LevelUsersDialog({
                     <CommandGroup>
                       {searchResults.map((user) => {
                         const isAssigned = users.some(
-                          (u) => u.user.id === user.id
+                          (u) => u.user.id === user.id,
                         );
                         return (
                           <CommandItem
@@ -221,7 +221,7 @@ export function LevelUsersDialog({
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                isAssigned ? "opacity-100" : "opacity-0"
+                                isAssigned ? "opacity-100" : "opacity-0",
                               )}
                             />
                             <div className="flex flex-col">

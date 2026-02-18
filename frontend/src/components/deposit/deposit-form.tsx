@@ -276,7 +276,7 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                     <strong>Setoran bulanan</strong> akan dipotong otomatis dari
                     gaji setiap bulan
                   </li>
-                  <li>Pengajuan akan melalui 2 tahap approval: DSP → Ketua</li>
+                  <li>Pengajuan akan melalui persetujuan Ketua</li>
                   <li>
                     Setelah disetujui, pemotongan akan dimulai pada periode gaji
                     berikutnya

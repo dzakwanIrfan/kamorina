@@ -107,9 +107,7 @@ services:
         limits:
           memory: 256M
 
-# ==========================================
 # Volumes
-# ==========================================
 volumes:
   postgres_data:
     driver: local
@@ -118,9 +116,7 @@ volumes:
   uploads_data:
     driver: local
 
-# ==========================================
 # Networks
-# ==========================================
 networks:
   kamorina-network:
     driver: bridge
