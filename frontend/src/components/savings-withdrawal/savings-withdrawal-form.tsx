@@ -332,8 +332,7 @@ export function SavingsWithdrawalForm({
               <AlertDescription className="text-xs space-y-1.5">
                 <ul className="list-disc list-inside space-y-1">
                   <li>
-                    Pengajuan akan melalui proses approval: DSP → Ketua →
-                    Shopkeeper → Ketua (Otorisasi)
+                    Pengajuan akan melalui persetujuan Ketua
                   </li>
                   <li>
                     Jika Anda memiliki deposito yang belum jatuh tempo, akan

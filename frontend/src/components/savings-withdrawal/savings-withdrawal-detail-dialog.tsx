@@ -294,7 +294,7 @@ export function SavingsWithdrawalDetailDialog({
             <div className="rounded-lg border p-4 space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Tanggal Penting
+                Informasi Tanggal
               </h3>
               <Separator />
               <div className="grid grid-cols-2 gap-4 text-sm">

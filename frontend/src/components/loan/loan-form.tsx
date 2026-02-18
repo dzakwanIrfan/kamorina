@@ -1,33 +1,42 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
-import { Loader2, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Loader2, AlertCircle, CheckCircle2, Info } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import { Button } from "@/components/ui/button";
+import { Form } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 
-import { loanService } from '@/services/loan.service';
-import { handleApiError } from '@/lib/axios';
-import { useAuthStore } from '@/store/auth.store';
-import { LoanEligibility, LoanType, CreateLoanDto } from '@/types/loan.types';
-import { createLoanFormSchema, getDefaultFormValues } from '@/lib/loan-form-schemas';
-import { formatCurrency } from '@/lib/loan-utils';
-import { useSetting, getSettingValue } from '@/hooks/use-settings';
+import { loanService } from "@/services/loan.service";
+import { handleApiError } from "@/lib/axios";
+import { useAuthStore } from "@/store/auth.store";
+import { LoanEligibility, LoanType, CreateLoanDto } from "@/types/loan.types";
+import {
+  createLoanFormSchema,
+  getDefaultFormValues,
+} from "@/lib/loan-form-schemas";
+import { formatCurrency } from "@/lib/loan-utils";
+import { useSetting, getSettingValue } from "@/hooks/use-settings";
 
-import { LoanTypeSelector } from './loan-type-selector';
-import { CommonLoanFields } from './form-fields/common-loan-fields';
-import { CashLoanFields } from './form-fields/cash-loan-fields';
-import { GoodsReimburseFields } from './form-fields/goods-reimburse-fields';
-import { GoodsOnlineFields } from './form-fields/goods-online-fields';
-import { GoodsPhoneFields } from './form-fields/goods-phone-fields';
-import { LoanCalculationPreview } from './loan-calculation-preview';
-import { FileUploadSection } from './file-upload-section';
+import { LoanTypeSelector } from "./loan-type-selector";
+import { CommonLoanFields } from "./form-fields/common-loan-fields";
+import { CashLoanFields } from "./form-fields/cash-loan-fields";
+import { GoodsReimburseFields } from "./form-fields/goods-reimburse-fields";
+import { GoodsOnlineFields } from "./form-fields/goods-online-fields";
+import { GoodsPhoneFields } from "./form-fields/goods-phone-fields";
+import { LoanCalculationPreview } from "./loan-calculation-preview";
+import { FileUploadSection } from "./file-upload-section";
 
 interface LoanFormProps {
   onSuccess: () => void;
@@ -36,14 +45,14 @@ interface LoanFormProps {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACCEPTED_FILE_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
 ];
 
 export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
@@ -57,15 +66,18 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const [eligibilityError, setEligibilityError] = useState<string | null>(null);
 
   // Fetch dynamic settings
-  const { data: shopMarginData } = useSetting('shop_margin_rate');
-  const { data: maxGoodsLoanData } = useSetting('max_goods_loan_amount');
+  const { data: shopMarginData } = useSetting("shop_margin_rate");
+  const { data: maxGoodsLoanData } = useSetting("max_goods_loan_amount");
 
   const shopMarginRate = shopMarginData ? getSettingValue(shopMarginData) : 5;
-  const maxGoodsLoanAmount = maxGoodsLoanData ? getSettingValue(maxGoodsLoanData) : 15000000;
+  const maxGoodsLoanAmount = maxGoodsLoanData
+    ? getSettingValue(maxGoodsLoanData)
+    : 15000000;
 
-  const formSchema = eligibility && selectedType 
-    ? createLoanFormSchema(selectedType, eligibility)
-    : null;
+  const formSchema =
+    eligibility && selectedType
+      ? createLoanFormSchema(selectedType, eligibility)
+      : null;
 
   const form = useForm<any>({
     resolver: formSchema ? zodResolver(formSchema) : undefined,
@@ -88,7 +100,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     } catch (error) {
       const errorMsg = handleApiError(error);
       setEligibilityError(errorMsg);
-      toast.error('Gagal memeriksa kelayakan', { description: errorMsg });
+      toast.error("Gagal memeriksa kelayakan", { description: errorMsg });
     } finally {
       setIsLoadingEligibility(false);
     }
@@ -98,8 +110,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     if (!eligibility || !amount || !tenor) return null;
 
     const annualRate = eligibility.loanLimit.interestRate / 100;
-    const totalInterest = Math.round((amount * annualRate * (tenor / 12)) * 100) / 100;
-    
+    const totalInterest =
+      Math.round(amount * annualRate * (tenor / 12) * 100) / 100;
+
     let shopMargin = 0;
     let totalRepayment = 0;
 
@@ -111,8 +124,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
         break;
 
       case LoanType.GOODS_ONLINE:
-        shopMargin = Math.round((amount * (shopMarginRate / 100)) * 100) / 100;
-        totalRepayment = Math.round((amount + shopMargin + totalInterest) * 100) / 100;
+        shopMargin = Math.round(amount * (shopMarginRate / 100) * 100) / 100;
+        totalRepayment =
+          Math.round((amount + shopMargin + totalInterest) * 100) / 100;
         break;
 
       default:
@@ -144,17 +158,20 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   };
 
   const loanAmount = getLoanAmount(form.watch());
-  const loanTenor = form.watch('loanTenor');
-  const calculations = loanAmount && loanTenor && selectedType
-    ? calculateLoan(Number(loanAmount), Number(loanTenor), selectedType) 
-    : null;
+  const loanTenor = form.watch("loanTenor");
+  const calculations =
+    loanAmount && loanTenor && selectedType
+      ? calculateLoan(Number(loanAmount), Number(loanTenor), selectedType)
+      : null;
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = Array.from(event.target.files || []);
 
     if (files.length === 0) return;
     if (uploadedFiles.length + files.length > 5) {
-      toast.error('Maksimal 5 file');
+      toast.error("Maksimal 5 file");
       return;
     }
 
@@ -173,8 +190,8 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       setIsUploading(true);
       const result = await loanService.uploadAttachments(files);
       setUploadedFiles([...uploadedFiles, ...result.files]);
-      toast.success('File berhasil diupload');
-      event.target.value = '';
+      toast.success("File berhasil diupload");
+      event.target.value = "";
     } catch (error) {
       toast.error(handleApiError(error));
     } finally {
@@ -189,13 +206,11 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
   const onSubmit = async (data: any) => {
     if (!selectedType) return;
 
-    if (selectedType === LoanType.GOODS_ONLINE && uploadedFiles.length === 0) {
-      toast.error('Untuk kredit barang online, lampiran dokumen wajib diupload.');
-      return;
-    }
-
-    if (selectedType === LoanType.GOODS_REIMBURSE && uploadedFiles.length === 0) {
-      toast.error('Untuk kredit barang reimburse, lampiran dokumen wajib diupload.');
+    // Validate file upload (mandatory for all loan types)
+    if (uploadedFiles.length === 0) {
+      toast.error(
+        "Lampiran dokumen wajib diupload untuk semua jenis pengajuan.",
+      );
       return;
     }
 
@@ -211,7 +226,7 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       const draftResult = await loanService.createDraft(payload);
       await loanService.submitLoan(draftResult.loan.id);
 
-      toast.success('Pengajuan pinjaman berhasil disubmit!');
+      toast.success("Pengajuan pinjaman berhasil disubmit!");
       onSuccess();
     } catch (error) {
       toast.error(handleApiError(error));
@@ -245,7 +260,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
       <Card className="w-full max-w-4xl mx-auto">
         <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Memeriksa kelayakan pinjaman...</p>
+          <p className="text-sm text-muted-foreground">
+            Memeriksa kelayakan pinjaman...
+          </p>
         </CardContent>
       </Card>
     );
@@ -259,7 +276,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
             <AlertCircle className="h-5 w-5" />
             Tidak Memenuhi Syarat
           </CardTitle>
-          <CardDescription>Anda belum memenuhi syarat untuk mengajukan pinjaman</CardDescription>
+          <CardDescription>
+            Anda belum memenuhi syarat untuk mengajukan pinjaman
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert variant="destructive">
@@ -269,7 +288,11 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
           </Alert>
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setSelectedType(null)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedType(null)}
+              className="flex-1"
+            >
               Pilih Jenis Lain
             </Button>
             {onCancel && (
@@ -283,9 +306,10 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
     );
   }
 
-  const displayMaxAmount = selectedType === LoanType.CASH_LOAN 
-    ? eligibility.loanLimit.maxLoanAmount 
-    : maxGoodsLoanAmount;
+  const displayMaxAmount =
+    selectedType === LoanType.CASH_LOAN
+      ? eligibility.loanLimit.maxLoanAmount
+      : maxGoodsLoanAmount;
 
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -377,7 +401,11 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                 <LoanCalculationPreview
                   calculations={calculations}
                   interestRate={eligibility.loanLimit.interestRate}
-                  shopMarginRate={selectedType === LoanType.GOODS_ONLINE ? shopMarginRate : undefined}
+                  shopMarginRate={
+                    selectedType === LoanType.GOODS_ONLINE
+                      ? shopMarginRate
+                      : undefined
+                  }
                   loanType={selectedType}
                 />
               </>
@@ -398,13 +426,19 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
               <AlertTitle>Informasi Penting</AlertTitle>
               <AlertDescription className="text-xs space-y-1">
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Pengajuan akan melalui 3 tahap approval: DSP → Ketua → Pengawas</li>
+                  <li>Pengajuan akan melalui persetujuan Ketua</li>
                   <li>Pencairan dilakukan setelah semua approval selesai</li>
                   {selectedType === LoanType.GOODS_PHONE && (
-                    <li>Harga handphone akan ditentukan oleh DSP berdasarkan harga rekanan</li>
+                    <li>
+                      Harga handphone akan ditentukan oleh DSP berdasarkan harga
+                      rekanan
+                    </li>
                   )}
                   {selectedType === LoanType.GOODS_ONLINE && (
-                    <li>Total pembayaran sudah termasuk margin toko {shopMarginRate}%</li>
+                    <li>
+                      Total pembayaran sudah termasuk margin toko{" "}
+                      {shopMarginRate}%
+                    </li>
                   )}
                 </ul>
               </AlertDescription>
@@ -423,7 +457,9 @@ export function LoanForm({ onSuccess, onCancel }: LoanFormProps) {
                 </Button>
               )}
               <Button type="submit" disabled={isSubmitting} className="flex-1">
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Submit Pengajuan
               </Button>
             </div>

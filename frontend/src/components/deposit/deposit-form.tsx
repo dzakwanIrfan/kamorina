@@ -294,6 +294,10 @@ export function DepositForm({ onSuccess, onCancel }: DepositFormProps) {
                     mengajukan <strong>Perubahan Deposito</strong> (dikenakan
                     biaya admin)
                   </li>
+                  <li>
+                    Jika ada perubahan tabungan deposito, maka akan dikenakan
+                    pinalti sebesar 3% dari tabungan deposito
+                  </li>
                 </ul>
               </AlertDescription>
             </Alert>

@@ -369,7 +369,7 @@ export function DepositChangeForm({ deposit, onSuccess, onCancel }: DepositChang
               <AlertTitle>Informasi Penting</AlertTitle>
               <AlertDescription className="text-xs space-y-1 mt-2">
                 <ul className="list-disc list-inside space-y-1">
-                  <li>Pengajuan perubahan akan melalui 2 tahap approval: DSP → Ketua</li>
+                  <li>Pengajuan akan melalui persetujuan Ketua</li>
                   <li>Biaya admin  akan dipotong setelah perubahan disetujui</li>
                   <li>Perubahan akan berlaku efektif setelah mendapat persetujuan akhir</li>
                   <li>Pemotongan gaji akan disesuaikan mulai periode berikutnya</li>
