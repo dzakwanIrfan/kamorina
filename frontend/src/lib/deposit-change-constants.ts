@@ -3,7 +3,7 @@ import {
   DepositChangeApprovalStep, 
   DepositChangeType 
 } from '@/types/deposit-change.types';
-import { CheckCircle2, Clock, XCircle, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, ArrowUpDown, TrendingUp, TrendingDown, StopCircle } from 'lucide-react';
 
 export const changeStatusMap = {
   [DepositChangeStatus.DRAFT]: { 
@@ -63,6 +63,11 @@ export const changeTypeMap = {
     label: 'Perubahan Jumlah & Tenor', 
     icon: ArrowUpDown,
     color: 'text-purple-600' 
+  },
+  [DepositChangeType.STOP]: { 
+    label: 'Berhenti Deposito', 
+    icon: StopCircle,
+    color: 'text-red-600' 
   },
 };
 

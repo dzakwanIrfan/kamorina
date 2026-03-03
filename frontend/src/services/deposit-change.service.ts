@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/axios';
 import {
   DepositChangeRequest,
   CreateDepositChangeDto,
+  CreateDepositStopDto,
   UpdateDepositChangeDto,
   ApproveDepositChangeDto,
   BulkApproveDepositChangeDto,
@@ -20,6 +21,14 @@ export const depositChangeService = {
     const response = await apiClient.get('/deposit-changes/preview', {
       params: { depositId, newAmountCode, newTenorCode },
     });
+    return response.data;
+  },
+
+  // Create stop deposit request
+  async createStopRequest(
+    data: CreateDepositStopDto
+  ): Promise<{ message: string; changeRequest: DepositChangeRequest }> {
+    const response = await apiClient.post('/deposit-changes/stop', data);
     return response.data;
   },
 

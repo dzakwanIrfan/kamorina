@@ -741,6 +741,7 @@ enum DepositChangeType {
   AMOUNT_CHANGE
   TENOR_CHANGE
   BOTH
+  STOP
 }
 
 enum DepositChangeStatus {

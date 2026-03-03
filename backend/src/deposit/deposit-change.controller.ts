@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { DepositChangeService } from './deposit-change.service';
 import { CreateDepositChangeDto } from './dto/deposit-change/create-deposit-change.dto';
+import { CreateDepositStopDto } from './dto/deposit-change/create-deposit-stop.dto';
 import { UpdateDepositChangeDto } from './dto/deposit-change/update-deposit-change.dto';
 import { ApproveDepositChangeDto } from './dto/deposit-change/approve-deposit-change.dto';
 import { BulkApproveDepositChangeDto } from './dto/deposit-change/bulk-approve-deposit-change.dto';
@@ -40,6 +41,18 @@ export class DepositChangeController {
     @Body() dto: CreateDepositChangeDto,
   ) {
     return this.depositChangeService.createDraft(user.id, dto);
+  }
+
+  /**
+   * Create stop deposit request
+   */
+  @Post('stop')
+  @HttpCode(HttpStatus.CREATED)
+  async createStopRequest(
+    @CurrentUser() user: ICurrentUser,
+    @Body() dto: CreateDepositStopDto,
+  ) {
+    return this.depositChangeService.createStopRequest(user.id, dto);
   }
 
   /**

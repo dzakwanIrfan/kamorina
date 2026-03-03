@@ -213,6 +213,7 @@ export function MyDepositChanges() {
           { label: 'Perubahan Jumlah', value: DepositChangeType.AMOUNT_CHANGE },
           { label: 'Perubahan Tenor', value: DepositChangeType.TENOR_CHANGE },
           { label: 'Keduanya', value: DepositChangeType.BOTH },
+          { label: 'Berhenti Deposito', value: DepositChangeType.STOP },
         ],
       },
     ],

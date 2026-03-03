@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Eye, CheckCircle2, XCircle, Clock, Plus, PiggyBank, Edit } from 'lucide-react';
+import { Eye, CheckCircle2, XCircle, Clock, Plus, PiggyBank, Edit, StopCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
@@ -99,6 +100,10 @@ export function MyDeposits() {
 
   const handleRequestChange = (depositId: string) => {
     router.push(`/dashboard/deposit-changes/create/${depositId}`);
+  };
+
+  const handleStopDeposit = (depositId: string) => {
+    router.push(`/dashboard/deposit-changes/stop/${depositId}`);
   };
 
   const handleViewChangeHistory = () => {
@@ -188,6 +193,18 @@ export function MyDeposits() {
                   <Edit className="h-4 w-4 mr-2" />
                   Ajukan Perubahan
                 </DropdownMenuItem>
+              )}
+              {canChangeDeposit(row.original.status) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleStopDeposit(row.original.id)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <StopCircle className="h-4 w-4 mr-2" />
+                    Berhenti Deposito
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

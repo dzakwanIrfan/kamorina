@@ -27,6 +27,7 @@ import {
   ArrowRight,
   TrendingUp,
   TrendingDown,
+  StopCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -202,12 +203,37 @@ export function DepositChangeDetailDialog({
             {/* Comparison: Before & After */}
             <div className="rounded-lg border p-4 space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <ArrowRightLeft className="h-4 w-4" />
-                Perbandingan Nilai
+                {changeRequest.changeType === 'STOP' ? (
+                  <StopCircle className="h-4 w-4 text-red-600" />
+                ) : (
+                  <ArrowRightLeft className="h-4 w-4" />
+                )}
+                {changeRequest.changeType === 'STOP' ? 'Penghentian Deposito' : 'Perbandingan Nilai'}
               </h3>
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {changeRequest.changeType === 'STOP' ? (
+                /* STOP: show deposit info and penalty fee */
+                <div className="space-y-3 text-sm">
+                  <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Jumlah Setoran / Bulan</span>
+                      <span className="font-semibold">{formatCurrency(changeRequest.currentAmountValue)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tenor Deposito</span>
+                      <span className="font-semibold">{changeRequest.currentTenorMonths} Bulan</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-red-600">
+                      <span>Biaya Penalti</span>
+                      <span className="font-semibold">- {formatCurrency(changeRequest.adminFee)}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Before */}
                 <div className="rounded-lg bg-muted/50 p-4 space-y-3">
                   <h4 className="text-sm font-medium text-muted-foreground text-center">Sebelum</h4>
@@ -321,6 +347,8 @@ export function DepositChangeDetailDialog({
                   </div>
                 </div>
               </div>
+                </>
+              )}
             </div>
 
             {/* Rejection Reason */}

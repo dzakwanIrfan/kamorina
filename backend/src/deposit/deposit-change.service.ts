@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { MailQueueService } from '../mail/mail-queue.service';
 import { DepositOptionService } from './deposit-option.service';
 import { CreateDepositChangeDto } from './dto/deposit-change/create-deposit-change.dto';
+import { CreateDepositStopDto } from './dto/deposit-change/create-deposit-stop.dto';
 import { UpdateDepositChangeDto } from './dto/deposit-change/update-deposit-change.dto';
 import { ApproveDepositChangeDto } from './dto/deposit-change/approve-deposit-change.dto';
 import { BulkApproveDepositChangeDto } from './dto/deposit-change/bulk-approve-deposit-change.dto';
@@ -66,6 +67,16 @@ export class DepositChangeService {
       where: { key: 'deposit_change_admin_fee' },
     });
     return setting ? parseFloat(setting.value) : 15000;
+  }
+
+  /**
+   * Get stop/penalty fee from settings
+   */
+  private async getStopPenaltyFee(): Promise<number> {
+    const setting = await this.prisma.cooperativeSetting.findUnique({
+      where: { key: 'deposit_change_admin_fee' },
+    });
+    return setting ? parseFloat(setting.value) : 0;
   }
 
   /**
@@ -274,6 +285,110 @@ export class DepositChangeService {
         adminFee,
         changeType,
       },
+    };
+  }
+
+  /**
+   * Create stop deposit request
+   */
+  async createStopRequest(userId: string, dto: CreateDepositStopDto) {
+    const deposit = await this.validateDepositForChange(
+      dto.depositApplicationId,
+      userId,
+    );
+
+    if (!dto.agreedToTerms) {
+      throw new BadRequestException(
+        'Anda harus menyetujui syarat dan ketentuan',
+      );
+    }
+
+    if (!dto.agreedToAdminFee) {
+      throw new BadRequestException('Anda harus menyetujui biaya penalti');
+    }
+
+    const changeNumber = await this.generateChangeNumber();
+    const penaltyFee = await this.getStopPenaltyFee();
+
+    const changeRequest = await this.prisma.depositChangeRequest.create({
+      data: {
+        changeNumber,
+        depositApplicationId: dto.depositApplicationId,
+        userId,
+        changeType: DepositChangeType.STOP,
+        currentAmountValue: deposit.amountValue,
+        currentTenorMonths: deposit.tenorMonths,
+        newAmountValue: 0,
+        newTenorMonths: 0,
+        adminFee: penaltyFee,
+        agreedToTerms: dto.agreedToTerms,
+        agreedToAdminFee: dto.agreedToAdminFee,
+        status: DepositChangeStatus.SUBMITTED,
+        currentStep: DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM,
+        submittedAt: new Date(),
+      },
+      include: {
+        depositApplication: true,
+        user: {
+          include: {
+            employee: {
+              include: {
+                department: true,
+                golongan: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Create approval records
+    await this.prisma.depositChangeApproval.createMany({
+      data: [
+        {
+          depositChangeRequestId: changeRequest.id,
+          step: DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM,
+        },
+        {
+          depositChangeRequestId: changeRequest.id,
+          step: DepositChangeApprovalStep.KETUA,
+        },
+      ],
+    });
+
+    // Save history
+    await this.prisma.depositChangeHistory.create({
+      data: {
+        depositChangeRequestId: changeRequest.id,
+        status: DepositChangeStatus.SUBMITTED,
+        changeType: DepositChangeType.STOP,
+        currentAmountValue: deposit.amountValue,
+        currentTenorMonths: deposit.tenorMonths,
+        newAmountValue: 0,
+        newTenorMonths: 0,
+        adminFee: penaltyFee,
+        action: 'SUBMITTED',
+        actionAt: new Date(),
+        actionBy: userId,
+        notes: dto.notes,
+      },
+    });
+
+    // Notify DSP
+    try {
+      await this.notifyApprovers(
+        changeRequest.id,
+        DepositChangeApprovalStep.DIVISI_SIMPAN_PINJAM,
+        'NEW_STOP_REQUEST',
+      );
+    } catch (error) {
+      this.logger.error('Failed to send notification:', error);
+    }
+
+    return {
+      message:
+        'Pengajuan berhenti tabungan deposito berhasil disubmit. Menunggu review dari Divisi Simpan Pinjam.',
+      changeRequest,
     };
   }
 
@@ -952,75 +1067,135 @@ export class DepositChangeService {
 
       // If final approval, update the actual deposit
       if (isLastStep) {
-        await tx.depositApplication.update({
-          where: { id: changeRequest.depositApplicationId },
-          data: {
-            amountValue: changeRequest.newAmountValue,
-            tenorMonths: changeRequest.newTenorMonths,
-            interestRate: changeRequest.newInterestRate,
-            // Recalculate maturity date if deposit is active
-            ...(changeRequest.depositApplication.maturityDate && {
-              maturityDate: new Date(
-                new Date().setMonth(
-                  new Date().getMonth() + changeRequest.newTenorMonths,
-                ),
-              ),
-            }),
-          },
-        });
+        if (changeRequest.changeType === DepositChangeType.STOP) {
+          // STOP: mark deposit as COMPLETED, deduct penalty fee
+          await tx.depositApplication.update({
+            where: { id: changeRequest.depositApplicationId },
+            data: {
+              status: DepositStatus.COMPLETED,
+              completedAt: new Date(),
+              currentStep: null,
+            },
+          });
 
-        // Update savings account - deduct from saldoSukarela
-        const savingsAccount = await tx.savingsAccount.findUnique({
-          where: { userId: depositApplication?.userId },
-        });
-
-        if (savingsAccount) {
-          const currentBunga = new Prisma.Decimal(
-            savingsAccount.bungaDeposito || 0,
-          );
-          const currentSaldoSukarela = new Prisma.Decimal(
-            savingsAccount.saldoSukarela || 0,
-          );
-          const saldoSukarela = currentSaldoSukarela.sub(adminFee);
-
-          const totalBalance = new Prisma.Decimal(
-            savingsAccount.saldoPokok || 0,
-          )
-            .add(savingsAccount.saldoWajib || 0)
-            .add(saldoSukarela);
-
-          const settings = await this.getDepositSettings();
-          const annualRate = settings.interestRate;
-          const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
-
-          // Hitung bunga bulanan
-          const monthlyInterest = new Prisma.Decimal(
-            totalBalance.mul(monthlyRate).toFixed(0),
-          );
-
-          await tx.savingsAccount.update({
+          // Deduct penalty fee from saldoSukarela
+          const savingsAccount = await tx.savingsAccount.findUnique({
             where: { userId: depositApplication?.userId },
+          });
+
+          if (savingsAccount && depositApplication) {
+            const penaltyFee = changeRequest.adminFee;
+
+            if (penaltyFee.gt(0)) {
+              const settings = await this.getDepositSettings();
+              const annualRate = settings.interestRate;
+              const currentSaldoSukarela = new Prisma.Decimal(
+                savingsAccount.saldoSukarela || 0,
+              );
+              const newSaldoSukarela = currentSaldoSukarela.sub(penaltyFee);
+              const totalBalance = new Prisma.Decimal(savingsAccount.saldoPokok || 0)
+                .add(savingsAccount.saldoWajib || 0)
+                .add(newSaldoSukarela);
+              const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
+              const monthlyInterest = new Prisma.Decimal(
+                totalBalance.mul(monthlyRate).toFixed(0),
+              );
+
+              await tx.savingsAccount.update({
+                where: { userId: depositApplication.userId },
+                data: {
+                  saldoSukarela: { decrement: penaltyFee },
+                  bungaDeposito: monthlyInterest,
+                },
+              });
+
+              // Create savings transaction for penalty deduction
+              await tx.savingsTransaction.create({
+                data: {
+                  savingsAccountId: savingsAccount.id,
+                  penarikan: penaltyFee,
+                  bunga: monthlyInterest.sub(savingsAccount.bungaDeposito || 0),
+                  jumlahBunga: monthlyInterest,
+                  transactionDate: new Date(),
+                  createdBy: approverId,
+                  interestRate: annualRate,
+                  note: `Biaya penalti berhenti deposito - ${changeRequest.depositApplication.depositNumber}`,
+                },
+              });
+            }
+          }
+        } else {
+          // AMOUNT_CHANGE / TENOR_CHANGE / BOTH: update deposit values
+          await tx.depositApplication.update({
+            where: { id: changeRequest.depositApplicationId },
             data: {
-              saldoSukarela: {
-                decrement: adminFee,
-              },
-              bungaDeposito: monthlyInterest,
+              amountValue: changeRequest.newAmountValue,
+              tenorMonths: changeRequest.newTenorMonths,
+              interestRate: changeRequest.newInterestRate,
+              // Recalculate maturity date if deposit is active
+              ...(changeRequest.depositApplication.maturityDate && {
+                maturityDate: new Date(
+                  new Date().setMonth(
+                    new Date().getMonth() + changeRequest.newTenorMonths,
+                  ),
+                ),
+              }),
             },
           });
 
-          // Create savings transaction record (penarikan)
-          await tx.savingsTransaction.create({
-            data: {
-              savingsAccountId: savingsAccount.id,
-              penarikan: adminFee,
-              bunga: monthlyInterest.sub(currentBunga),
-              jumlahBunga: monthlyInterest,
-              transactionDate: new Date(),
-              createdBy: approverId,
-              interestRate: annualRate,
-              note: 'Biaya admin perubahan deposito',
-            },
+          // Update savings account - deduct from saldoSukarela
+          const savingsAccount = await tx.savingsAccount.findUnique({
+            where: { userId: depositApplication?.userId },
           });
+
+          if (savingsAccount) {
+            const currentBunga = new Prisma.Decimal(
+              savingsAccount.bungaDeposito || 0,
+            );
+            const currentSaldoSukarela = new Prisma.Decimal(
+              savingsAccount.saldoSukarela || 0,
+            );
+            const saldoSukarela = currentSaldoSukarela.sub(adminFee);
+
+            const totalBalance = new Prisma.Decimal(
+              savingsAccount.saldoPokok || 0,
+            )
+              .add(savingsAccount.saldoWajib || 0)
+              .add(saldoSukarela);
+
+            const settings = await this.getDepositSettings();
+            const annualRate = settings.interestRate;
+            const monthlyRate = new Prisma.Decimal(annualRate).div(100).div(12);
+
+            // Hitung bunga bulanan
+            const monthlyInterest = new Prisma.Decimal(
+              totalBalance.mul(monthlyRate).toFixed(0),
+            );
+
+            await tx.savingsAccount.update({
+              where: { userId: depositApplication?.userId },
+              data: {
+                saldoSukarela: {
+                  decrement: adminFee,
+                },
+                bungaDeposito: monthlyInterest,
+              },
+            });
+
+            // Create savings transaction record (penarikan)
+            await tx.savingsTransaction.create({
+              data: {
+                savingsAccountId: savingsAccount.id,
+                penarikan: adminFee,
+                bunga: monthlyInterest.sub(currentBunga),
+                jumlahBunga: monthlyInterest,
+                transactionDate: new Date(),
+                createdBy: approverId,
+                interestRate: annualRate,
+                note: 'Biaya admin perubahan deposito',
+              },
+            });
+          }
         }
       }
 
@@ -1052,7 +1227,10 @@ export class DepositChangeService {
       }
 
       return {
-        message: 'Perubahan deposito berhasil disetujui dan telah diterapkan.',
+        message:
+          changeRequest.changeType === DepositChangeType.STOP
+            ? 'Pengajuan berhenti tabungan deposito disetujui. Deposito telah dihentikan dan biaya penalti telah dipotong.'
+            : 'Perubahan deposito berhasil disetujui dan telah diterapkan.',
       };
     } else {
       // Notify next approver

@@ -2,6 +2,7 @@ export enum DepositChangeType {
   AMOUNT_CHANGE = 'AMOUNT_CHANGE',
   TENOR_CHANGE = 'TENOR_CHANGE',
   BOTH = 'BOTH',
+  STOP = 'STOP',
 }
 
 export enum DepositChangeStatus {
@@ -154,6 +155,13 @@ export interface DepositChangeRequest {
     };
     adminFee: number;
   };
+}
+
+export interface CreateDepositStopDto {
+  depositApplicationId: string;
+  agreedToTerms: boolean;
+  agreedToAdminFee: boolean;
+  notes?: string;
 }
 
 export interface CreateDepositChangeDto {

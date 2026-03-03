@@ -1,4 +1,4 @@
-.PHONY: dev dev-build prod prod-build down logs logs-backend logs-frontend \
+.PHONY: dev dev-build dev-build-attached prod prod-build down logs logs-backend logs-frontend \
         prisma-migrate prisma-seed prisma-reset prisma-studio clean help
 
 # Development
@@ -18,6 +18,13 @@ dev:
 ## Rebuild and start development environment
 dev-build:
 	docker compose up -d --build
+	@echo ""
+	@echo "✅ Development environment rebuilt and started!"
+	@echo ""
+
+## Rebuild and start development environment
+dev-build-attached:
+	docker compose up --build
 	@echo ""
 	@echo "✅ Development environment rebuilt and started!"
 	@echo ""
