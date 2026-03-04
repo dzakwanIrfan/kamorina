@@ -225,7 +225,7 @@ export function DepositStopForm({ deposit, onSuccess, onCancel }: DepositStopFor
                       <span className="font-semibold text-red-600">
                         {formatCurrency(penaltyFee)}
                       </span>{' '}
-                      yang akan dipotong dari saldo sukarela saya.
+                      yang akan dipotong dari saldo tabungan saya.
                     </FormDescription>
                     <FormMessage />
                   </div>
