@@ -25,6 +25,7 @@ import {
   Loader2,
   Mail,
   History as HistoryIcon,
+  ClipboardList,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 import { useSidebarBadges } from "@/hooks/use-sidebar-badges";
@@ -218,6 +219,13 @@ const managementGroups = [
         icon: Banknote,
         href: "/dashboard/payroll",
         roles: ["ketua", "payroll", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Laporan Potong Gaji",
+        icon: ClipboardList,
+        href: "/dashboard/salary-deduction-report",
+        roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
         requiresMemberVerified: true,
       },
       {

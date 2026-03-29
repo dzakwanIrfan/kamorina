@@ -23,6 +23,7 @@ import { UsersModule } from './users/users.module';
 import { EmailConfigModule } from './email-config/email-config.module';
 import { EmailLogsModule } from './email-logs/email-logs.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SalaryDeductionReportModule } from './salary-deduction-report/salary-deduction-report.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     EmailConfigModule,
     EmailLogsModule,
     DashboardModule,
+    SalaryDeductionReportModule,
   ],
 })
 export class AppModule {}

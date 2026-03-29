@@ -97,7 +97,7 @@ export function PayrollDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full sm:max-w-5xl max-h-[95dvh] sm:max-h-[90vh] h-[95dvh] sm:h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-b shrink-0">
+        <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 bg-linear-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-b shrink-0">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
             <div className="space-y-1">
               <DialogTitle className="text-2xl sm:text-3xl font-bold tracking-tight line-clamp-1">
