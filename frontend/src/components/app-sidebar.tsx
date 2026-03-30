@@ -26,6 +26,7 @@ import {
   Mail,
   History as HistoryIcon,
   ClipboardList,
+  Landmark,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 import { useSidebarBadges } from "@/hooks/use-sidebar-badges";
@@ -225,6 +226,13 @@ const managementGroups = [
         title: "Laporan Potong Gaji",
         icon: ClipboardList,
         href: "/dashboard/salary-deduction-report",
+        roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Saldo Freeze Pinjaman",
+        icon: Landmark,
+        href: "/dashboard/loan-balance-report",
         roles: ["ketua", "divisi_simpan_pinjam", "payroll"],
         requiresMemberVerified: true,
       },

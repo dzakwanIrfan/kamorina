@@ -24,6 +24,7 @@ import { EmailConfigModule } from './email-config/email-config.module';
 import { EmailLogsModule } from './email-logs/email-logs.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SalaryDeductionReportModule } from './salary-deduction-report/salary-deduction-report.module';
+import { LoanBalanceReportModule } from './loan-balance-report/loan-balance-report.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { SalaryDeductionReportModule } from './salary-deduction-report/salary-de
     EmailLogsModule,
     DashboardModule,
     SalaryDeductionReportModule,
+    LoanBalanceReportModule,
   ],
 })
 export class AppModule {}
