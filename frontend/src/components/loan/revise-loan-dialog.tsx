@@ -31,6 +31,7 @@ import { Loader2, Calendar as CalendarIcon, Percent } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 import { handleApiError } from "@/lib/axios";
 import { formatCurrency } from "@/lib/loan-utils";
+import { CurrencyInput } from "../ui/currency-input";
 
 interface ReviseLoanDialogProps {
   loan: LoanApplication | null;
@@ -50,9 +51,17 @@ function createReviseSchema(loanType: LoanType) {
 
   switch (loanType) {
     case LoanType.CASH_LOAN:
+    case LoanType.EXCESS_LOAN:
       return z.object({
         ...baseSchema,
-        loanAmount: z.number().positive("Jumlah pinjaman harus lebih dari 0"),
+        // loanAmount: z.number().positive("Jumlah pinjaman harus lebih dari 0"),
+        loanAmount: z
+          .string()
+          .min(1, "Jumlah pinjaman harus diisi")
+          .refine((val) => {
+            const num = Number(val);
+            return !isNaN(num) && num > 0;
+          }, "Jumlah pinjaman harus lebih dari 0"),
       });
 
     case LoanType.GOODS_REIMBURSE:
@@ -112,24 +121,25 @@ export function ReviseLoanDialog({
 
       switch (loan.loanType) {
         case LoanType.CASH_LOAN:
+        case LoanType.EXCESS_LOAN:
           defaultValues.loanAmount = Number(loan.loanAmount);
           break;
         case LoanType.GOODS_REIMBURSE:
           defaultValues.itemPrice = Number(
-            loan.goodsReimburseDetails?.itemPrice || loan.loanAmount
+            loan.goodsReimburseDetails?.itemPrice || loan.loanAmount,
           );
           break;
         case LoanType.GOODS_ONLINE:
           defaultValues.itemPrice = Number(
-            loan.goodsOnlineDetails?.itemPrice || loan.loanAmount
+            loan.goodsOnlineDetails?.itemPrice || loan.loanAmount,
           );
           break;
         case LoanType.GOODS_PHONE:
           const currentRetail = Number(
-            loan.goodsPhoneDetails?.retailPrice || 0
+            loan.goodsPhoneDetails?.retailPrice || 0,
           );
           const currentCoop = Number(
-            loan.goodsPhoneDetails?.cooperativePrice || 0
+            loan.goodsPhoneDetails?.cooperativePrice || 0,
           );
 
           // Calculate existing margin percentage if prices exist
@@ -200,6 +210,7 @@ export function ReviseLoanDialog({
   const renderOriginalData = () => {
     switch (loan.loanType) {
       case LoanType.CASH_LOAN:
+      case LoanType.EXCESS_LOAN:
         return (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -329,6 +340,7 @@ export function ReviseLoanDialog({
   const renderReviseFields = () => {
     switch (loan.loanType) {
       case LoanType.CASH_LOAN:
+      case LoanType.EXCESS_LOAN:
         return (
           <FormField
             control={form.control}
@@ -339,14 +351,10 @@ export function ReviseLoanDialog({
                 <FormControl>
                   <div className="relative">
                     <FaRupiahSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="number"
+                    <CurrencyInput
+                      value={field.value}
                       placeholder="5000000"
-                      className="pl-10"
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseFloat(e.target.value) || 0)
-                      }
+                      onChange={field.onChange}
                       disabled={isSubmitting}
                     />
                   </div>

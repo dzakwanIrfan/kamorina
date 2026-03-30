@@ -1,7 +1,18 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailQueueService } from '../../mail/mail-queue.service';
-import { LoanStatus, LoanApprovalStep, LoanApprovalDecision, LoanType } from '@prisma/client';
+import {
+  LoanStatus,
+  LoanApprovalStep,
+  LoanApprovalDecision,
+  LoanType,
+} from '@prisma/client';
 import { LoanHandlerFactory } from '../handlers/loan-handler.factory';
 import { LoanCalculationService } from './loan-calculation.service';
 import { LoanValidationService } from './loan-validation.service';
@@ -21,7 +32,7 @@ export class LoanApprovalService {
     private calculationService: LoanCalculationService,
     private validationService: LoanValidationService,
     private notificationService: LoanNotificationService,
-  ) { }
+  ) {}
 
   /**
    * Helper: Get status for current approval step
@@ -45,7 +56,9 @@ export class LoanApprovalService {
       LoanApprovalStep.PENGAWAS,
     ];
     const currentIndex = stepOrder.indexOf(currentStep);
-    return currentIndex < stepOrder.length - 1 ? stepOrder[currentIndex + 1] : null;
+    return currentIndex < stepOrder.length - 1
+      ? stepOrder[currentIndex + 1]
+      : null;
   }
 
   /**
@@ -98,6 +111,7 @@ export class LoanApprovalService {
     let newLoanAmount: number;
     switch (loan.loanType) {
       case LoanType.CASH_LOAN:
+      case LoanType.EXCESS_LOAN:
         newLoanAmount = (dto as any).loanAmount;
         break;
       case LoanType.GOODS_REIMBURSE:
@@ -116,7 +130,7 @@ export class LoanApprovalService {
     const calculations = await this.calculationService.calculateLoanDetails(
       newLoanAmount,
       dto.loanTenor,
-      loan.loanType
+      loan.loanType,
     );
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -137,7 +151,12 @@ export class LoanApprovalService {
       });
 
       // Update type-specific details (pass shopMarginRate for GOODS_ONLINE)
-      await handler.reviseTypeSpecificDetails(tx, loanId, dto, calculations.shopMarginRate);
+      await handler.reviseTypeSpecificDetails(
+        tx,
+        loanId,
+        dto,
+        calculations.shopMarginRate,
+      );
 
       // Save revision in approval record
       const approvalRecord = loan.approvals.find(
@@ -206,7 +225,7 @@ export class LoanApprovalService {
 
   /**
    * Process approval (DSP, Ketua, Pengawas)
-   * 
+   *
    * Flow Status:
    * - UNDER_REVIEW_DSP -> (DSP approve) -> UNDER_REVIEW_KETUA
    * - UNDER_REVIEW_KETUA -> (Ketua approve) -> UNDER_REVIEW_PENGAWAS
@@ -246,31 +265,43 @@ export class LoanApprovalService {
       .find((step) => step === loan.currentStep);
 
     if (!approverStep) {
-      throw new ForbiddenException('Anda tidak memiliki akses untuk approve di step ini');
+      throw new ForbiddenException(
+        'Anda tidak memiliki akses untuk approve di step ini',
+      );
     }
 
     // Validate current status matches expected status for this step
     const expectedStatus = this.getStatusForStep(loan.currentStep);
     if (loan.status !== expectedStatus) {
       throw new BadRequestException(
-        `Status pinjaman tidak sesuai. Expected: ${expectedStatus}, Got: ${loan.status}`
+        `Status pinjaman tidak sesuai. Expected: ${expectedStatus}, Got: ${loan.status}`,
       );
     }
 
-    const approvalRecord = loan.approvals.find((a) => a.step === loan.currentStep);
+    const approvalRecord = loan.approvals.find(
+      (a) => a.step === loan.currentStep,
+    );
     if (!approvalRecord) {
       throw new BadRequestException('Record approval tidak ditemukan');
     }
 
     // Allow re-approval if previous decision was REVISED (for DSP)
-    if (approvalRecord.decision && approvalRecord.decision !== LoanApprovalDecision.REVISED) {
+    if (
+      approvalRecord.decision &&
+      approvalRecord.decision !== LoanApprovalDecision.REVISED
+    ) {
       throw new BadRequestException('Step ini sudah diproses sebelumnya');
     }
 
     if (dto.decision === LoanApprovalDecision.REJECTED) {
       return this.processRejection(loan, approvalRecord, approverId, dto);
     } else {
-      return this.processApprovalDecision(loan, approvalRecord, approverId, dto);
+      return this.processApprovalDecision(
+        loan,
+        approvalRecord,
+        approverId,
+        dto,
+      );
     }
   }
 
@@ -335,7 +366,7 @@ export class LoanApprovalService {
     }
 
     return {
-      message: `Pinjaman berhasil ditolak oleh ${this.getStepDisplayName(loan.currentStep)}`
+      message: `Pinjaman berhasil ditolak oleh ${this.getStepDisplayName(loan.currentStep)}`,
     };
   }
 
@@ -412,13 +443,18 @@ export class LoanApprovalService {
       }
 
       return {
-        message: 'Pinjaman berhasil disetujui semua pihak. Menunggu proses pencairan oleh Shopkeeper.',
+        message:
+          'Pinjaman berhasil disetujui semua pihak. Menunggu proses pencairan oleh Shopkeeper.',
         newStatus: newStatus,
       };
     } else {
       // Notify next approver
       try {
-        await this.notificationService.notifyApprovers(loan.id, nextStep!, 'APPROVAL_REQUEST');
+        await this.notificationService.notifyApprovers(
+          loan.id,
+          nextStep!,
+          'APPROVAL_REQUEST',
+        );
       } catch (error) {
         console.error('Failed to notify next approver:', error);
       }
@@ -447,10 +483,15 @@ export class LoanApprovalService {
 
     for (const loanId of dto.loanIds) {
       try {
-        const result = await this.processApproval(loanId, approverId, approverRoles, {
-          decision: dto.decision,
-          notes: dto.notes,
-        });
+        const result = await this.processApproval(
+          loanId,
+          approverId,
+          approverRoles,
+          {
+            decision: dto.decision,
+            notes: dto.notes,
+          },
+        );
         results.success.push({
           id: loanId,
           newStatus: (result as any).newStatus || LoanStatus.REJECTED,
