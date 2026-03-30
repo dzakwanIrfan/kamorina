@@ -340,6 +340,7 @@ enum LoanType {
   GOODS_REIMBURSE
   GOODS_ONLINE
   GOODS_PHONE
+  EXCESS_LOAN
 }
 
 enum LoanStatus {
@@ -420,6 +421,7 @@ model LoanApplication {
   goodsReimburseDetails GoodsReimburseDetail?
   goodsOnlineDetails    GoodsOnlineDetail?
   goodsPhoneDetails     GoodsPhoneDetail?
+  excessLoanDetails     ExcessLoanDetail?
 
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
@@ -541,6 +543,20 @@ model GoodsPhoneDetail {
   @@index([retailPrice])
   @@index([cooperativePrice])
   @@map("goods_phone_details")
+}
+
+// 5. EXCESS LOAN (Pinjaman Excess - Dana Sosial, 0% bunga)
+model ExcessLoanDetail {
+  id                String          @id @default(uuid())
+  loanApplicationId String          @unique @map("loan_application_id")
+  loanApplication   LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
+
+  notes String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("excess_loan_details")
 }
 
 model LoanApproval {
@@ -1163,6 +1179,8 @@ enum SocialFundTransactionType {
   INITIAL_BALANCE
   ADJUSTMENT
   SANTUNAN
+  EXCESS_LOAN_DISBURSEMENT
+  EXCESS_LOAN_REPAYMENT
 }
 
 model SocialFundBalance {

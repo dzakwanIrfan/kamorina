@@ -24,6 +24,7 @@ export class LoanCrudService {
   private extractLoanAmount(dto: any, loanType: LoanType): number {
     switch (loanType) {
       case LoanType.CASH_LOAN:
+      case LoanType.EXCESS_LOAN:
         return dto.loanAmount;
       case LoanType.GOODS_REIMBURSE:
       case LoanType.GOODS_ONLINE:
@@ -40,7 +41,15 @@ export class LoanCrudService {
    * Create draft loan application
    */
   async createDraft(userId: string, dto: CreateLoanDto) {
-    const user = await this.validationService.checkMemberStatus(userId);
+    // For EXCESS_LOAN, the loan is created on behalf of recipientUserId
+    const loanOwnerId =
+      dto.loanType === LoanType.EXCESS_LOAN &&
+      'recipientUserId' in dto &&
+      dto.recipientUserId
+        ? dto.recipientUserId
+        : userId;
+
+    const user = await this.validationService.checkMemberStatus(loanOwnerId);
     const handler = this.loanHandlerFactory.getHandler(dto.loanType);
 
     // Extract loan amount based on type
@@ -48,7 +57,7 @@ export class LoanCrudService {
 
     // Validate loan amount (skip for GOODS_PHONE as it's set by DSP)
     if (dto.loanType !== LoanType.GOODS_PHONE) {
-      await handler.validateLoanAmount(userId, loanAmount);
+      await handler.validateLoanAmount(loanOwnerId, loanAmount);
     }
 
     // Validate tenor
@@ -82,7 +91,7 @@ export class LoanCrudService {
       const loanApp = await tx.loanApplication.create({
         data: {
           loanNumber,
-          userId,
+          userId: loanOwnerId,
           loanType: dto.loanType,
           loanAmount,
           loanTenor: dto.loanTenor,

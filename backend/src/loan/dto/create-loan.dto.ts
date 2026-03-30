@@ -99,9 +99,26 @@ export class CreateGoodsPhoneDto extends CreateBaseLoanDto {
   notes?: string;
 }
 
+// DTO untuk Excess Loan (Pinjaman Excess - Dana Sosial)
+export class CreateExcessLoanDto extends CreateBaseLoanDto {
+  @IsNumber()
+  @IsPositive({ message: 'Jumlah pinjaman harus lebih dari 0' })
+  @Type(() => Number)
+  loanAmount: number;
+
+  @IsString()
+  @IsNotEmpty({ message: 'User ID anggota penerima wajib diisi' })
+  recipientUserId: string;
+
+  @IsString()
+  @IsOptional()
+  notes?: string;
+}
+
 // Union type untuk semua create loan DTOs
-export type CreateLoanDto = 
-  | CreateCashLoanDto 
-  | CreateGoodsReimburseDto 
-  | CreateGoodsOnlineDto 
-  | CreateGoodsPhoneDto;
+export type CreateLoanDto =
+  | CreateCashLoanDto
+  | CreateGoodsReimburseDto
+  | CreateGoodsOnlineDto
+  | CreateGoodsPhoneDto
+  | CreateExcessLoanDto;

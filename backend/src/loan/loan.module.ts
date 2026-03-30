@@ -20,6 +20,7 @@ import { CashLoanHandler } from './handlers/cash-loan.handler';
 import { GoodsReimburseHandler } from './handlers/goods-reimburse.handler';
 import { GoodsOnlineHandler } from './handlers/goods-online.handler';
 import { GoodsPhoneHandler } from './handlers/goods-phone.handler';
+import { ExcessLoanHandler } from './handlers/excess-loan.handler';
 
 // External modules
 import { MailModule } from '../mail/mail.module';
@@ -32,7 +33,7 @@ import { LoanInstallmentService } from './services/loan-installment.service';
   providers: [
     // Main service
     LoanService,
-    
+
     // Feature services
     LoanCrudService,
     LoanSubmissionService,
@@ -41,21 +42,21 @@ import { LoanInstallmentService } from './services/loan-installment.service';
     LoanAuthorizationService,
     LoanQueryService,
     LoanInstallmentService,
-    
+
     // Utility services
     LoanValidationService,
     LoanCalculationService,
     LoanNumberService,
     LoanNotificationService,
-    
+
     // Handlers
     LoanHandlerFactory,
     CashLoanHandler,
     GoodsReimburseHandler,
     GoodsOnlineHandler,
     GoodsPhoneHandler,
+    ExcessLoanHandler,
   ],
   exports: [LoanService, LoanInstallmentService],
-
 })
 export class LoanModule {}

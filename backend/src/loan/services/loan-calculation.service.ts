@@ -29,9 +29,20 @@ export class LoanCalculationService {
     tenor: number,
     loanType: LoanType,
   ) {
+    // EXCESS_LOAN: zero interest, totalRepayment = principal only
+    if (loanType === LoanType.EXCESS_LOAN) {
+      const monthlyInstallment = Math.round((amount / tenor) * 100) / 100;
+      return {
+        interestRate: 0,
+        shopMarginRate: null,
+        monthlyInstallment,
+        totalRepayment: amount,
+      };
+    }
+
     // Get interest rate from settings
     const annualRate = await this.getSettingNumber('loan_interest_rate', 8);
-    
+
     // Get shop margin rate for online goods
     let shopMarginRate = 0;
     if (loanType === LoanType.GOODS_ONLINE) {
@@ -40,9 +51,9 @@ export class LoanCalculationService {
 
     // Calculate total interest based on loan type
     const totalInterest = Math.round((amount * (annualRate / 100) * (tenor / 12)) * 100) / 100;
-    
+
     let totalRepayment: number;
-    
+
     switch (loanType) {
       case LoanType.CASH_LOAN:
       case LoanType.GOODS_REIMBURSE:
@@ -50,13 +61,13 @@ export class LoanCalculationService {
         // totalRepayment = loanAmount + interestRate
         totalRepayment = Math.round((amount + totalInterest) * 100) / 100;
         break;
-      
+
       case LoanType.GOODS_ONLINE:
         // totalRepayment = loanAmount + (loanAmount * shop_margin_rate) + interestRate
         const marginAmount = Math.round((amount * (shopMarginRate / 100)) * 100) / 100;
         totalRepayment = Math.round((amount + marginAmount + totalInterest) * 100) / 100;
         break;
-      
+
       default:
         totalRepayment = Math.round((amount + totalInterest) * 100) / 100;
     }

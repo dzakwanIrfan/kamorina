@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma, RepaymentStatus, LoanStatus } from '@prisma/client';
+import { LoanType, Prisma, RepaymentStatus, LoanStatus, SocialFundTransactionType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
   PayrollContext,
@@ -113,6 +113,15 @@ export class LoanRepaymentProcessor {
           },
         });
 
+        // 5. EXCESS_LOAN: replenish Social Fund with the repayment amount
+        if (loan.loanType === LoanType.EXCESS_LOAN) {
+          await this.replenishSocialFund(
+            tx,
+            repaymentAmount,
+            loan.loanNumber,
+          );
+        }
+
         totalAmount = totalAmount.add(repaymentAmount);
         processedCount++;
 
@@ -143,5 +152,34 @@ export class LoanRepaymentProcessor {
     );
 
     return { processedCount, totalAmount, errors, details };
+  }
+
+  /**
+   * Replenish Social Fund when an EXCESS_LOAN is fully repaid
+   */
+  private async replenishSocialFund(
+    tx: Prisma.TransactionClient,
+    amount: Prisma.Decimal,
+    loanNumber: string,
+  ): Promise<void> {
+    const balance = await tx.socialFundBalance.findFirst();
+    if (!balance) return;
+
+    const newBalance = balance.currentBalance.add(amount);
+
+    await tx.socialFundBalance.update({
+      where: { id: balance.id },
+      data: { currentBalance: newBalance },
+    });
+
+    await tx.socialFundTransaction.create({
+      data: {
+        type: SocialFundTransactionType.EXCESS_LOAN_REPAYMENT,
+        amount,
+        balanceAfter: newBalance,
+        description: `Pelunasan Pinjaman Excess ${loanNumber}`,
+        createdBy: balance.updatedBy || balance.id,
+      },
+    });
   }
 }

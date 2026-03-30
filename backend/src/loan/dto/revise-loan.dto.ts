@@ -57,8 +57,17 @@ export class ReviseGoodsPhoneDto extends ReviseLoanBaseDto {
   cooperativePrice: number;
 }
 
-export type ReviseLoanDto = 
-  | ReviseCashLoanDto 
-  | ReviseGoodsReimburseDto 
-  | ReviseGoodsOnlineDto 
-  | ReviseGoodsPhoneDto;
+// Revise untuk Excess Loan
+export class ReviseExcessLoanDto extends ReviseLoanBaseDto {
+  @IsNumber()
+  @IsPositive({ message: 'Jumlah pinjaman harus lebih dari 0' })
+  @Type(() => Number)
+  loanAmount: number;
+}
+
+export type ReviseLoanDto =
+  | ReviseCashLoanDto
+  | ReviseGoodsReimburseDto
+  | ReviseGoodsOnlineDto
+  | ReviseGoodsPhoneDto
+  | ReviseExcessLoanDto;

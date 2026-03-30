@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { LoanType, Prisma, SocialFundTransactionType } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
     PayrollContext,
@@ -87,6 +87,17 @@ export class LoanInstallmentProcessor {
                     },
                 });
 
+                // EXCESS_LOAN: replenish Social Fund with the installment amount
+                if (loan.loanType === LoanType.EXCESS_LOAN) {
+                    await this.replenishSocialFund(
+                        tx,
+                        installment.amount,
+                        loan.loanNumber,
+                        installment.installmentNumber,
+                        loan.loanTenor,
+                    );
+                }
+
                 // Check if all installments are paid
                 const remainingUnpaid = await tx.loanInstallment.count({
                     where: {
@@ -156,5 +167,36 @@ export class LoanInstallmentProcessor {
         );
 
         return { processedCount, totalAmount, errors, details };
+    }
+
+    /**
+     * Replenish Social Fund when an EXCESS_LOAN installment is paid
+     */
+    private async replenishSocialFund(
+        tx: Prisma.TransactionClient,
+        amount: Prisma.Decimal,
+        loanNumber: string,
+        installmentNumber: number,
+        loanTenor: number,
+    ): Promise<void> {
+        const balance = await tx.socialFundBalance.findFirst();
+        if (!balance) return;
+
+        const newBalance = balance.currentBalance.add(amount);
+
+        await tx.socialFundBalance.update({
+            where: { id: balance.id },
+            data: { currentBalance: newBalance },
+        });
+
+        await tx.socialFundTransaction.create({
+            data: {
+                type: SocialFundTransactionType.EXCESS_LOAN_REPAYMENT,
+                amount,
+                balanceAfter: newBalance,
+                description: `Cicilan ${installmentNumber}/${loanTenor} Pinjaman Excess ${loanNumber}`,
+                createdBy: balance.updatedBy || balance.id,
+            },
+        });
     }
 }

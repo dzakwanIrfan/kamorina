@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { LoanStatus } from '@prisma/client';
+import { LoanStatus, LoanType, Prisma, SocialFundTransactionType } from '@prisma/client';
 import { LoanNotificationService } from './loan-notification.service';
 import { ProcessAuthorizationDto } from '../dto/process-authorization.dto';
 import { BulkProcessAuthorizationDto } from '../dto/bulk-process-authorization.dto';
@@ -70,6 +70,11 @@ export class LoanAuthorizationService {
       // Generate installment schedule
       await this.installmentService.generateInstallmentSchedule(loanId, tx);
 
+      // EXCESS_LOAN: deduct from Social Fund
+      if (loan.loanType === LoanType.EXCESS_LOAN) {
+        await this.deductSocialFund(tx, loan.loanAmount, loanId, ketuaId);
+      }
+
       // Save history
       await tx.loanHistory.create({
         data: {
@@ -136,5 +141,44 @@ export class LoanAuthorizationService {
       message: `Berhasil memproses ${results.success.length} otorisasi, ${results.failed.length} gagal`,
       results,
     };
+  }
+
+  /**
+   * Deduct Social Fund balance when an EXCESS_LOAN is disbursed
+   */
+  private async deductSocialFund(
+    tx: Prisma.TransactionClient,
+    loanAmount: Prisma.Decimal,
+    loanId: string,
+    processedBy: string,
+  ): Promise<void> {
+    const balance = await tx.socialFundBalance.findFirst();
+
+    if (!balance) {
+      throw new BadRequestException('Saldo dana sosial belum diatur');
+    }
+
+    if (balance.currentBalance.lessThan(loanAmount)) {
+      throw new BadRequestException(
+        `Saldo dana sosial tidak mencukupi untuk pencairan pinjaman excess. Saldo: Rp ${balance.currentBalance.toNumber().toLocaleString('id-ID')}`,
+      );
+    }
+
+    const newBalance = balance.currentBalance.sub(loanAmount);
+
+    await tx.socialFundBalance.update({
+      where: { id: balance.id },
+      data: { currentBalance: newBalance, updatedBy: processedBy },
+    });
+
+    await tx.socialFundTransaction.create({
+      data: {
+        type: SocialFundTransactionType.EXCESS_LOAN_DISBURSEMENT,
+        amount: loanAmount,
+        balanceAfter: newBalance,
+        description: `Pencairan Pinjaman Excess (Loan ID: ${loanId})`,
+        createdBy: processedBy,
+      },
+    });
   }
 }
