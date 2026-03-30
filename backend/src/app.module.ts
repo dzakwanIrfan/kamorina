@@ -25,6 +25,7 @@ import { EmailLogsModule } from './email-logs/email-logs.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SalaryDeductionReportModule } from './salary-deduction-report/salary-deduction-report.module';
 import { LoanBalanceReportModule } from './loan-balance-report/loan-balance-report.module';
+import { SocialFundModule } from './social-fund/social-fund.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { LoanBalanceReportModule } from './loan-balance-report/loan-balance-repo
     DashboardModule,
     SalaryDeductionReportModule,
     LoanBalanceReportModule,
+    SocialFundModule,
   ],
 })
 export class AppModule {}

@@ -136,6 +136,10 @@ model User {
   loanRepayments                  LoanRepayment[]                  @relation("user_repayments")
   repaymentApprovals              RepaymentApproval[]              @relation("repayment_approver")
 
+  // Dana Sosial
+  socialFundRecipients SocialFundTransaction[] @relation("social_fund_recipient")
+  socialFundCreated    SocialFundTransaction[] @relation("social_fund_creator")
+
   @@map("users")
 }
 
@@ -1151,4 +1155,49 @@ model EmailLog {
   @@index([status])
   @@index([sentAt])
   @@map("email_logs")
+}
+
+// DANA SOSIAL (Social Fund)
+
+enum SocialFundTransactionType {
+  INITIAL_BALANCE
+  ADJUSTMENT
+  SANTUNAN
+}
+
+model SocialFundBalance {
+  id             String  @id @default(uuid())
+  currentBalance Decimal @default(0) @map("current_balance") @db.Decimal(15, 2)
+
+  updatedBy String? @map("updated_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("social_fund_balance")
+}
+
+model SocialFundTransaction {
+  id   String                     @id @default(uuid())
+  type SocialFundTransactionType
+
+  amount       Decimal @db.Decimal(15, 2) // Always positive
+  balanceAfter Decimal @map("balance_after") @db.Decimal(15, 2)
+
+  description String? @db.Text
+
+  // For SANTUNAN type - link to recipient
+  recipientUserId String? @map("recipient_user_id")
+  recipientUser   User?   @relation("social_fund_recipient", fields: [recipientUserId], references: [id])
+
+  // Who performed this transaction
+  createdBy     String @map("created_by")
+  createdByUser User   @relation("social_fund_creator", fields: [createdBy], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([type])
+  @@index([recipientUserId])
+  @@index([createdAt])
+  @@map("social_fund_transactions")
 }

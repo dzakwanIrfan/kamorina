@@ -27,6 +27,8 @@ import {
   History as HistoryIcon,
   ClipboardList,
   Landmark,
+  HeartHandshake,
+  HandCoins,
 } from "lucide-react";
 import { FaRupiahSign } from "react-icons/fa6";
 import { useSidebarBadges } from "@/hooks/use-sidebar-badges";
@@ -208,6 +210,25 @@ const managementGroups = [
         icon: Shield,
         href: "/dashboard/loans/authorization",
         roles: ["ketua"],
+        requiresMemberVerified: true,
+      },
+    ],
+  },
+  {
+    label: "Dana Sosial",
+    items: [
+      {
+        title: "Saldo Awal",
+        icon: HandCoins,
+        href: "/dashboard/social-fund/initial-balance",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
+      {
+        title: "Santunan",
+        icon: HeartHandshake,
+        href: "/dashboard/social-fund/santunan",
+        roles: ["ketua", "divisi_simpan_pinjam"],
         requiresMemberVerified: true,
       },
     ],
