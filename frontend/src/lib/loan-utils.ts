@@ -5,6 +5,7 @@ export const loanTypeLabels: Record<LoanType, string> = {
   [LoanType.GOODS_REIMBURSE]: 'Kredit Barang (Reimburse)',
   [LoanType.GOODS_ONLINE]: 'Kredit Barang (Online)',
   [LoanType.GOODS_PHONE]: 'Kredit Barang (Handphone)',
+  [LoanType.EXCESS_LOAN]: 'Pinjaman Excess',
 };
 
 export const loanTypeDescriptions: Record<LoanType, string> = {
@@ -12,6 +13,7 @@ export const loanTypeDescriptions: Record<LoanType, string> = {
   [LoanType.GOODS_REIMBURSE]: 'Reimburse pembelian barang yang sudah dilakukan',
   [LoanType.GOODS_ONLINE]: 'Pembelian barang melalui toko online',
   [LoanType.GOODS_PHONE]: 'Pembelian handphone dengan harga koperasi rekanan',
+  [LoanType.EXCESS_LOAN]: 'Pinjaman tanpa bunga dari dana sosial koperasi',
 };
 
 export function getLoanTypeLabel(loanType: LoanType): string {
@@ -32,6 +34,8 @@ export function getTypeSpecificDetails(loan: LoanApplication) {
       return loan.goodsOnlineDetails;
     case LoanType.GOODS_PHONE:
       return loan.goodsPhoneDetails;
+    case LoanType.EXCESS_LOAN:
+      return loan.excessLoanDetails;
     default:
       return null;
   }
@@ -47,6 +51,8 @@ export function getDisplayLoanAmount(loan: LoanApplication): number {
       return loan.goodsOnlineDetails?.itemPrice || loan.loanAmount;
     case LoanType.GOODS_PHONE:
       return loan.goodsPhoneDetails?.cooperativePrice || loan.loanAmount;
+    case LoanType.EXCESS_LOAN:
+      return loan.loanAmount;
     default:
       return loan.loanAmount;
   }

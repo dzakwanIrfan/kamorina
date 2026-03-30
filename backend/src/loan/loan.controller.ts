@@ -81,7 +81,7 @@ export class LoanController {
     @Param('id') id: string,
     @Body() updateLoanDto: UpdateLoanDto,
   ) {
-    return this.loanService.updateDraft(user.id, id, updateLoanDto);
+    return this.loanService.updateDraft(user.id, id, updateLoanDto, user.roles);
   }
 
   /**
@@ -90,7 +90,7 @@ export class LoanController {
   @Post(':id/submit')
   @HttpCode(HttpStatus.OK)
   async submitLoan(@CurrentUser() user: ICurrentUser, @Param('id') id: string) {
-    return this.loanService.submitLoan(user.id, id);
+    return this.loanService.submitLoan(user.id, id, user.roles);
   }
 
   /**
@@ -102,7 +102,7 @@ export class LoanController {
     @CurrentUser() user: ICurrentUser,
     @Param('id') id: string,
   ) {
-    return this.loanService.deleteDraft(user.id, id);
+    return this.loanService.deleteDraft(user.id, id, user.roles);
   }
 
   /**

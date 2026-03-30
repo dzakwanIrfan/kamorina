@@ -18,7 +18,7 @@ export class LoanSubmissionService {
    * Submit loan application
    * Flow: DRAFT -> SUBMITTED -> UNDER_REVIEW_DSP
    */
-  async submitLoan(userId: string, loanId: string) {
+  async submitLoan(userId: string, loanId: string, userRoles: string[] = []) {
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
       include: {
@@ -30,7 +30,12 @@ export class LoanSubmissionService {
       throw new NotFoundException('Pinjaman tidak ditemukan');
     }
 
-    if (loan.userId !== userId) {
+    // For EXCESS_LOAN, ketua/DSP creates on behalf of member - allow them to submit
+    const isAdminSubmitter =
+      loan.loanType === LoanType.EXCESS_LOAN &&
+      userRoles.some((r) => ['ketua', 'divisi_simpan_pinjam'].includes(r));
+
+    if (loan.userId !== userId && !isAdminSubmitter) {
       throw new ForbiddenException('Anda tidak memiliki akses ke pinjaman ini');
     }
 
@@ -42,7 +47,7 @@ export class LoanSubmissionService {
 
     // Re-validate before submit (skip for GOODS_PHONE)
     if (loan.loanType !== LoanType.GOODS_PHONE) {
-      await handler.validateLoanAmount(userId, loan.loanAmount.toNumber());
+      await handler.validateLoanAmount(loan.userId, loan.loanAmount.toNumber());
     }
     await this.validationService.validateLoanTenor(loan.loanTenor);
 

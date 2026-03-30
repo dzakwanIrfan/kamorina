@@ -9,7 +9,8 @@ import {
   ShoppingBag,
   ShoppingCart,
   Smartphone,
-  ExternalLink
+  ExternalLink,
+  HeartHandshake,
 } from 'lucide-react';
 import { formatCurrency, getLoanTypeLabel } from '@/lib/loan-utils';
 import { format } from 'date-fns';
@@ -25,6 +26,7 @@ const loanTypeIcons: Record<LoanType, any> = {
   [LoanType.GOODS_REIMBURSE]: ShoppingBag,
   [LoanType.GOODS_ONLINE]: ShoppingCart,
   [LoanType.GOODS_PHONE]: Smartphone,
+  [LoanType.EXCESS_LOAN]: HeartHandshake,
 };
 
 export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
@@ -177,6 +179,29 @@ export function LoanTypeDetails({ loan }: LoanTypeDetailsProps) {
               <div>
                 <p className="text-sm text-muted-foreground">Spesifikasi & Catatan</p>
                 <p className="text-sm whitespace-pre-wrap">{loan.goodsPhoneDetails.notes}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case LoanType.EXCESS_LOAN:
+        return (
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Jumlah Pinjaman</p>
+              <p className="text-2xl font-bold text-primary">
+                {formatCurrency(loan.loanAmount)}
+              </p>
+            </div>
+            <div className="bg-rose-50 dark:bg-rose-950/30 rounded-lg p-3">
+              <p className="text-sm font-medium text-rose-800 dark:text-rose-200">
+                Pinjaman tanpa bunga (0%) dari Dana Sosial
+              </p>
+            </div>
+            {loan.excessLoanDetails?.notes && (
+              <div>
+                <p className="text-sm text-muted-foreground">Catatan</p>
+                <p className="text-sm">{loan.excessLoanDetails.notes}</p>
               </div>
             )}
           </div>

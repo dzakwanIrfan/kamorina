@@ -5,6 +5,7 @@ export enum LoanType {
   GOODS_REIMBURSE = "GOODS_REIMBURSE",
   GOODS_ONLINE = "GOODS_ONLINE",
   GOODS_PHONE = "GOODS_PHONE",
+  EXCESS_LOAN = "EXCESS_LOAN",
 }
 
 export enum LoanStatus {
@@ -72,6 +73,14 @@ export interface GoodsPhoneDetail {
   itemName: string;
   retailPrice: number;
   cooperativePrice: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExcessLoanDetail {
+  id: string;
+  loanApplicationId: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -202,6 +211,7 @@ export interface LoanApplication {
   goodsReimburseDetails?: GoodsReimburseDetail | null;
   goodsOnlineDetails?: GoodsOnlineDetail | null;
   goodsPhoneDetails?: GoodsPhoneDetail | null;
+  excessLoanDetails?: ExcessLoanDetail | null;
   loanInstallments?: LoanInstallment[];
 }
 
@@ -246,11 +256,21 @@ export interface CreateGoodsPhoneDto {
   notes?: string;
 }
 
+export interface CreateExcessLoanDto {
+  loanType: LoanType.EXCESS_LOAN;
+  loanAmount: number;
+  loanTenor: number;
+  loanPurpose: string;
+  recipientUserId: string;
+  notes?: string;
+}
+
 export type CreateLoanDto =
   | CreateCashLoanDto
   | CreateGoodsReimburseDto
   | CreateGoodsOnlineDto
-  | CreateGoodsPhoneDto;
+  | CreateGoodsPhoneDto
+  | CreateExcessLoanDto;
 
 // Update DTOs
 export type UpdateCashLoanDto = Partial<Omit<CreateCashLoanDto, "loanType">>;
@@ -264,11 +284,16 @@ export type UpdateGoodsPhoneDto = Partial<
   Omit<CreateGoodsPhoneDto, "loanType">
 >;
 
+export type UpdateExcessLoanDto = Partial<
+  Omit<CreateExcessLoanDto, "loanType" | "recipientUserId">
+>;
+
 export type UpdateLoanDto =
   | UpdateCashLoanDto
   | UpdateGoodsReimburseDto
   | UpdateGoodsOnlineDto
-  | UpdateGoodsPhoneDto;
+  | UpdateGoodsPhoneDto
+  | UpdateExcessLoanDto;
 
 // Revise DTOs
 export interface ReviseCashLoanDto {
@@ -296,11 +321,18 @@ export interface ReviseGoodsPhoneDto {
   revisionNotes: string;
 }
 
+export interface ReviseExcessLoanDto {
+  loanAmount: number;
+  loanTenor: number;
+  revisionNotes: string;
+}
+
 export type ReviseLoanDto =
   | ReviseCashLoanDto
   | ReviseGoodsReimburseDto
   | ReviseGoodsOnlineDto
-  | ReviseGoodsPhoneDto;
+  | ReviseGoodsPhoneDto
+  | ReviseExcessLoanDto;
 
 export interface ApproveLoanDto {
   decision: LoanApprovalDecision;

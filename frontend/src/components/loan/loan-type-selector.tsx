@@ -19,14 +19,21 @@ interface LoanTypeSelectorProps {
   disabled?: boolean;
 }
 
-const loanTypeIcons: Record<LoanType, any> = {
+const MEMBER_LOAN_TYPES = [
+  LoanType.CASH_LOAN,
+  LoanType.GOODS_REIMBURSE,
+  LoanType.GOODS_ONLINE,
+  LoanType.GOODS_PHONE,
+] as const;
+
+const loanTypeIcons: Partial<Record<LoanType, any>> = {
   [LoanType.CASH_LOAN]: Banknote,
   [LoanType.GOODS_REIMBURSE]: ShoppingBag,
   [LoanType.GOODS_ONLINE]: ShoppingCart,
   [LoanType.GOODS_PHONE]: Smartphone,
 };
 
-const loanTypeBadges: Record<LoanType, string> = {
+const loanTypeBadges: Partial<Record<LoanType, string>> = {
   [LoanType.CASH_LOAN]: 'Sesuai Plafond',
   [LoanType.GOODS_REIMBURSE]: 'Maks 15 Juta',
   [LoanType.GOODS_ONLINE]: 'Maks 15 Juta',
@@ -34,11 +41,9 @@ const loanTypeBadges: Record<LoanType, string> = {
 };
 
 export function LoanTypeSelector({ selectedType, onSelect, disabled }: LoanTypeSelectorProps) {
-  const loanTypes = Object.values(LoanType);
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {loanTypes.map((type) => {
+      {MEMBER_LOAN_TYPES.map((type) => {
         const Icon = loanTypeIcons[type];
         const isSelected = selectedType === type;
 

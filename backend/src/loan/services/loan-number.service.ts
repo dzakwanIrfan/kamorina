@@ -40,6 +40,7 @@ export class LoanNumberService {
       [LoanType.GOODS_REIMBURSE]: 'REIM',
       [LoanType.GOODS_ONLINE]: 'ONLN',
       [LoanType.GOODS_PHONE]: 'PHNE',
+      [LoanType.EXCESS_LOAN]: 'EXCS',
     };
     return prefixMap[loanType];
   }

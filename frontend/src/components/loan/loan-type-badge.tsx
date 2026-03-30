@@ -3,11 +3,12 @@
 import { Badge } from '@/components/ui/badge';
 import { LoanType } from '@/types/loan.types';
 import { getLoanTypeLabel } from '@/lib/loan-utils';
-import { 
-  Banknote, 
-  ShoppingBag, 
-  ShoppingCart, 
-  Smartphone 
+import {
+  Banknote,
+  ShoppingBag,
+  ShoppingCart,
+  Smartphone,
+  HeartHandshake,
 } from 'lucide-react';
 
 interface LoanTypeBadgeProps {
@@ -21,6 +22,7 @@ const loanTypeIcons: Record<LoanType, any> = {
   [LoanType.GOODS_REIMBURSE]: ShoppingBag,
   [LoanType.GOODS_ONLINE]: ShoppingCart,
   [LoanType.GOODS_PHONE]: Smartphone,
+  [LoanType.EXCESS_LOAN]: HeartHandshake,
 };
 
 export function LoanTypeBadge({ 

@@ -75,6 +75,7 @@ export const loanTypeColors: Record<LoanType, string> = {
   [LoanType.GOODS_REIMBURSE]: "text-green-600",
   [LoanType.GOODS_ONLINE]: "text-purple-600",
   [LoanType.GOODS_PHONE]: "text-orange-600",
+  [LoanType.EXCESS_LOAN]: "text-rose-600",
 };
 
 export const MAX_GOODS_LOAN_AMOUNT = 15000000;

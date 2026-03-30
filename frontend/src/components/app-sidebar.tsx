@@ -231,6 +231,13 @@ const managementGroups = [
         roles: ["ketua", "divisi_simpan_pinjam"],
         requiresMemberVerified: true,
       },
+      {
+        title: "Pinjaman Excess",
+        icon: FaRupiahSign,
+        href: "/dashboard/social-fund/excess-loan",
+        roles: ["ketua", "divisi_simpan_pinjam"],
+        requiresMemberVerified: true,
+      },
     ],
   },
   {

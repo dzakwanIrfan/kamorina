@@ -102,11 +102,12 @@ const statusMap = {
   },
 };
 
-const loanTypeMap = {
+const loanTypeMap: Record<LoanType, string> = {
   [LoanType.CASH_LOAN]: "Pinjaman Tunai",
   [LoanType.GOODS_REIMBURSE]: "Reimburse Barang",
   [LoanType.GOODS_ONLINE]: "Barang Online",
   [LoanType.GOODS_PHONE]: "Kredit HP",
+  [LoanType.EXCESS_LOAN]: "Pinjaman Excess",
 };
 
 export function AllLoans() {
@@ -313,6 +314,7 @@ export function AllLoans() {
           { label: "Reimburse Barang", value: LoanType.GOODS_REIMBURSE },
           { label: "Barang Online", value: LoanType.GOODS_ONLINE },
           { label: "Kredit HP", value: LoanType.GOODS_PHONE },
+          { label: "Pinjaman Excess", value: LoanType.EXCESS_LOAN },
         ],
       },
     ],

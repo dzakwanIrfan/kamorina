@@ -137,7 +137,7 @@ export class LoanCrudService {
   /**
    * Update draft loan
    */
-  async updateDraft(userId: string, loanId: string, dto: UpdateLoanDto) {
+  async updateDraft(userId: string, loanId: string, dto: UpdateLoanDto, userRoles: string[] = []) {
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
     });
@@ -146,7 +146,11 @@ export class LoanCrudService {
       throw new NotFoundException('Pinjaman tidak ditemukan');
     }
 
-    if (loan.userId !== userId) {
+    const isAdminForExcess =
+      loan.loanType === LoanType.EXCESS_LOAN &&
+      userRoles.some((r) => ['ketua', 'divisi_simpan_pinjam'].includes(r));
+
+    if (loan.userId !== userId && !isAdminForExcess) {
       throw new ForbiddenException('Anda tidak memiliki akses ke pinjaman ini');
     }
 
@@ -241,7 +245,7 @@ export class LoanCrudService {
   /**
    * Delete draft loan
    */
-  async deleteDraft(userId: string, loanId: string) {
+  async deleteDraft(userId: string, loanId: string, userRoles: string[] = []) {
     const loan = await this.prisma.loanApplication.findUnique({
       where: { id: loanId },
     });
@@ -250,7 +254,11 @@ export class LoanCrudService {
       throw new NotFoundException('Pinjaman tidak ditemukan');
     }
 
-    if (loan.userId !== userId) {
+    const isAdminForExcess =
+      loan.loanType === LoanType.EXCESS_LOAN &&
+      userRoles.some((r) => ['ketua', 'divisi_simpan_pinjam'].includes(r));
+
+    if (loan.userId !== userId && !isAdminForExcess) {
       throw new ForbiddenException('Anda tidak memiliki akses ke pinjaman ini');
     }
 

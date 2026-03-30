@@ -40,17 +40,17 @@ export class LoanService {
     return this.crudService.createDraft(userId, dto);
   }
 
-  async updateDraft(userId: string, loanId: string, dto: UpdateLoanDto) {
-    return this.crudService.updateDraft(userId, loanId, dto);
+  async updateDraft(userId: string, loanId: string, dto: UpdateLoanDto, userRoles: string[] = []) {
+    return this.crudService.updateDraft(userId, loanId, dto, userRoles);
   }
 
-  async deleteDraft(userId: string, loanId: string) {
-    return this.crudService.deleteDraft(userId, loanId);
+  async deleteDraft(userId: string, loanId: string, userRoles: string[] = []) {
+    return this.crudService.deleteDraft(userId, loanId, userRoles);
   }
 
   // SUBMISSION
-  async submitLoan(userId: string, loanId: string) {
-    return this.submissionService.submitLoan(userId, loanId);
+  async submitLoan(userId: string, loanId: string, userRoles: string[] = []) {
+    return this.submissionService.submitLoan(userId, loanId, userRoles);
   }
 
   // APPROVAL PROCESS
